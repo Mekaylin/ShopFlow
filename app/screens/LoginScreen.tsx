@@ -203,7 +203,7 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
         .eq('id', authData.user.id);
       console.log('User update result:', { userError });
       if (userError) throw new Error('User update failed: ' + userError.message);
-      Alert.alert('Success', 'Registration successful! Please check your email to confirm your account.');
+      Alert.alert('Check your email', 'Registration successful! Please check your email to confirm your account before logging in.');
       onBack();
     } catch (err: any) {
       console.log('Registration error (full object):', err);
