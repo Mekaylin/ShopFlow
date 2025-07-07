@@ -1,0 +1,13 @@
+{
+  // See https://go.expo.dev/notifications for more information
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start Expo Go App",
+      "type": "shell",
+      "command": "npx expo start",
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

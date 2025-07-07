@@ -1,4 +1,31 @@
-# Welcome to your Expo app 👋
+# ShopFlow Expo Go App
+
+This is a basic Expo Go app with a simple homepage.
+
+## Getting Started
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+2. **Start the app:**
+   ```bash
+   npx expo start
+   ```
+3. **Open in Expo Go:**
+   - Scan the QR code with the Expo Go app on your device, or use an emulator/simulator.
+
+## Project Structure
+- The main homepage is in `app/index.tsx`.
+- Edit files in the `app` directory to add more screens or features.
+
+## Notes
+- This project uses [Expo Router](https://docs.expo.dev/router/introduction) for navigation.
+- For more info, see the [Expo documentation](https://docs.expo.dev/).
+
+---
+
+# Original Expo Instructions
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
