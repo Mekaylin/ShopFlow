@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, Image, Modal, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { supabase } from '../../lib/supabase';
 
 // Types
 interface Task {
@@ -75,7 +76,7 @@ function minutesLate(deadline: string): number {
   return Math.floor((now.getTime() - deadlineDate.getTime()) / 60000);
 }
 
-function AdminDashboardScreen({ onLogout }: { onLogout: () => void }) {
+function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: any }) {
   // --- IMPORTS (assume at top, not shown in snippet) ---
   // import React, { useState, useEffect } from 'react';
   // import { View, Text, TouchableOpacity, Modal, TextInput, ScrollView, FlatList, Image, Alert, Platform, SafeAreaView } from 'react-native';
@@ -115,8 +116,8 @@ function AdminDashboardScreen({ onLogout }: { onLogout: () => void }) {
   const [darkMode, setDarkMode] = useState(false);
   // Settings page state
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const [tab, setTab] = useState<'home' | 'employees' | 'tasks' | 'materials'>('home');
-  const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
+  const [tab, setTab] = useState<'home' | 'employees' | 'tasks' | 'materials' | 'clock'>('home');
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [materials, setMaterials] = useState<Material[]>(initialMaterials);
   // Notification settings
@@ -182,21 +183,36 @@ function AdminDashboardScreen({ onLogout }: { onLogout: () => void }) {
     Alert.alert('Saved', 'Working hours and lunch times updated.');
   };
 
-  // Employee CRUD
-  const handleAddEmployee = () => {
+  // Fetch employees from Supabase on mount
+  useEffect(() => {
+    async function fetchEmployees() {
+      if (!user?.business_id) return;
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('business_id', user.business_id);
+      if (!error && data) setEmployees(data);
+    }
+    fetchEmployees();
+  }, [user?.business_id]);
+
+  // Add employee to Supabase
+  const handleAddEmployee = async () => {
     if (!newEmployeeName || !newEmployeeCode) return;
-    setEmployees([
-      ...employees,
-      {
-        id: Date.now().toString(),
+    const { data, error } = await supabase
+      .from('employees')
+      .insert({
         name: newEmployeeName,
         code: newEmployeeCode,
-        lunchStart: newEmployeeLunchStart,
-        lunchEnd: newEmployeeLunchEnd,
-        photoUri: newEmployeePhotoUri,
+        lunch_start: newEmployeeLunchStart,
+        lunch_end: newEmployeeLunchEnd,
+        photo_uri: newEmployeePhotoUri,
         department: newEmployeeDepartment,
-      },
-    ]);
+        business_id: user.business_id,
+      })
+      .select('*')
+      .single();
+    if (!error && data) setEmployees([...employees, data]);
     setNewEmployeeName('');
     setNewEmployeeCode('');
     setNewEmployeeLunchStart('12:00');
@@ -204,22 +220,24 @@ function AdminDashboardScreen({ onLogout }: { onLogout: () => void }) {
     setNewEmployeePhotoUri(undefined);
     setNewEmployeeDepartment('');
   };
-  const handleEditEmployee = (emp: Employee) => {
-    setEditEmployee(emp);
-    setNewEmployeeName(emp.name);
-    setNewEmployeeCode(emp.code);
-    setNewEmployeeLunchStart(emp.lunchStart);
-    setNewEmployeeLunchEnd(emp.lunchEnd);
-    setNewEmployeePhotoUri(emp.photoUri);
-    setNewEmployeeDepartment(emp.department || '');
-  };
-  const handleSaveEmployee = () => {
+
+  // Edit employee in Supabase
+  const handleSaveEmployee = async () => {
     if (!editEmployee) return;
-    setEmployees(employees.map(e =>
-      e.id === editEmployee!.id
-        ? { ...e, name: newEmployeeName, code: newEmployeeCode, lunchStart: newEmployeeLunchStart, lunchEnd: newEmployeeLunchEnd, photoUri: newEmployeePhotoUri, department: newEmployeeDepartment }
-        : e
-    ));
+    const { data, error } = await supabase
+      .from('employees')
+      .update({
+        name: newEmployeeName,
+        code: newEmployeeCode,
+        lunch_start: newEmployeeLunchStart,
+        lunch_end: newEmployeeLunchEnd,
+        photo_uri: newEmployeePhotoUri,
+        department: newEmployeeDepartment,
+      })
+      .eq('id', editEmployee.id)
+      .select('*')
+      .single();
+    if (!error && data) setEmployees(employees.map(e => e.id === editEmployee.id ? data : e));
     setEditEmployee(null);
     setNewEmployeeName('');
     setNewEmployeeCode('');
@@ -228,6 +246,16 @@ function AdminDashboardScreen({ onLogout }: { onLogout: () => void }) {
     setNewEmployeePhotoUri(undefined);
     setNewEmployeeDepartment('');
   };
+
+  // Delete employee from Supabase
+  const handleDeleteEmployee = async (id: string) => {
+    const { error } = await supabase
+      .from('employees')
+      .delete()
+      .eq('id', id);
+    if (!error) setEmployees(employees.filter(e => e.id !== id));
+  };
+
   // Pick employee photo
   const pickEmployeePhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -247,50 +275,123 @@ function AdminDashboardScreen({ onLogout }: { onLogout: () => void }) {
     }
   };
 
-  // Employee CRUD
-  const handleDeleteEmployee = (id: string) => {
-    setEmployees(employees.filter(e => e.id !== id));
-    setTasks(tasks.filter(t => t.assignedTo !== employees.find(e => e.id === id)?.name));
+  // Task CRUD
+  useEffect(() => {
+    async function fetchTasks() {
+      if (!user?.business_id) return;
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('business_id', user.business_id);
+      if (!error && data) setTasks(data);
+    }
+    fetchTasks();
+  }, [user?.business_id]);
+
+  const handleAddTask = async () => {
+    if (!newTaskName || !newTaskStart || !newTaskDeadline || !selectedTaskEmployee) return;
+    const { data, error } = await supabase
+      .from('tasks')
+      .insert({
+        name: newTaskName,
+        assigned_to: selectedTaskEmployee.id,
+        business_id: user.business_id,
+        start: newTaskStart,
+        deadline: newTaskDeadline,
+        completed: false,
+        completed_at: null,
+        materials_used: [],
+      })
+      .select('*')
+      .single();
+    if (!error && data) setTasks([...tasks, data]);
+    setNewTaskName('');
+    setNewTaskStart('');
+    setNewTaskDeadline('');
+    setSelectedTaskEmployee(null);
   };
 
-  // Task CRUD
-  const handleEditTask = (task: Task) => {
-    setEditTask(task);
-    setNewEmployeeName(task.name);
-    setNewEmployeeCode(task.assignedTo);
-  };
-  const handleSaveTask = () => {
+  const handleEditTask = async () => {
     if (!editTask) return;
-    setTasks(tasks.map(t => t.id === editTask!.id ? { ...t, name: newEmployeeName, assignedTo: newEmployeeCode } : t));
+    const { data, error } = await supabase
+      .from('tasks')
+      .update({
+        name: newTaskName,
+        assigned_to: newEmployeeCode, // assuming newEmployeeCode is employee id
+        start: newTaskStart,
+        deadline: newTaskDeadline,
+      })
+      .eq('id', editTask.id)
+      .select('*')
+      .single();
+    if (!error && data) setTasks(tasks.map(t => t.id === editTask.id ? data : t));
     setEditTask(null);
-    setNewEmployeeName('');
+    setNewTaskName('');
+    setNewTaskStart('');
+    setNewTaskDeadline('');
     setNewEmployeeCode('');
   };
-  const handleDeleteTask = (id: string) => {
-    setTasks(tasks.filter(t => t.id !== id));
+
+  const handleDeleteTask = async (id: string) => {
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('id', id);
+    if (!error) setTasks(tasks.filter(t => t.id !== id));
   };
 
   // Material CRUD
-  const handleAddMaterial = () => {
+  useEffect(() => {
+    async function fetchMaterials() {
+      if (!user?.business_id) return;
+      const { data, error } = await supabase
+        .from('materials')
+        .select('*')
+        .eq('business_id', user.business_id);
+      if (!error && data) setMaterials(data);
+    }
+    fetchMaterials();
+  }, [user?.business_id]);
+
+  const handleAddMaterial = async () => {
     if (!newMaterialName || !newMaterialUnit) return;
-    setMaterials([...materials, { id: Date.now().toString(), name: newMaterialName, unit: newMaterialUnit }]);
+    const { data, error } = await supabase
+      .from('materials')
+      .insert({
+        name: newMaterialName,
+        unit: newMaterialUnit,
+        business_id: user.business_id,
+      })
+      .select('*')
+      .single();
+    if (!error && data) setMaterials([...materials, data]);
     setNewMaterialName('');
     setNewMaterialUnit('');
   };
-  const handleEditMaterial = (mat: Material) => {
-    setEditMaterial(mat);
-    setNewMaterialName(mat.name);
-    setNewMaterialUnit(mat.unit);
-  };
-  const handleSaveMaterial = () => {
+
+  const handleEditMaterial = async () => {
     if (!editMaterial) return;
-    setMaterials(materials.map(m => m.id === editMaterial.id ? { ...m, name: newMaterialName, unit: newMaterialUnit } : m));
+    const { data, error } = await supabase
+      .from('materials')
+      .update({
+        name: newMaterialName,
+        unit: newMaterialUnit,
+      })
+      .eq('id', editMaterial.id)
+      .select('*')
+      .single();
+    if (!error && data) setMaterials(materials.map(m => m.id === editMaterial.id ? data : m));
     setEditMaterial(null);
     setNewMaterialName('');
     setNewMaterialUnit('');
   };
-  const handleDeleteMaterial = (id: string) => {
-    setMaterials(materials.filter(m => m.id !== id));
+
+  const handleDeleteMaterial = async (id: string) => {
+    const { error } = await supabase
+      .from('materials')
+      .delete()
+      .eq('id', id);
+    if (!error) setMaterials(materials.filter(m => m.id !== id));
   };
 
   // Add Material Type logic
@@ -332,6 +433,7 @@ function AdminDashboardScreen({ onLogout }: { onLogout: () => void }) {
         { name: 'employees', icon: 'users', label: 'Employees' },
         { name: 'tasks', icon: 'tasks', label: 'Tasks' },
         { name: 'materials', icon: 'boxes', label: 'Materials' },
+        { name: 'clock', icon: 'clock', label: 'Clock Events' },
       ].map(tabObj => (
         <TouchableOpacity
           key={tabObj.name}
@@ -433,7 +535,7 @@ function AdminDashboardScreen({ onLogout }: { onLogout: () => void }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   // Export modal state
   const [exportModalVisible, setExportModalVisible] = useState(false);
-  const [exportType, setExportType] = useState<'tasks' | 'materials' | 'employees' | 'all'>('all');
+  const [exportType, setExportType] = useState<'tasks' | 'materials' | 'employees' | 'attendance' | 'all'>('all');
   const [exportStartDate, setExportStartDate] = useState<Date>(new Date());
   const [exportEndDate, setExportEndDate] = useState<Date>(new Date());
   const [showExportStartPicker, setShowExportStartPicker] = useState(false);
@@ -474,7 +576,7 @@ function AdminDashboardScreen({ onLogout }: { onLogout: () => void }) {
       });
       data += 'Task Name,Assigned To,Start,Deadline,Completed,Completed At\n';
       filtered.forEach(t => {
-        data += `${t.name},${t.assignedTo},${t.start},${t.deadline},${t.completed ? 'Yes' : 'No'},${t.completedAt || ''}\n`;
+        data += `${t.name},${t.assignedTo || t.assigned_to},${t.start},${t.deadline},${t.completed ? 'Yes' : 'No'},${t.completedAt || t.completed_at || ''}\n`;
       });
       filename = 'tasks.csv';
     }
@@ -488,9 +590,21 @@ function AdminDashboardScreen({ onLogout }: { onLogout: () => void }) {
     if (exportType === 'employees' || exportType === 'all') {
       data += '\nEmployee Name,Code,Lunch Start,Lunch End\n';
       employees.forEach(e => {
-        data += `${e.name},${e.code},${e.lunchStart},${e.lunchEnd}\n`;
+        data += `${e.name},${e.code},${e.lunchStart || e.lunch_start},${e.lunchEnd || e.lunch_end}\n`;
       });
       filename = 'employees.csv';
+    }
+    if (exportType === 'attendance' || exportType === 'all') {
+      data += '\nEmployee Name,Clock In,Clock Out\n';
+      employees.forEach(emp => {
+        const events = (clockEvents || []).filter(ev => ev.employee_id === emp.id);
+        events.forEach(ev => {
+          const clockIn = ev.clock_in ? new Date(ev.clock_in).toLocaleString() : '';
+          const clockOut = ev.clock_out ? new Date(ev.clock_out).toLocaleString() : '';
+          data += `${emp.name},${clockIn},${clockOut}\n`;
+        });
+      });
+      filename = 'attendance.csv';
     }
     if (exportType === 'all') filename = 'all_data.csv';
     const fileUri = FileSystem.cacheDirectory + filename;
@@ -505,7 +619,7 @@ function AdminDashboardScreen({ onLogout }: { onLogout: () => void }) {
         <View style={{ backgroundColor: '#fff', borderRadius: 14, padding: 24, width: '90%' }}>
           <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16, color: '#1976d2' }}>Export Data</Text>
           <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>What do you want to export?</Text>
-          {['tasks', 'materials', 'employees', 'all'].map(type => (
+          {['tasks', 'materials', 'employees', 'attendance', 'all'].map(type => (
             <TouchableOpacity key={type} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }} onPress={() => setExportType(type as any)}>
               <View style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#1976d2', marginRight: 8, backgroundColor: exportType === type ? '#1976d2' : '#fff', alignItems: 'center', justifyContent: 'center' }}>
                 {exportType === type && <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#fff' }} />}
@@ -1134,6 +1248,53 @@ function AdminDashboardScreen({ onLogout }: { onLogout: () => void }) {
     notifyLateInput: [styles.input, { minWidth: 60, flex: 0, width: 100, maxWidth: 140, alignSelf: 'flex-start' }],
   };
 
+  // Fetch clock events for all employees in this business
+  const [clockEvents, setClockEvents] = useState<any[]>([]);
+
+  // Fetch clock events for all employees in this business
+  useEffect(() => {
+    async function fetchClockEvents() {
+      if (!user?.business_id) return;
+      const { data, error } = await supabase
+        .from('clock_events')
+        .select('*')
+        .eq('business_id', user.business_id)
+        .order('clock_in', { ascending: false });
+      if (!error && data) setClockEvents(data);
+    }
+    fetchClockEvents();
+  }, [user?.business_id]);
+
+  // Helper: group clock events by employee
+  const clockEventsByEmployee = employees.reduce((acc, emp) => {
+    acc[emp.id] = clockEvents.filter(ev => ev.employee_id === emp.id);
+    return acc;
+  }, {} as Record<string, any[]>);
+
+  // Helper: get late employees for a given day
+  function getLateEmployeesByClockEvents(date: Date) {
+    const workStartTime = workStart || '08:00';
+    const lateList: string[] = [];
+    employees.forEach(emp => {
+      const events = clockEventsByEmployee[emp.id] || [];
+      // Find first clock_in for this day
+      const event = events.find(ev => {
+        const d = new Date(ev.clock_in);
+        return d.toDateString() === date.toDateString();
+      });
+      if (event) {
+        const clockIn = new Date(event.clock_in);
+        const [h, m] = workStartTime.split(':').map(Number);
+        const workStartDate = new Date(clockIn);
+        workStartDate.setHours(h, m, 0, 0);
+        if (clockIn > workStartDate) {
+          lateList.push(emp.name);
+        }
+      }
+    });
+    return lateList;
+  }
+
   return (
     <SafeAreaView style={[...themedStyles.container, { position: 'relative', flex: 1 }]}> {/* Ensure relative positioning for absolute children */}
       <View style={themedStyles.headerRow}>
@@ -1216,13 +1377,13 @@ function AdminDashboardScreen({ onLogout }: { onLogout: () => void }) {
                 style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
               >
                 <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#c62828', marginBottom: 6 }}>Late Employees</Text>
-                {limitLines(lateEmps, 10).map((name, idx) => (
+                {limitLines(getLateEmployeesByClockEvents(summaryDate), 10).map((name, idx) => (
                   <Text key={name} style={{ color: '#c62828', fontSize: 15 }} numberOfLines={1} ellipsizeMode="tail">
                     {idx + 1}. {name}
                   </Text>
                 ))}
-                {lateEmps.length > 10 && (
-                  <Text style={{ color: '#c62828', fontWeight: 'bold', marginTop: 4 }}>+{lateEmps.length - 10} more...</Text>
+                {getLateEmployeesByClockEvents(summaryDate).length > 10 && (
+                  <Text style={{ color: '#c62828', fontWeight: 'bold', marginTop: 4 }}>+{getLateEmployeesByClockEvents(summaryDate).length - 10} more...</Text>
                 )}
               </TouchableOpacity>
               {/* Materials Used Card */}
@@ -1265,7 +1426,7 @@ function AdminDashboardScreen({ onLogout }: { onLogout: () => void }) {
                 <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 24, width: '90%', maxHeight: '90%' }}>
                   <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#c62828', marginBottom: 10 }}>All Late Employees</Text>
                   <ScrollView style={{ maxHeight: 400 }}>
-                    {lateEmps.map((name, idx) => (
+                    {getLateEmployeesByClockEvents(summaryDate).map((name, idx) => (
                       <Text key={name} style={{ color: '#c62828', fontSize: 15, marginBottom: 2 }}>
                         {idx + 1}. {name}
                       </Text>

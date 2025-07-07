@@ -3,6 +3,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Animated, FlatList, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { supabase } from '../../lib/supabase';
 
 // Demo employees (no login code needed)
 interface Employee {
@@ -48,9 +49,11 @@ const initialTasks: Task[] = [
 
 interface EmployeeDashboardScreenProps {
   onLogout: () => void;
+  employee: any;
+  business: any;
 }
 
-export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
+export default function EmployeeDashboardScreen({ onLogout, employee, business }: EmployeeDashboardScreenProps) {
   const colorScheme = useColorScheme();
   const [darkMode, setDarkMode] = useState(colorScheme === 'dark');
   const isDark = darkMode;
@@ -58,6 +61,9 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
   const [biometricSupported, setBiometricSupported] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [biometricLoggedIn, setBiometricLoggedIn] = useState(false);
+  const [clockEvents, setClockEvents] = useState<any[]>([]);
+  const [clockedIn, setClockedIn] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Check for biometric support on mount
   useEffect(() => {
@@ -66,6 +72,25 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
       setBiometricSupported(compatible);
     })();
   }, []);
+
+  // Fetch clock events for this employee
+  useEffect(() => {
+    async function fetchClockEvents() {
+      if (!employee?.id || !business?.id) return;
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('clock_events')
+        .select('*')
+        .eq('employee_id', employee.id)
+        .eq('business_id', business.id)
+        .order('clock_in', { ascending: false });
+      if (!error && data) setClockEvents(data);
+      setLoading(false);
+      // Set clockedIn state if there is an open event
+      setClockedIn(data && data.length > 0 && !data[0].clock_out);
+    }
+    fetchClockEvents();
+  }, [employee?.id, business?.id]);
 
   // Biometric login handler
   const handleBiometricLogin = async () => {
@@ -85,7 +110,6 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
   };
   const insets = useSafeAreaInsets();
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [clockedIn, setClockedIn] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [codePromptVisible, setCodePromptVisible] = useState(false);
@@ -354,6 +378,47 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
     shadow: isDark ? '#000' : '#b0b8c1',
   };
 
+  // Handle clock in
+  const handleClockIn = async () => {
+    if (!employee?.id || !business?.id) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('clock_events')
+      .insert({
+        employee_id: employee.id,
+        business_id: business.id,
+        clock_in: new Date().toISOString(),
+        clock_out: null,
+      })
+      .select('*')
+      .single();
+    setLoading(false);
+    if (!error && data) {
+      setClockEvents([data, ...clockEvents]);
+      setClockedIn(true);
+    }
+  };
+
+  // Handle clock out
+  const handleClockOut = async () => {
+    if (!employee?.id || !business?.id) return;
+    // Find latest open event
+    const openEvent = clockEvents.find(e => !e.clock_out);
+    if (!openEvent) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('clock_events')
+      .update({ clock_out: new Date().toISOString() })
+      .eq('id', openEvent.id)
+      .select('*')
+      .single();
+    setLoading(false);
+    if (!error && data) {
+      setClockEvents(clockEvents.map(e => e.id === openEvent.id ? data : e));
+      setClockedIn(false);
+    }
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 16 }]}> 
       {/* Top bar with title and settings icon */}
@@ -444,7 +509,7 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
       <View style={styles.buttonCol}>
         <TouchableOpacity
           style={[styles.actionBtn, { backgroundColor: clockedIn ? theme.error : theme.accent, shadowColor: theme.shadow }]}
-          onPress={handleClockInOutPress}
+          onPress={clockedIn ? handleClockOut : handleClockIn}
         >
           <MaterialIcons name={clockedIn ? 'logout' : 'login'} size={40} color="#fff" style={{ marginBottom: 10 }} />
           <Text style={styles.actionBtnText}>{clockedIn ? 'Clock Out' : 'Clock In'}</Text>

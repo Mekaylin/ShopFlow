@@ -1,5 +1,5 @@
 import AppNavigator from '../navigation/AppNavigator';
 
-export default function HomeScreen() {
+export default function() {
   return <AppNavigator />;
 }
