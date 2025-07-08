@@ -133,9 +133,6 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={styles.centered}>
           <Animated.View style={[styles.card, { transform: [{ translateX: shakeAnim }] }]}> 
-            <FontAwesome5 name="tools" size={54} color="#1976d2" style={{ marginBottom: 18 }} />
-            <Text style={styles.title}>ShopFlow</Text>
-            <Text style={styles.subtitle}>Sign in to continue</Text>
             <TextInput
               style={styles.input}
               placeholder="Email"
