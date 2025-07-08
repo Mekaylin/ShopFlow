@@ -14,6 +14,9 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
   const [showReset, setShowReset] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [loginLocked, setLoginLocked] = useState(false);
+  const [lockTimer, setLockTimer] = useState(0);
 
   if (showRegister) {
     return <RegistrationScreen onBack={() => setShowRegister(false)} />;
@@ -70,7 +73,28 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
     );
   }
 
+  useEffect(() => {
+    let timer: ReturnType<typeof setInterval>;
+    if (loginLocked && lockTimer > 0) {
+      timer = setInterval(() => {
+        setLockTimer((t) => {
+          if (t <= 1) {
+            setLoginLocked(false);
+            clearInterval(timer);
+            return 0;
+          }
+          return t - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [loginLocked, lockTimer]);
+
   const handleLogin = async () => {
+    if (loginLocked) {
+      Alert.alert('Too Many Attempts', `Please wait ${lockTimer} seconds before trying again.`);
+      return;
+    }
     if (!email || !password) {
       Alert.alert('Missing Fields', 'Please enter both email and password.');
       return;
@@ -80,6 +104,11 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
       // Sign in with Supabase Auth
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) {
+        setLoginAttempts((a) => a + 1);
+        if (loginAttempts + 1 >= 5) {
+          setLoginLocked(true);
+          setLockTimer(30);
+        }
         console.error('Auth error details:', signInError);
         throw new Error(signInError.message);
       }
@@ -89,7 +118,27 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
       }
       // Check if email is confirmed (optional, but recommended)
       if (signInData?.user && !signInData.user.confirmed_at) {
-        Alert.alert('Email Not Verified', 'Please confirm your email address before logging in.');
+        Alert.alert(
+          'Email Not Verified',
+          'Please confirm your email address before logging in.',
+          [
+            { text: 'Resend Confirmation Email', onPress: async () => {
+                setLoading(true);
+                try {
+                  const { error } = await supabase.auth.resend({ type: 'signup', email });
+                  if (error) {
+                    Alert.alert('Error', error.message);
+                  } else {
+                    Alert.alert('Confirmation Email Sent', 'Please check your inbox.');
+                  }
+                } finally {
+                  setLoading(false);
+                }
+              }
+            },
+            { text: 'OK' }
+          ]
+        );
         return;
       }
       // Fetch user role from users table
@@ -105,6 +154,7 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
       if (role !== 'admin' && role !== 'employee') {
         throw new Error('Invalid user role.');
       }
+      setLoginAttempts(0); // reset on success
       onLogin(role);
     } catch (e: unknown) {
       let message = 'Unknown error';
@@ -260,6 +310,9 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
       });
       console.log('Auth signUp result:', { authData, signUpError });
       if (signUpError) {
+        if (signUpError.message.toLowerCase().includes('already registered')) {
+          throw new Error('This email is already registered. Please log in or use a different email.');
+        }
         throw new Error('Auth sign up failed: ' + signUpError.message + ' (full error: ' + JSON.stringify(signUpError) + ')');
       }
       if (!authData.user) {
@@ -273,7 +326,12 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
           .select('id')
           .single();
         console.log('Business insert result:', { business, businessError });
-        if (businessError || !business) throw new Error('Failed to create business: ' + (businessError?.message || 'Unknown error'));
+        if (businessError || !business) {
+          if (businessError?.message?.toLowerCase().includes('duplicate')) {
+            throw new Error('This business name is already in use. Please choose a different name.');
+          }
+          throw new Error('Failed to create business: ' + (businessError?.message || 'Unknown error'));
+        }
         business_id = business.id;
       } else {
         // Employee: resolve business by code or UUID
