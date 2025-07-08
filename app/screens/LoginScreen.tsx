@@ -11,12 +11,70 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
   const [loading, setLoading] = useState(false);
   const [shakeAnim] = useState(new Animated.Value(0));
   const [showRegister, setShowRegister] = useState(false);
+  const [showReset, setShowReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
 
   if (showRegister) {
     return <RegistrationScreen onBack={() => setShowRegister(false)} />;
   }
 
+  if (showReset) {
+    return (
+      <View style={styles.bg}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+          <View style={styles.centered}>
+            <View style={styles.card}>
+              <Text style={styles.title}>Reset Password</Text>
+              <Text style={styles.subtitle}>Enter your email to receive a password reset link.</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                value={resetEmail}
+                onChangeText={setResetEmail}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                placeholderTextColor="#b0b8c1"
+                editable={!resetLoading}
+              />
+              <TouchableOpacity
+                style={styles.loginBtn}
+                onPress={async () => {
+                  setResetLoading(true);
+                  try {
+                    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail);
+                    if (error) {
+                      Alert.alert('Error', error.message);
+                    } else {
+                      Alert.alert('Success', 'Check your email for a password reset link.');
+                      setShowReset(false);
+                    }
+                  } catch (e) {
+                  Alert.alert('Error', e instanceof Error ? e.message : JSON.stringify(e) || 'Unknown error');
+                  } finally {
+                    setResetLoading(false);
+                  }
+                }}
+                disabled={resetLoading}
+              >
+                <Text style={styles.loginBtnText}>{resetLoading ? 'Sending...' : 'Send Reset Email'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowReset(false)} style={{ marginTop: 16 }}>
+                <Text style={{ color: '#1976d2', textAlign: 'center' }}>Back to Login</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    );
+  }
+
   const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Missing Fields', 'Please enter both email and password.');
+      return;
+    }
     setLoading(true);
     try {
       // Sign in with Supabase Auth
@@ -31,7 +89,8 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
       }
       // Check if email is confirmed (optional, but recommended)
       if (signInData?.user && !signInData.user.confirmed_at) {
-        throw new Error('Please confirm your email address before logging in.');
+        Alert.alert('Email Not Verified', 'Please confirm your email address before logging in.');
+        return;
       }
       // Fetch user role from users table
       const { data: users, error: userError } = await supabase
@@ -40,23 +99,30 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
         .eq('email', email)
         .limit(1);
       if (userError || !users || users.length === 0) {
-        throw new Error('User not found or missing role.');
+        throw new Error('User not found or missing role. ' + (userError?.message || ''));
       }
       const role = users[0].role;
       if (role !== 'admin' && role !== 'employee') {
         throw new Error('Invalid user role.');
       }
       onLogin(role);
-    } catch (e) {
-      console.error('Exception during auth:', e);
+    } catch (e: unknown) {
+      let message = 'Unknown error';
+      if (e instanceof Error) {
+        console.error('Exception during auth:', e);
+        message = e.message;
+      } else {
+        console.error('Exception during auth:', JSON.stringify(e));
+        message = JSON.stringify(e) || 'Unknown error';
+      }
       Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 6, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -6, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: false }),
+        Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: false }),
+        Animated.timing(shakeAnim, { toValue: 6, duration: 60, useNativeDriver: false }),
+        Animated.timing(shakeAnim, { toValue: -6, duration: 60, useNativeDriver: false }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: false }),
       ]).start();
-      Alert.alert('Login failed', e.message || 'Unknown error');
+      Alert.alert('Login failed', message);
     } finally {
       setLoading(false);
     }
@@ -109,6 +175,9 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowRegister(true)} style={{ marginTop: 16 }}>
               <Text style={{ color: '#1976d2', textAlign: 'center', fontWeight: 'bold' }}>Don&apos;t have an account? Sign Up</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowReset(true)} style={{ marginTop: 12 }}>
+              <Text style={{ color: '#1976d2', textAlign: 'center' }}>Forgot Password?</Text>
             </TouchableOpacity>
             {onTest && (
               <TouchableOpacity onPress={onTest} style={{ marginTop: 24 }}>
@@ -169,6 +238,10 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
   }
 
   const handleRegister = async () => {
+    if (!email || !password) {
+      Alert.alert('Missing Fields', 'Please enter both email and password.');
+      return;
+    }
     if (passwordStrength === 'weak') {
       Alert.alert('Weak Password', 'Please choose a stronger password.');
       return;
@@ -205,18 +278,17 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
       });
       console.log('Auth signUp result:', { authData, signUpError });
       if (signUpError) {
-        if (signUpError.message.toLowerCase().includes('user already registered')) {
-          throw new Error('This email is already registered. Please log in or use a different email.');
-        }
-        throw new Error('Auth sign up failed: ' + signUpError.message);
+        throw new Error('Auth sign up failed: ' + signUpError.message + ' (full error: ' + JSON.stringify(signUpError) + ')');
       }
       // Insert into public.users
-      const { error: userError } = await supabase
-        .from('users')
-        .update({ name, role, business_id })
-        .eq('id', authData.user.id);
-      console.log('User update result:', { userError });
-      if (userError) throw new Error('User update failed: ' + userError.message);
+      if (authData.user) {
+        const { error: userError } = await supabase
+          .from('users')
+          .update({ name, role, business_id })
+          .eq('id', authData.user.id);
+        console.log('User update result:', { userError });
+        if (userError) throw new Error('User update failed: ' + userError.message + ' (full error: ' + JSON.stringify(userError) + ')');
+      }
       Alert.alert('Check your email', 'Registration successful! Please check your email to confirm your account before logging in.');
       setTimeout(onBack, 1200); // Delay to allow alert to show
     } catch (err: any) {

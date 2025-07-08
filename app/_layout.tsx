@@ -1,8 +1,11 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
+import { supabase } from '../lib/supabase';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
 
@@ -11,10 +14,40 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+  const [restoring, setRestoring] = useState(true);
+  const router = useRouter();
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
+  useEffect(() => {
+    const restoreSession = async () => {
+      const stored = await SecureStore.getItemAsync('supabase-session');
+      if (stored) {
+        const session = JSON.parse(stored);
+        await supabase.auth.setSession(session);
+        // Fetch user role and redirect
+        const { data: users, error } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', session.user.id)
+          .limit(1);
+        if (users && users.length > 0) {
+          const role = users[0].role;
+          if (role === 'admin') router.replace('/admin-dashboard');
+          else if (role === 'employee') router.replace('/employee-dashboard');
+        }
+      }
+      setRestoring(false);
+    };
+    restoreSession();
+  }, []);
+
+  if (!loaded || restoring) {
+    return (
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <StatusBar style="auto" />
+        <Stack.Screen name="+loading" options={{ headerShown: false }} />
+        <></>
+      </ThemeProvider>
+    );
   }
 
   return (

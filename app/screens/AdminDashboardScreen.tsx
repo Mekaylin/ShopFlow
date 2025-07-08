@@ -1248,8 +1248,12 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
               )}
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <TouchableOpacity onPress={() => handleEditMaterial(item)} style={{ marginRight: 8 }}><Text style={{ color: '#1976d2', fontWeight: 'bold' }}>Edit</Text></TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeleteMaterial(item.id)} style={{ marginRight: 8 }}><Text style={{ color: '#c62828', fontWeight: 'bold' }}>Delete</Text></TouchableOpacity>
+              <TouchableOpacity onPress={handleEditMaterial} style={{ marginRight: 8 }}>
+                <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>Edit</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleDeleteMaterial(item.id)} style={{ marginRight: 8 }}>
+                <Text style={{ color: '#c62828', fontWeight: 'bold' }}>Delete</Text>
+              </TouchableOpacity>
               <TouchableOpacity onPress={() => setSelectedMaterialIdForType(item.id)}>
                 <Text style={{ color: '#388e3c', fontWeight: 'bold' }}>Add Type</Text>
               </TouchableOpacity>

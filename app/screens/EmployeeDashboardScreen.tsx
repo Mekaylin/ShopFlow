@@ -153,13 +153,13 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
       Animated.timing(welcomeAnim, {
         toValue: 1,
         duration: 700,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }).start(() => {
         setTimeout(() => {
           Animated.timing(welcomeAnim, {
             toValue: 0,
             duration: 500,
-            useNativeDriver: true,
+            useNativeDriver: false,
           }).start(() => setShowWelcome(false));
         }, 1800);
       });
