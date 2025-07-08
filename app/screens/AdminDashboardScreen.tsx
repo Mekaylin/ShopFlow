@@ -928,21 +928,6 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   );
 
   // Tasks screen - show employees, tap to manage their tasks
-  const [selectedTaskEmployee, setSelectedTaskEmployee] = useState<Employee | null>(null);
-  const [newTaskName, setNewTaskName] = useState('');
-  const [newTaskStart, setNewTaskStart] = useState('');
-  const [newTaskDeadline, setNewTaskDeadline] = useState('');
-  const [newVehicleName, setNewVehicleName] = useState('');
-  const [newVehicleReg, setNewVehicleReg] = useState('');
-  const [newVehicleVin, setNewVehicleVin] = useState('');
-  const [newVehicleColour, setNewVehicleColour] = useState('');
-  const [newVehicleModel, setNewVehicleModel] = useState('');
-  const [isDealership, setIsDealership] = useState(false);
-  const [dealershipName, setDealershipName] = useState('');
-  // Settings moved to dedicated page
-  const [showDealership, setShowDealership] = useState(true);
-  const [showWorkHours, setShowWorkHours] = useState(false);
-
   const handleAddTaskForEmployee = async () => {
     if (!newTaskName || !newTaskStart || !newTaskDeadline || !selectedTaskEmployee) return;
     
