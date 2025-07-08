@@ -1,4 +1,5 @@
 import { FontAwesome5 } from '@expo/vector-icons';
+import * as SecureStore from 'expo-secure-store';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
@@ -21,10 +22,12 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
       // Sign in with Supabase Auth
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) {
-        if (signInError.message.toLowerCase().includes('invalid login credentials')) {
-          throw new Error('Incorrect email or password.');
-        }
+        console.error('Auth error details:', signInError);
         throw new Error(signInError.message);
+      }
+      // Store session securely
+      if (signInData?.session) {
+        await SecureStore.setItemAsync('supabase-session', JSON.stringify(signInData.session));
       }
       // Check if email is confirmed (optional, but recommended)
       if (signInData?.user && !signInData.user.confirmed_at) {
@@ -44,7 +47,8 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
         throw new Error('Invalid user role.');
       }
       onLogin(role);
-    } catch (err: any) {
+    } catch (e) {
+      console.error('Exception during auth:', e);
       Animated.sequence([
         Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
         Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
@@ -52,7 +56,7 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
         Animated.timing(shakeAnim, { toValue: -6, duration: 60, useNativeDriver: true }),
         Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
       ]).start();
-      Alert.alert('Login failed', err.message || 'Unknown error');
+      Alert.alert('Login failed', e.message || 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -188,7 +192,17 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
         if (!business_id) throw new Error('Invalid business code. Please check with your admin.');
       }
       // Register user with Supabase Auth
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({ email, password });
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: {
+            name: name,
+            role: role,
+            business_id: business_id
+          }
+        }
+      });
       console.log('Auth signUp result:', { authData, signUpError });
       if (signUpError) {
         if (signUpError.message.toLowerCase().includes('user already registered')) {
@@ -204,7 +218,7 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
       console.log('User update result:', { userError });
       if (userError) throw new Error('User update failed: ' + userError.message);
       Alert.alert('Check your email', 'Registration successful! Please check your email to confirm your account before logging in.');
-      onBack();
+      setTimeout(onBack, 1200); // Delay to allow alert to show
     } catch (err: any) {
       console.log('Registration error (full object):', err);
       Alert.alert('Registration failed', err.message || JSON.stringify(err) || 'Unknown error');

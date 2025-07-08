@@ -5,6 +5,8 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Sharing from 'expo-sharing';
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, Image, Modal, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import PerformanceManagement from '../../components/PerformanceManagement';
+import TaskRatingModal from '../../components/TaskRatingModal';
 import { supabase } from '../../lib/supabase';
 
 // Types
@@ -116,7 +118,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   const [darkMode, setDarkMode] = useState(false);
   // Settings page state
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const [tab, setTab] = useState<'home' | 'employees' | 'tasks' | 'materials' | 'clock'>('home');
+  const [tab, setTab] = useState<'home' | 'employees' | 'tasks' | 'materials' | 'clock' | 'performance'>('home');
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [materials, setMaterials] = useState<Material[]>(initialMaterials);
@@ -154,6 +156,10 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   const [newEmployeeDepartment, setNewEmployeeDepartment] = useState('');
   // Task state
   const [editTask, setEditTask] = useState<Task | null>(null);
+  const [newTaskName, setNewTaskName] = useState('');
+  const [newTaskStart, setNewTaskStart] = useState('');
+  const [newTaskDeadline, setNewTaskDeadline] = useState('');
+  const [selectedTaskEmployee, setSelectedTaskEmployee] = useState<Employee | null>(null);
   const [selectedMaterialForTask, setSelectedMaterialForTask] = useState<string>('');
   const [selectedMaterialTypeForTask, setSelectedMaterialTypeForTask] = useState<string>('');
   const [materialQuantityForTask, setMaterialQuantityForTask] = useState('');
@@ -397,15 +403,123 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   // Add Material Type logic
   const handleAddMaterialType = (materialId: string) => {
     if (!newMaterialTypeLabel) return;
+    const newType = { id: Date.now().toString(), label: newMaterialTypeLabel };
     setMaterialTypes(prev => ({
       ...prev,
-      [materialId]: [
-        ...(prev[materialId] || []),
-        { id: Date.now().toString(), label: newMaterialTypeLabel },
-      ],
+      [materialId]: [...(prev[materialId] || []), newType]
     }));
     setNewMaterialTypeLabel('');
-    setSelectedMaterialIdForType(null);
+  };
+
+  // Performance Management Functions
+  useEffect(() => {
+    async function fetchPerformanceSettings() {
+      if (!user?.business_id) return;
+      const { data, error } = await supabase
+        .from('performance_settings')
+        .select('*')
+        .eq('business_id', user.business_id)
+        .single();
+      
+      if (!error && data) {
+        setPerformanceSettings({
+          ratingSystemEnabled: data.rating_system_enabled,
+          autoRateCompletedTasks: data.auto_rate_completed_tasks,
+          defaultRating: data.default_rating
+        });
+      }
+    }
+    fetchPerformanceSettings();
+  }, [user?.business_id]);
+
+  const updatePerformanceSettings = async (newSettings: any) => {
+    if (!user?.business_id) return;
+    
+    const { error } = await supabase
+      .from('performance_settings')
+      .upsert({
+        business_id: user.business_id,
+        rating_system_enabled: newSettings.ratingSystemEnabled,
+        auto_rate_completed_tasks: newSettings.autoRateCompletedTasks,
+        default_rating: newSettings.defaultRating,
+        updated_at: new Date().toISOString()
+      });
+
+    if (!error) {
+      setPerformanceSettings(newSettings);
+      Alert.alert('Success', 'Performance settings updated successfully!');
+    } else {
+      Alert.alert('Error', 'Failed to update performance settings.');
+    }
+  };
+
+  const handleRateTask = (task: any) => {
+    // Find the employee for this task
+    const employee = employees.find(e => e.name === task.assigned_to);
+    if (!employee) {
+      Alert.alert('Error', 'Employee not found for this task.');
+      return;
+    }
+
+    setSelectedTaskForRating(task);
+    setSelectedEmployeeForRating(employee);
+    setShowTaskRatingModal(true);
+  };
+
+  const handleTaskRatingSubmitted = () => {
+    // Refresh tasks to show updated rating status
+    // This will be handled by the TaskRatingModal component
+    setShowTaskRatingModal(false);
+    setSelectedTaskForRating(null);
+    setSelectedEmployeeForRating(null);
+  };
+
+  const calculatePerformanceMetrics = async () => {
+    if (!user?.business_id) return;
+    
+    try {
+      // Call the database function to calculate metrics for all employees
+      const { data: employeeList } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('business_id', user.business_id);
+
+      if (employeeList) {
+        for (const employee of employeeList) {
+          // Calculate for day, week, and month
+          const periods = ['day', 'week', 'month'] as const;
+          for (const period of periods) {
+            const now = new Date();
+            let startDate: Date;
+            let endDate: Date = now;
+
+            switch (period) {
+              case 'day':
+                startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                break;
+              case 'week':
+                const dayOfWeek = now.getDay();
+                const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysToSubtract);
+                break;
+              case 'month':
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                break;
+            }
+
+            await supabase.rpc('calculate_performance_metrics', {
+              p_employee_id: employee.id,
+              p_business_id: user.business_id,
+              p_period_type: period,
+              p_start_date: startDate.toISOString().split('T')[0],
+              p_end_date: endDate.toISOString().split('T')[0]
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error calculating performance metrics:', error);
+    }
   };
 
   // View employee's tasks
@@ -434,6 +548,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
         { name: 'tasks', icon: 'tasks', label: 'Tasks' },
         { name: 'materials', icon: 'boxes', label: 'Materials' },
         { name: 'clock', icon: 'clock', label: 'Clock Events' },
+        { name: 'performance', icon: 'chart-line', label: 'Performance' },
       ].map(tabObj => (
         <TouchableOpacity
           key={tabObj.name}
@@ -442,7 +557,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
             paddingVertical: 8,
             backgroundColor: tab === tabObj.name ? (darkMode ? '#222b45' : '#1976d2') : (darkMode ? '#333950' : '#e3f2fd'),
             borderRadius: 8,
-            marginHorizontal: 4,
+            marginHorizontal: 2,
             alignItems: 'center',
             justifyContent: 'center',
             flexDirection: 'column',
@@ -451,11 +566,11 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
         >
           <FontAwesome5
             name={tabObj.icon}
-            size={18}
+            size={16}
             color={tab === tabObj.name ? '#fff' : (darkMode ? '#b3c0e0' : '#1976d2')}
             style={{ marginBottom: 2 }}
           />
-          <Text style={{ color: tab === tabObj.name ? '#fff' : (darkMode ? '#b3c0e0' : '#1976d2'), fontWeight: 'bold', textAlign: 'center', fontSize: 13 }}>
+          <Text style={{ color: tab === tabObj.name ? '#fff' : (darkMode ? '#b3c0e0' : '#1976d2'), fontWeight: 'bold', textAlign: 'center', fontSize: 11 }}>
             {tabObj.label}
           </Text>
         </TouchableOpacity>
@@ -828,57 +943,67 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   const [showDealership, setShowDealership] = useState(true);
   const [showWorkHours, setShowWorkHours] = useState(false);
 
-  const handleAddTaskForEmployee = () => {
-    if (!selectedTaskEmployee || !newTaskName || !newTaskStart || !newTaskDeadline) return;
-    // Add vehicle info and dealership info to the task name for now (could be refactored to a new Task type)
-    let fullTaskName = newTaskName;
-    if (newVehicleName) fullTaskName += ` | Vehicle: ${newVehicleName}`;
-    if (newVehicleReg) fullTaskName += ` | Reg: ${newVehicleReg}`;
-    if (newVehicleVin) fullTaskName += ` | VIN: ${newVehicleVin}`;
-    if (newVehicleColour) fullTaskName += ` | Colour: ${newVehicleColour}`;
-    if (newVehicleModel) fullTaskName += ` | Model: ${newVehicleModel}`;
-    if (showDealership && isDealership && dealershipName) fullTaskName += ` | Dealership: ${dealershipName}`;
-    setTasks([
-      ...tasks,
-      {
-        id: Date.now().toString(),
-        name: fullTaskName,
+  const handleAddTaskForEmployee = async () => {
+    if (!newTaskName || !newTaskStart || !newTaskDeadline || !selectedTaskEmployee) return;
+    
+    const { data, error } = await supabase
+      .from('tasks')
+      .insert({
+        name: newTaskName,
+        assigned_to: selectedTaskEmployee.name,
+        business_id: user.business_id,
         start: newTaskStart,
         deadline: newTaskDeadline,
         completed: false,
-        assignedTo: selectedTaskEmployee.name,
-        completedAt: undefined,
-        materialsUsed: materialsForNewTask,
-      },
-    ]);
-    setNewTaskName('');
-    setNewTaskStart('');
-    setNewTaskDeadline('');
-    setNewVehicleName('');
-    setNewVehicleReg('');
-    setNewVehicleVin('');
-    setNewVehicleColour('');
-    setNewVehicleModel('');
-    setIsDealership(false);
-    setDealershipName('');
-    setMaterialsForNewTask([]);
+        completed_at: null,
+        materials_used: materialsForNewTask,
+        vehicle_name: newVehicleName,
+        vehicle_reg: newVehicleReg,
+        vehicle_vin: newVehicleVin,
+        vehicle_colour: newVehicleColour,
+        vehicle_model: newVehicleModel,
+        is_dealership: isDealership,
+        dealership_name: dealershipName
+      })
+      .select('*')
+      .single();
+      
+    if (!error && data) {
+      setTasks([...tasks, data]);
+      setNewTaskName('');
+      setNewTaskStart('');
+      setNewTaskDeadline('');
+      setNewVehicleName('');
+      setNewVehicleReg('');
+      setNewVehicleVin('');
+      setNewVehicleColour('');
+      setNewVehicleModel('');
+      setIsDealership(false);
+      setDealershipName('');
+      setMaterialsForNewTask([]);
+    }
   };
 
-  const handleDeleteTaskForEmployee = (taskId: string) => {
-    setTasks(tasks.filter(t => t.id !== taskId));
+  const handleDeleteTaskForEmployee = async (taskId: string) => {
+    const { error } = await supabase
+      .from('tasks')
+      .delete()
+      .eq('id', taskId);
+    if (!error) setTasks(tasks.filter(t => t.id !== taskId));
   };
 
   // --- Add material to new task ---
   const handleAddMaterialToTask = () => {
     if (!selectedMaterialForTask || !materialQuantityForTask) return;
-    setMaterialsForNewTask(prev => [
-      ...prev,
-      {
-        materialId: selectedMaterialForTask,
-        materialTypeId: selectedMaterialTypeForTask || undefined,
-        quantity: Number(materialQuantityForTask),
-      },
-    ]);
+    const quantity = parseFloat(materialQuantityForTask);
+    if (isNaN(quantity) || quantity <= 0) return;
+    
+    setMaterialsForNewTask([...materialsForNewTask, {
+      materialId: selectedMaterialForTask,
+      materialTypeId: selectedMaterialTypeForTask || undefined,
+      quantity: quantity
+    }]);
+    
     setSelectedMaterialForTask('');
     setSelectedMaterialTypeForTask('');
     setMaterialQuantityForTask('');
@@ -1087,25 +1212,49 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
             {Array.isArray(item.materialsUsed) && item.materialsUsed.length > 0 && (
               <View style={{ marginTop: 4, marginBottom: 4 }}>
                 <Text style={{ fontSize: 13, color: '#1976d2', fontWeight: 'bold' }}>Materials Used:</Text>
-                {item.materialsUsed.map((mu, idx) => {
+                {item.materialsUsed.map((mu, idx2) => {
                   const mat = materials.find(m => m.id === mu.materialId);
-                  const types = materialTypes[mu.materialId] || [];
-                  const selectedType = mu.materialTypeId && types.find(t => t.id === mu.materialTypeId);
+                  const type = mu.materialTypeId && materialTypes[mu.materialId]?.find(t => t.id === mu.materialTypeId);
                   return (
-                    <Text key={idx} style={{ fontSize: 13, color: '#263238' }}>
-                      {mat ? mat.name : 'Material'}{selectedType ? ` (${selectedType.label})` : ''}: {mu.quantity} {mat ? mat.unit : ''}
-                    </Text>
+                    <Text key={idx2} style={{ fontSize: 14 }}>{mat?.name}{type ? ` (${type.label})` : ''}: {mu.quantity} {mat?.unit}</Text>
                   );
                 })}
               </View>
             )}
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 6 }}>
+            
+            {/* Rating Section for Completed Tasks */}
+            {item.completed && performanceSettings.ratingSystemEnabled && (
+              <View style={{ marginTop: 8, marginBottom: 8, padding: 8, backgroundColor: '#f8f9fa', borderRadius: 8 }}>
+                <Text style={{ fontSize: 13, color: '#1976d2', fontWeight: 'bold', marginBottom: 4 }}>
+                  Task Rating
+                </Text>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: '#FFD700',
+                    borderRadius: 6,
+                    paddingVertical: 6,
+                    paddingHorizontal: 12,
+                    alignSelf: 'flex-start',
+                    flexDirection: 'row',
+                    alignItems: 'center'
+                  }}
+                  onPress={() => handleRateTask(item)}
+                >
+                  <FontAwesome5 name="star" size={14} color="#fff" style={{ marginRight: 6 }} />
+                  <Text style={{ color: '#fff', fontWeight: '600', fontSize: 12 }}>
+                    Rate Task
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 }}>
               {!item.completed && (
-                <TouchableOpacity onPress={() => handleCompleteTask(item.id)} style={{ backgroundColor: '#388e3c', borderRadius: 8, padding: 6, marginRight: 8 }}>
+                <TouchableOpacity style={{ backgroundColor: '#388e3c', borderRadius: 8, padding: 8, marginRight: 8 }} onPress={() => handleCompleteTask(item.id)}>
                   <Text style={{ color: '#fff', fontWeight: 'bold' }}>Mark Complete</Text>
                 </TouchableOpacity>
               )}
-              <TouchableOpacity onPress={() => handleDeleteTaskForEmployee(item.id)} style={{ backgroundColor: '#c62828', borderRadius: 8, padding: 6 }}>
+              <TouchableOpacity style={{ backgroundColor: '#c62828', borderRadius: 8, padding: 8 }} onPress={() => handleDeleteTaskForEmployee(item.id)}>
                 <Text style={{ color: '#fff', fontWeight: 'bold' }}>Delete</Text>
               </TouchableOpacity>
             </View>
@@ -1295,6 +1444,69 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
     return lateList;
   }
 
+  // Performance Management State
+  const [performanceSettings, setPerformanceSettings] = useState({
+    ratingSystemEnabled: true,
+    autoRateCompletedTasks: false,
+    defaultRating: 3
+  });
+  const [showPerformanceManagement, setShowPerformanceManagement] = useState(false);
+  const [showTaskRatingModal, setShowTaskRatingModal] = useState(false);
+  const [selectedTaskForRating, setSelectedTaskForRating] = useState<any>(null);
+  const [selectedEmployeeForRating, setSelectedEmployeeForRating] = useState<any>(null);
+
+  const renderClockEvents = () => {
+    return (
+      <ScrollView style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff', padding: 16 }}>
+        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 16 }}>
+          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2', marginBottom: 16 }}>
+            Clock Events
+          </Text>
+          
+          {clockEvents.length === 0 ? (
+            <Text style={{ color: '#666', textAlign: 'center', fontStyle: 'italic' }}>
+              No clock events recorded yet
+            </Text>
+          ) : (
+            clockEvents.map((event, index) => (
+              <View key={event.id || index} style={{
+                backgroundColor: '#f8f9fa',
+                borderRadius: 8,
+                padding: 12,
+                marginBottom: 8,
+                borderLeftWidth: 4,
+                borderLeftColor: event.type === 'in' ? '#4CAF50' : '#FF9800'
+              }}>
+                <Text style={{ fontWeight: 'bold', color: '#333' }}>
+                  {event.employee_name}
+                </Text>
+                <Text style={{ color: '#666', fontSize: 12 }}>
+                  {event.type === 'in' ? 'Clock In' : 'Clock Out'} - {new Date(event.timestamp).toLocaleString()}
+                </Text>
+              </View>
+            ))
+          )}
+        </View>
+      </ScrollView>
+    );
+  };
+
+  // Clock events state
+  const [clockEvents, setClockEvents] = useState<any[]>([]);
+  
+  // UI state variables
+  const [showWorkHours, setShowWorkHours] = useState(false);
+  const [canExpand, setCanExpand] = useState(true);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+  const [materialsUsed, setMaterialsUsed] = useState<string[]>([]);
+
+  // Calculate filtered tasks and materials when summary range or date changes
+  useEffect(() => {
+    const filtered = filterTasksByDate(summaryRange, summaryDate);
+    setFilteredTasks(filtered);
+    setMaterialsUsed(getMaterialsUsed(summaryRange, summaryDate));
+  }, [summaryRange, summaryDate, tasks, materials]);
+
   return (
     <SafeAreaView style={[...themedStyles.container, { position: 'relative', flex: 1 }]}> {/* Ensure relative positioning for absolute children */}
       <View style={themedStyles.headerRow}>
@@ -1470,67 +1682,160 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
         {tab === 'employees' && renderEmployees()}
         {tab === 'tasks' && renderTasks()}
         {tab === 'materials' && renderMaterials()}
-        {/* View Tasks full-screen window (visually rich) */}
-        {selectedEmployee && (
-          <Modal visible={!!selectedEmployee} animationType="slide" transparent onRequestClose={closeEmployeeTasks}>
-            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>
-              <View style={{ backgroundColor: darkMode ? '#23263a' : '#fff', borderRadius: 18, padding: 24, width: '95%', maxHeight: '90%' }}>
-                <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1976d2', marginBottom: 10, textAlign: 'center' }}>Tasks for {selectedEmployee ? selectedEmployee.name : ''}</Text>
-                <ScrollView style={{ maxHeight: 400 }}>
-                  {selectedEmployee && tasks.filter(t => t.assignedTo === selectedEmployee.name).length === 0 ? (
-                    <Text style={{ color: '#888', marginVertical: 8, textAlign: 'center' }}>No tasks assigned.</Text>
-                  ) : (
-                    selectedEmployee && tasks.filter(t => t.assignedTo === selectedEmployee.name).map((t, idx) => {
-                      const isLate = !t.completed && minutesLate(t.deadline) > lateThreshold;
-                      return (
-                        <View key={t.id} style={{
-                          backgroundColor: t.completed ? '#e8f5e9' : isLate ? '#ffebee' : '#fffde7',
-                          borderRadius: 14,
-                          padding: 14,
-                          marginBottom: 12,
-                          borderLeftWidth: 6,
-                          borderLeftColor: t.completed ? '#388e3c' : isLate ? '#c62828' : '#ff9800',
-                          shadowColor: '#1976d2',
-                          shadowOpacity: 0.06,
-                          shadowRadius: 6,
-                          elevation: 1,
-                        }}>
-                          <Text style={{ fontWeight: 'bold', fontSize: 17, color: '#1976d2', marginBottom: 2 }}>{t.name}</Text>
-                          <Text style={{ fontSize: 13, color: '#888', marginBottom: 4 }}>Start: {t.start} | Due: {t.deadline}</Text>
-                          {t.completed && (
-                            <Text style={{ color: '#388e3c', fontWeight: 'bold', fontSize: 13, marginBottom: 2 }}>Completed at: {t.completedAt ? new Date(t.completedAt).toLocaleString() : ''}</Text>
-                          )}
-                          {isLate && !t.completed && (
-                            <Text style={{ color: '#c62828', fontWeight: 'bold', fontSize: 13, marginBottom: 2 }}>Late by {minutesLate(t.deadline)} min</Text>
-                          )}
-                          {Array.isArray(t.materialsUsed) && t.materialsUsed.length > 0 && (
-                            <View style={{ marginTop: 4, marginBottom: 4 }}>
-                              <Text style={{ fontSize: 13, color: '#1976d2', fontWeight: 'bold' }}>Materials Used:</Text>
-                              {t.materialsUsed.map((mu, idx2) => {
-                                const mat = materials.find(m => m.id === mu.materialId);
-                                const type = mu.materialTypeId && materialTypes[mu.materialId]?.find(t => t.id === mu.materialTypeId);
-                                return (
-                                  <Text key={idx2} style={{ fontSize: 14 }}>{mat?.name}{type ? ` (${type.label})` : ''}: {mu.quantity} {mat?.unit}</Text>
-                                );
-                              })}
-                            </View>
-                          )}
-                          {!t.completed && (
-                            <TouchableOpacity style={{ backgroundColor: '#388e3c', borderRadius: 8, padding: 8, marginTop: 6, alignSelf: 'flex-end' }} onPress={() => handleCompleteTask(t.id)}>
-                              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Mark Complete</Text>
-                            </TouchableOpacity>
-                          )}
-                        </View>
-                      );
-                    })
-                  )}
-                </ScrollView>
-                <TouchableOpacity style={{ alignSelf: 'center', marginTop: 8 }} onPress={closeEmployeeTasks}>
-                  <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>Close</Text>
+        {tab === 'clock' && renderClockEvents()}
+        {tab === 'performance' && (
+          <View style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff', padding: 16 }}>
+            <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 16 }}>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2', marginBottom: 16 }}>
+                Performance Management
+              </Text>
+              
+              {/* Performance Settings */}
+              <View style={{ marginBottom: 20 }}>
+                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 12 }}>
+                  Rating System Settings
+                </Text>
+                
+                <View style={{ marginBottom: 12 }}>
+                  <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}
+                    onPress={() => updatePerformanceSettings({
+                      ...performanceSettings,
+                      ratingSystemEnabled: !performanceSettings.ratingSystemEnabled
+                    })}
+                  >
+                    <FontAwesome5
+                      name={performanceSettings.ratingSystemEnabled ? 'toggle-on' : 'toggle-off'}
+                      size={20}
+                      color={performanceSettings.ratingSystemEnabled ? '#4CAF50' : '#ccc'}
+                      style={{ marginRight: 12 }}
+                    />
+                    <Text style={{ fontSize: 14, color: '#333' }}>
+                      Enable Task Rating System
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={{ marginBottom: 12 }}>
+                  <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}
+                    onPress={() => updatePerformanceSettings({
+                      ...performanceSettings,
+                      autoRateCompletedTasks: !performanceSettings.autoRateCompletedTasks
+                    })}
+                  >
+                    <FontAwesome5
+                      name={performanceSettings.autoRateCompletedTasks ? 'toggle-on' : 'toggle-off'}
+                      size={20}
+                      color={performanceSettings.autoRateCompletedTasks ? '#4CAF50' : '#ccc'}
+                      style={{ marginRight: 12 }}
+                    />
+                    <Text style={{ fontSize: 14, color: '#333' }}>
+                      Auto-rate Completed Tasks
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>
+                    Default Rating for Auto-rated Tasks:
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {[1, 2, 3, 4, 5].map((rating) => (
+                      <TouchableOpacity
+                        key={rating}
+                        onPress={() => updatePerformanceSettings({
+                          ...performanceSettings,
+                          defaultRating: rating
+                        })}
+                        style={{ marginRight: 8 }}
+                      >
+                        <FontAwesome5
+                          name={performanceSettings.defaultRating >= rating ? 'star' : 'star-o'}
+                          size={20}
+                          color={performanceSettings.defaultRating >= rating ? '#FFD700' : '#ccc'}
+                        />
+                      </TouchableOpacity>
+                    ))}
+                    <Text style={{ marginLeft: 8, fontSize: 14, color: '#666' }}>
+                      ({performanceSettings.defaultRating}/5)
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Action Buttons */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: '#1976d2',
+                    borderRadius: 8,
+                    paddingVertical: 12,
+                    paddingHorizontal: 20,
+                    flex: 1,
+                    marginRight: 8,
+                    alignItems: 'center'
+                  }}
+                  onPress={() => {
+                    calculatePerformanceMetrics();
+                    setShowPerformanceManagement(true);
+                  }}
+                >
+                  <FontAwesome5 name="chart-line" size={16} color="#fff" style={{ marginRight: 8 }} />
+                  <Text style={{ color: '#fff', fontWeight: '600' }}>View Performance</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    backgroundColor: '#4CAF50',
+                    borderRadius: 8,
+                    paddingVertical: 12,
+                    paddingHorizontal: 20,
+                    flex: 1,
+                    marginLeft: 8,
+                    alignItems: 'center'
+                  }}
+                  onPress={calculatePerformanceMetrics}
+                >
+                  <FontAwesome5 name="sync-alt" size={16} color="#fff" style={{ marginRight: 8 }} />
+                  <Text style={{ color: '#fff', fontWeight: '600' }}>Recalculate</Text>
                 </TouchableOpacity>
               </View>
             </View>
-          </Modal>
+
+            {/* Quick Stats */}
+            <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20 }}>
+              <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 16 }}>
+                Quick Stats
+              </Text>
+              
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                <View style={{ alignItems: 'center' }}>
+                  <FontAwesome5 name="tasks" size={24} color="#1976d2" />
+                  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2', marginTop: 4 }}>
+                    {tasks.filter(t => t.completed).length}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: '#666' }}>Completed</Text>
+                </View>
+                
+                <View style={{ alignItems: 'center' }}>
+                  <FontAwesome5 name="star" size={24} color="#FFD700" />
+                  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#FFD700', marginTop: 4 }}>
+                    {employees.length}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: '#666' }}>Employees</Text>
+                </View>
+                
+                <View style={{ alignItems: 'center' }}>
+                  <FontAwesome5 name="chart-bar" size={24} color="#4CAF50" />
+                  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#4CAF50', marginTop: 4 }}>
+                    {tasks.filter(t => !t.completed).length}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: '#666' }}>Pending</Text>
+                </View>
+              </View>
+            </View>
+          </View>
         )}
       </View>
       {/* Logout button moved to settings modal */}
@@ -1677,6 +1982,32 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
             {/* Removed duplicate close button */}
           </View>
         </View>
+      </Modal>
+
+      {/* Task Rating Modal */}
+      <TaskRatingModal
+        visible={showTaskRatingModal}
+        onClose={() => {
+          setShowTaskRatingModal(false);
+          setSelectedTaskForRating(null);
+          setSelectedEmployeeForRating(null);
+        }}
+        task={selectedTaskForRating}
+        employee={selectedEmployeeForRating}
+        business={user}
+        onRatingSubmitted={handleTaskRatingSubmitted}
+      />
+
+      {/* Performance Management Modal */}
+      <Modal
+        visible={showPerformanceManagement}
+        animationType="slide"
+        onRequestClose={() => setShowPerformanceManagement(false)}
+      >
+        <PerformanceManagement
+          business={user}
+          onClose={() => setShowPerformanceManagement(false)}
+        />
       </Modal>
     </SafeAreaView>
   );
