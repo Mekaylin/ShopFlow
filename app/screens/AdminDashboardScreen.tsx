@@ -1482,7 +1482,6 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
 
   // UI state variables
   const [showWorkHours, setShowWorkHours] = useState(false);
-  const [canExpand, setCanExpand] = useState(true);
   const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [materialsUsed, setMaterialsUsed] = useState<string[]>([]);
 
