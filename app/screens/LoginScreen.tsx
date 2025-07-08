@@ -108,7 +108,7 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
               <Text style={styles.loginBtnText}>{loading ? 'Logging in...' : 'Login'}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowRegister(true)} style={{ marginTop: 16 }}>
-              <Text style={{ color: '#1976d2', textAlign: 'center', fontWeight: 'bold' }}>Don't have an account? Sign Up</Text>
+              <Text style={{ color: '#1976d2', textAlign: 'center', fontWeight: 'bold' }}>Don&apos;t have an account? Sign Up</Text>
             </TouchableOpacity>
             {onTest && (
               <TouchableOpacity onPress={onTest} style={{ marginTop: 24 }}>
