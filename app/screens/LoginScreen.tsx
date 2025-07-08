@@ -246,8 +246,27 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
     setLoading(true);
     try {
       let business_id = null;
+      // Register user with Supabase Auth first
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: {
+            name: name,
+            role: role
+            // business_id will be set after business creation for admin
+          }
+        }
+      });
+      console.log('Auth signUp result:', { authData, signUpError });
+      if (signUpError) {
+        throw new Error('Auth sign up failed: ' + signUpError.message + ' (full error: ' + JSON.stringify(signUpError) + ')');
+      }
+      if (!authData.user) {
+        throw new Error('User not returned from sign up.');
+      }
       if (role === 'admin') {
-        // Create new business
+        // Now create new business (user is authenticated, so RLS won't block)
         const { data: business, error: businessError } = await supabase
           .from('businesses')
           .insert({ name: businessName })
@@ -261,31 +280,13 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
         business_id = await resolveBusinessId(businessCode);
         if (!business_id) throw new Error('Invalid business code. Please check with your admin.');
       }
-      // Register user with Supabase Auth
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          data: {
-            name: name,
-            role: role,
-            business_id: business_id
-          }
-        }
-      });
-      console.log('Auth signUp result:', { authData, signUpError });
-      if (signUpError) {
-        throw new Error('Auth sign up failed: ' + signUpError.message + ' (full error: ' + JSON.stringify(signUpError) + ')');
-      }
-      // Insert into public.users
-      if (authData.user) {
-        const { error: userError } = await supabase
-          .from('users')
-          .update({ name, role, business_id })
-          .eq('id', authData.user.id);
-        console.log('User update result:', { userError });
-        if (userError) throw new Error('User update failed: ' + userError.message + ' (full error: ' + JSON.stringify(userError) + ')');
-      }
+      // Update user with business_id
+      const { error: userError } = await supabase
+        .from('users')
+        .update({ name, role, business_id })
+        .eq('id', authData.user.id);
+      console.log('User update result:', { userError });
+      if (userError) throw new Error('User update failed: ' + userError.message + ' (full error: ' + JSON.stringify(userError) + ')');
       Alert.alert('Check your email', 'Registration successful! Please check your email to confirm your account before logging in.');
       setTimeout(onBack, 1200); // Delay to allow alert to show
     } catch (err: any) {
