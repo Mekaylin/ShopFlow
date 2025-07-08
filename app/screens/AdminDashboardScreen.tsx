@@ -1477,8 +1477,9 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   };
 
   // Clock events state
-  const [clockEvents, setClockEvents] = useState<any[]>([]);
-  
+  // Duplicate declaration removed below:
+  // const [clockEvents, setClockEvents] = useState<any[]>([]);
+
   // UI state variables
   const [showWorkHours, setShowWorkHours] = useState(false);
   const [canExpand, setCanExpand] = useState(true);
