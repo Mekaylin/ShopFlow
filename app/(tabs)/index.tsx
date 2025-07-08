@@ -1,5 +1,7 @@
 import AppNavigator from '../navigation/AppNavigator';
 
-export default function() {
+const IndexScreen = () => {
   return <AppNavigator />;
-}
+};
+IndexScreen.displayName = "IndexScreen";
+export default IndexScreen;

@@ -1,5 +1,5 @@
 import { FontAwesome5 } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 
@@ -23,7 +23,7 @@ export default function PerformanceManagement({ business, onClose }: Performance
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchPerformanceData = async (selectedPeriod: 'day' | 'week' | 'month') => {
+  const fetchPerformanceData = useCallback(async (selectedPeriod: 'day' | 'week' | 'month') => {
     setLoading(true);
     try {
       const now = new Date();
@@ -83,7 +83,7 @@ export default function PerformanceManagement({ business, onClose }: Performance
     } finally {
       setLoading(false);
     }
-  };
+  }, [business.id]);
 
   const refreshPerformanceData = async () => {
     setRefreshing(true);
@@ -93,7 +93,7 @@ export default function PerformanceManagement({ business, onClose }: Performance
 
   useEffect(() => {
     fetchPerformanceData(period);
-  }, [period, business.id]);
+  }, [period, business.id, fetchPerformanceData]);
 
   const renderPerformanceCard = (data: PerformanceData, index: number) => {
     const isTopPerformer = index === 0;

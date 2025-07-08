@@ -63,7 +63,18 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
   const [biometricLoggedIn, setBiometricLoggedIn] = useState(false);
   const [clockEvents, setClockEvents] = useState<any[]>([]);
   const [clockedIn, setClockedIn] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [codePromptVisible, setCodePromptVisible] = useState(false);
+  const [enteredCode, setEnteredCode] = useState('');
+  const [showEmployeeTasksPage, setShowEmployeeTasksPage] = useState(false);
+  const [employeeTasksName, setEmployeeTasksName] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [materials, setMaterials] = useState<Material[]>(initialMaterials); // get from admin
+  // taskMaterials: { [taskId]: { materialId, quantity }[] }
+  const [taskMaterials, setTaskMaterials] = useState<{ [taskId: string]: { materialId: string; quantity: string }[] }>({});
+  // Animation state
+  const [showWelcome, setShowWelcome] = useState(false);
+  const welcomeAnim = useRef(new Animated.Value(0)).current;
 
   // Check for biometric support on mount
   useEffect(() => {
@@ -77,7 +88,6 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
   useEffect(() => {
     async function fetchClockEvents() {
       if (!employee?.id || !business?.id) return;
-      setLoading(true);
       const { data, error } = await supabase
         .from('clock_events')
         .select('*')
@@ -85,7 +95,6 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
         .eq('business_id', business.id)
         .order('clock_in', { ascending: false });
       if (!error && data) setClockEvents(data);
-      setLoading(false);
       // Set clockedIn state if there is an open event
       setClockedIn(data && data.length > 0 && !data[0].clock_out);
     }
@@ -110,32 +119,6 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
   };
   const insets = useSafeAreaInsets();
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
-  const [codePromptVisible, setCodePromptVisible] = useState(false);
-  const [enteredCode, setEnteredCode] = useState('');
-  const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
-  const [showEmployeeTasksPage, setShowEmployeeTasksPage] = useState(false);
-  const [employeeTasksName, setEmployeeTasksName] = useState<string | null>(null);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [materials, setMaterials] = useState<Material[]>(initialMaterials); // get from admin
-  // taskMaterials: { [taskId]: { materialId, quantity }[] }
-  const [taskMaterials, setTaskMaterials] = useState<{ [taskId: string]: { materialId: string; quantity: string }[] }>({});
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Animation state
-  const [showWelcome, setShowWelcome] = useState(false);
-  const welcomeAnim = useRef(new Animated.Value(0)).current;
-
-  // Removed auto-logout logic for all-day running app
-  const userAction = (fn: () => void) => fn;
-
-  // Working hours and lunch times (should be fetched from admin, here as demo)
-  const [workStart, setWorkStart] = useState('08:00');
-  const [workEnd, setWorkEnd] = useState('17:00');
-  const [lunchStart, setLunchStart] = useState('12:00');
-  const [lunchEnd, setLunchEnd] = useState('12:30');
-  // Auto-detect clock action
-  const [lastAction, setLastAction] = useState<'in' | 'lunch' | 'lunchBack' | 'out' | null>(null);
   const [onLunch, setOnLunch] = useState(false);
 
   // Helper to get current time as HH:mm
@@ -155,15 +138,14 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
   }
 
   // Prompt for code or fingerprint on clock in/out
-  const handleClockInOutPress = userAction(() => {
+  const handleClockInOutPress = () => {
     setCodePromptVisible(true);
     setEnteredCode('');
-  });
+  };
 
   // Handle clock action (in, lunch, lunchBack, out)
   const handleClockAction = () => {
     const action = getNextClockAction();
-    setLastAction(action);
     if (action === 'in') {
       setClockedIn(true);
       setOnLunch(false);
@@ -381,7 +363,6 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
   // Handle clock in
   const handleClockIn = async () => {
     if (!employee?.id || !business?.id) return;
-    setLoading(true);
     const { data, error } = await supabase
       .from('clock_events')
       .insert({
@@ -392,7 +373,6 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
       })
       .select('*')
       .single();
-    setLoading(false);
     if (!error && data) {
       setClockEvents([data, ...clockEvents]);
       setClockedIn(true);
@@ -405,14 +385,12 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
     // Find latest open event
     const openEvent = clockEvents.find(e => !e.clock_out);
     if (!openEvent) return;
-    setLoading(true);
     const { data, error } = await supabase
       .from('clock_events')
       .update({ clock_out: new Date().toISOString() })
       .eq('id', openEvent.id)
       .select('*')
       .single();
-    setLoading(false);
     if (!error && data) {
       setClockEvents(clockEvents.map(e => e.id === openEvent.id ? data : e));
       setClockedIn(false);
@@ -516,7 +494,7 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionBtn, { backgroundColor: theme.primary, marginTop: 28, shadowColor: theme.shadow }]}
-          onPress={userAction(() => setModalVisible(true))}
+          onPress={() => setModalVisible(true)}
         >
           <FontAwesome5 name="tasks" size={36} color="#fff" style={{ marginBottom: 10 }} />
           <Text style={styles.actionBtnText}>View Tasks &gt;</Text>
@@ -576,7 +554,7 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
                 </TouchableOpacity>
               )}
             />
-            <TouchableOpacity style={styles.closeBtn} onPress={userAction(() => setModalVisible(false))}>
+            <TouchableOpacity style={styles.closeBtn} onPress={() => setModalVisible(false)}>
               <Text style={styles.closeBtnText}>Close</Text>
             </TouchableOpacity>
           </View>
@@ -588,7 +566,7 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
           <View style={[styles.fullPageContent, { backgroundColor: theme.card, borderRadius: 18, shadowColor: theme.shadow, shadowOpacity: 0.18, shadowRadius: 12, elevation: 8 }]}> 
             <Text style={[styles.modalTitle, { color: theme.primary }]}>{employeeTasksName}&apos;s Tasks</Text>
             <ScrollView>{renderEmployeeTasks(employeeTasksName)}</ScrollView>
-            <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.primary }]} onPress={userAction(closeEmployeeTasks)}>
+            <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.primary }]} onPress={closeEmployeeTasks}>
               <Text style={styles.closeBtnText}>Back</Text>
             </TouchableOpacity>
           </View>

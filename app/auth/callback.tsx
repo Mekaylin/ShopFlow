@@ -12,7 +12,6 @@ export default function AuthCallback() {
       const searchParams = new URLSearchParams(hash.replace('#', ''));
       const access_token = searchParams.get('access_token');
       const refresh_token = searchParams.get('refresh_token');
-      const type = searchParams.get('type');
 
       if (access_token && refresh_token) {
         supabase.auth.setSession({
@@ -24,7 +23,7 @@ export default function AuthCallback() {
         });
       }
     }
-  }, []);
+  }, [router]);
 
   return (
     <div style={{ padding: 40, textAlign: 'center' }}>

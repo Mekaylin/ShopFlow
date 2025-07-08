@@ -43,20 +43,6 @@ interface Material {
   types?: MaterialType[];
 }
 
-// Demo employees (editable)
-const initialEmployees: Employee[] = [
-  { id: 'e1', name: 'Alex Johnson', code: 'alex123', lunchStart: '12:00', lunchEnd: '12:30', photoUri: undefined, department: 'Body Shop' },
-  { id: 'e2', name: 'Maria Lopez', code: 'maria456', lunchStart: '12:30', lunchEnd: '13:00', photoUri: undefined, department: 'Paint' },
-  { id: 'e3', name: 'Sam Patel', code: 'sam789', lunchStart: '13:00', lunchEnd: '13:30', photoUri: undefined, department: 'Detailing' },
-];
-
-// Demo tasks (editable)
-const initialTasks: Task[] = [
-  { id: '1', name: 'Replace windshield', start: '8:00', deadline: '10:00', completed: false, assignedTo: 'Alex Johnson', completedAt: undefined, materialsUsed: [] },
-  { id: '2', name: 'Paint bumper', start: '10:15', deadline: '12:00', completed: false, assignedTo: 'Maria Lopez', completedAt: undefined, materialsUsed: [] },
-  { id: '3', name: 'Oil change', start: '13:00', deadline: '14:00', completed: false, assignedTo: 'Sam Patel', completedAt: undefined, materialsUsed: [] },
-];
-
 // Demo materials (editable)
 const initialMaterials: Material[] = [
   { id: 'm1', name: 'Paint', unit: 'L' },
@@ -92,7 +78,6 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   // import { Employee, Task, Material, MaterialType, initialEmployees, initialTasks, initialMaterials, minutesLate } from '../data';
 
   // Fingerprint auth state
-  const [biometricSupported, setBiometricSupported] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [biometricLoggedIn, setBiometricLoggedIn] = useState(false);
 
@@ -120,7 +105,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [tab, setTab] = useState<'home' | 'employees' | 'tasks' | 'materials' | 'clock' | 'performance'>('home');
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [materials, setMaterials] = useState<Material[]>(initialMaterials);
   // Notification settings
   const [lateThreshold, setLateThreshold] = useState(10); // minutes
@@ -171,7 +156,6 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   const [materialTypes, setMaterialTypes] = useState<{ [materialId: string]: MaterialType[] }>({});
   const [newMaterialTypeLabel, setNewMaterialTypeLabel] = useState('');
   const [selectedMaterialIdForType, setSelectedMaterialIdForType] = useState<string | null>(null);
-  const [selectedMaterialType, setSelectedMaterialType] = useState<{ [materialId: string]: string }>({});
   // Modal for viewing employee's tasks
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   // Working hours/lunch settings
@@ -179,13 +163,11 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   const [workEnd, setWorkEnd] = useState('17:00');
   const [lunchStart, setLunchStart] = useState('12:00');
   const [lunchEnd, setLunchEnd] = useState('12:30');
-  const [editingTimes, setEditingTimes] = useState(false);
   const saveTimes = () => {
     if (!/^\d{2}:\d{2}$/.test(workStart) || !/^\d{2}:\d{2}$/.test(workEnd) || !/^\d{2}:\d{2}$/.test(lunchStart) || !/^\d{2}:\d{2}$/.test(lunchEnd)) {
       Alert.alert('Invalid time', 'Please use HH:MM format for all times.');
       return;
     }
-    setEditingTimes(false);
     Alert.alert('Saved', 'Working hours and lunch times updated.');
   };
 
@@ -210,8 +192,8 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
       .insert({
         name: newEmployeeName,
         code: newEmployeeCode,
-        lunch_start: newEmployeeLunchStart,
-        lunch_end: newEmployeeLunchEnd,
+        lunchStart: newEmployeeLunchStart,
+        lunchEnd: newEmployeeLunchEnd,
         photo_uri: newEmployeePhotoUri,
         department: newEmployeeDepartment,
         business_id: user.business_id,
@@ -235,8 +217,8 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
       .update({
         name: newEmployeeName,
         code: newEmployeeCode,
-        lunch_start: newEmployeeLunchStart,
-        lunch_end: newEmployeeLunchEnd,
+        lunchStart: newEmployeeLunchStart,
+        lunchEnd: newEmployeeLunchEnd,
         photo_uri: newEmployeePhotoUri,
         department: newEmployeeDepartment,
       })
@@ -300,13 +282,13 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
       .from('tasks')
       .insert({
         name: newTaskName,
-        assigned_to: selectedTaskEmployee.id,
+        assignedTo: selectedTaskEmployee.id,
         business_id: user.business_id,
         start: newTaskStart,
         deadline: newTaskDeadline,
         completed: false,
-        completed_at: null,
-        materials_used: [],
+        completedAt: null,
+        materialsUsed: [],
       })
       .select('*')
       .single();
@@ -323,7 +305,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
       .from('tasks')
       .update({
         name: newTaskName,
-        assigned_to: newEmployeeCode, // assuming newEmployeeCode is employee id
+        assignedTo: newEmployeeCode, // assuming newEmployeeCode is employee id
         start: newTaskStart,
         deadline: newTaskDeadline,
       })
@@ -455,7 +437,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
 
   const handleRateTask = (task: any) => {
     // Find the employee for this task
-    const employee = employees.find(e => e.name === task.assigned_to);
+    const employee = employees.find(e => e.name === task.assignedTo);
     if (!employee) {
       Alert.alert('Error', 'Employee not found for this task.');
       return;
@@ -633,17 +615,6 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
     return late.map(e => e.name);
   }
 
-  // Helper: get previous days (for navigation)
-  function getPreviousDays(num: number) {
-    const days: string[] = [];
-    for (let i = 1; i <= num; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      days.push(getDateString(d));
-    }
-    return days;
-  }
-
   // Home tab state
   const [summaryRange, setSummaryRange] = useState<'day' | 'week' | 'month'>('day');
   const [summaryDate, setSummaryDate] = useState<Date>(new Date());
@@ -663,10 +634,6 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   const [showAllMaterialsModal, setShowAllMaterialsModal] = useState(false);
 
   const filteredTasks = filterTasksByDate(summaryRange, summaryDate);
-  const completedTasks = filteredTasks.filter(t => t.completed);
-  const inProgressTasks = filteredTasks.filter(t => !t.completed);
-  const lateTasks = filteredTasks.filter(t => !t.completed && minutesLate(t.deadline) > lateThreshold);
-  const lateEmps = getLateEmployees(summaryDate);
   const materialsUsed = getMaterialsUsed(summaryRange, summaryDate);
 
   // Helper to limit lines per card
@@ -691,7 +658,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
       });
       data += 'Task Name,Assigned To,Start,Deadline,Completed,Completed At\n';
       filtered.forEach(t => {
-        data += `${t.name},${t.assignedTo || t.assigned_to},${t.start},${t.deadline},${t.completed ? 'Yes' : 'No'},${t.completedAt || t.completed_at || ''}\n`;
+        data += `${t.name},${t.assignedTo || t.assignedTo},${t.start},${t.deadline},${t.completed ? 'Yes' : 'No'},${t.completedAt || ''}\n`;
       });
       filename = 'tasks.csv';
     }
@@ -705,7 +672,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
     if (exportType === 'employees' || exportType === 'all') {
       data += '\nEmployee Name,Code,Lunch Start,Lunch End\n';
       employees.forEach(e => {
-        data += `${e.name},${e.code},${e.lunchStart || e.lunch_start},${e.lunchEnd || e.lunch_end}\n`;
+        data += `${e.name},${e.code},${e.lunchStart},${e.lunchEnd}\n`;
       });
       filename = 'employees.csv';
     }
@@ -804,9 +771,6 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
             <Text style={{ color: '#888', fontSize: 14, marginBottom: 2 }}>{emp.department || 'No Dept'}</Text>
             <Text style={{ color: '#888', fontSize: 13, marginBottom: 2 }}>{`Lunch: ${emp.lunchStart} - ${emp.lunchEnd}`}</Text>
             <View style={{ flexDirection: 'row', marginTop: 8 }}>
-              <TouchableOpacity onPress={() => handleEditEmployee(emp)} style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 6, marginRight: 8 }}>
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Edit</Text>
-              </TouchableOpacity>
               <TouchableOpacity onPress={() => handleDeleteEmployee(emp.id)} style={{ backgroundColor: '#c62828', borderRadius: 8, padding: 6 }}>
                 <Text style={{ color: '#fff', fontWeight: 'bold' }}>Delete</Text>
               </TouchableOpacity>
@@ -834,7 +798,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
               <TextInput style={styles.input} placeholder="Name" value={newEmployeeName} onChangeText={setNewEmployeeName} />
               <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
                 <TextInput style={[styles.input, { flex: 1 }]} placeholder="Code" value={newEmployeeCode} onChangeText={setNewEmployeeCode} />
-                {biometricSupported && (
+                {biometricEnabled && (
                   <TouchableOpacity
                     style={{ marginLeft: 8, backgroundColor: biometricLoggedIn ? '#388e3c' : '#1976d2', borderRadius: 8, padding: 8, alignItems: 'center', justifyContent: 'center' }}
                     onPress={async () => {
@@ -935,20 +899,13 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
       .from('tasks')
       .insert({
         name: newTaskName,
-        assigned_to: selectedTaskEmployee.name,
+        assignedTo: selectedTaskEmployee.id,
         business_id: user.business_id,
         start: newTaskStart,
         deadline: newTaskDeadline,
         completed: false,
-        completed_at: null,
-        materials_used: materialsForNewTask,
-        vehicle_name: newVehicleName,
-        vehicle_reg: newVehicleReg,
-        vehicle_vin: newVehicleVin,
-        vehicle_colour: newVehicleColour,
-        vehicle_model: newVehicleModel,
-        is_dealership: isDealership,
-        dealership_name: dealershipName
+        completedAt: null,
+        materialsUsed: [],
       })
       .select('*')
       .single();
@@ -958,13 +915,6 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
       setNewTaskName('');
       setNewTaskStart('');
       setNewTaskDeadline('');
-      setNewVehicleName('');
-      setNewVehicleReg('');
-      setNewVehicleVin('');
-      setNewVehicleColour('');
-      setNewVehicleModel('');
-      setIsDealership(false);
-      setDealershipName('');
       setMaterialsForNewTask([]);
     }
   };
@@ -1053,34 +1003,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
             </TouchableOpacity>
           </View>
         </View>
-        <View style={{ flexDirection: 'row', marginBottom: 10 }}>
-          <TextInput style={[styles.input, { flex: 1, marginRight: 6 }]} placeholder="Vehicle Name" value={newVehicleName} onChangeText={setNewVehicleName} />
-          <TextInput style={[styles.input, { flex: 1, marginLeft: 6 }]} placeholder="Vehicle Reg" value={newVehicleReg} onChangeText={setNewVehicleReg} />
-        </View>
-        <View style={{ flexDirection: 'row', marginBottom: 10 }}>
-          <TextInput style={[styles.input, { flex: 1, marginRight: 6 }]} placeholder="VIN" value={newVehicleVin} onChangeText={setNewVehicleVin} />
-          <TextInput style={[styles.input, { flex: 1, marginLeft: 6 }]} placeholder="Colour" value={newVehicleColour} onChangeText={setNewVehicleColour} />
-        </View>
-        <TextInput style={[styles.input, { width: '100%', marginBottom: 10 }]} placeholder="Model" value={newVehicleModel} onChangeText={setNewVehicleModel} />
-        {showDealership && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 10 }}>
-            <TouchableOpacity
-              style={[styles.checkbox, isDealership && styles.checkboxChecked]}
-              onPress={() => setIsDealership(v => !v)}
-            >
-              {isDealership && <FontAwesome5 name="check" size={14} color="#fff" />}
-            </TouchableOpacity>
-            <Text style={{ fontSize: 16, marginLeft: 8 }}>Dealership</Text>
-            {isDealership && (
-              <TextInput
-                style={[styles.input, { flex: 2, marginLeft: 8 }]} 
-                placeholder="Dealership Name"
-                value={dealershipName}
-                onChangeText={setDealershipName}
-              />
-            )}
-          </View>
-        )}
+        
         {/* Material selection UI */}
         <View style={{ marginTop: 12, marginBottom: 12, backgroundColor: '#f5faff', borderRadius: 10, padding: 10 }}>
           <Text style={{ fontWeight: 'bold', color: '#1976d2', marginBottom: 4 }}>Add Materials Used</Text>
@@ -1344,7 +1267,9 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
         <View style={{ flexDirection: 'row', marginBottom: 8 }}>
           <TextInput style={[styles.input, { flex: 2, marginRight: 6 }]} placeholder="Name" value={newMaterialName} onChangeText={setNewMaterialName} />
           <TextInput style={[styles.input, { flex: 1, marginRight: 6 }]} placeholder="Unit" value={newMaterialUnit} onChangeText={setNewMaterialUnit} />
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSaveMaterial}><Text style={styles.saveBtnText}>Save</Text></TouchableOpacity>
+          <TouchableOpacity style={styles.saveBtn} onPress={handleAddMaterial}>
+            <Text style={styles.saveBtnText}>Save</Text>
+          </TouchableOpacity>
         </View>
       )}
       {/* Add Material Type Modal */}
@@ -1479,17 +1404,13 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   // Clock events state
   // Duplicate declaration removed below:
   // const [clockEvents, setClockEvents] = useState<any[]>([]);
-
+  
   // UI state variables
   const [showWorkHours, setShowWorkHours] = useState(false);
-  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
-  const [materialsUsed, setMaterialsUsed] = useState<string[]>([]);
 
   // Calculate filtered tasks and materials when summary range or date changes
   useEffect(() => {
     const filtered = filterTasksByDate(summaryRange, summaryDate);
-    setFilteredTasks(filtered);
-    setMaterialsUsed(getMaterialsUsed(summaryRange, summaryDate));
   }, [summaryRange, summaryDate, tasks, materials]);
 
   return (
@@ -1837,7 +1758,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
             <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
               <View style={themedStyles.settingsCard}>
                 <Text style={themedStyles.settingsTitle}>Task Options</Text>
-                {biometricSupported && (
+                {biometricEnabled && (
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                     <Text style={{ fontSize: 16, marginRight: 8, color: darkMode ? '#b3c0e0' : undefined }}>Fingerprint Login</Text>
                     <TouchableOpacity
@@ -1865,15 +1786,6 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
                     )}
                   </View>
                 )}
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                  <Text style={{ fontSize: 16, marginRight: 8, color: darkMode ? '#b3c0e0' : undefined }}>Show Dealership Option</Text>
-                  <TouchableOpacity
-                    style={[styles.checkbox, showDealership && styles.checkboxChecked, darkMode && { borderColor: '#b3c0e0', backgroundColor: showDealership ? '#b3c0e0' : '#23263a' }]}
-                    onPress={() => setShowDealership(v => !v)}
-                  >
-                    {showDealership && <FontAwesome5 name="check" size={14} color={darkMode ? '#23263a' : '#fff'} />}
-                  </TouchableOpacity>
-                </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                   <Text style={{ fontSize: 16, marginRight: 8, color: darkMode ? '#b3c0e0' : undefined }}>Dark Mode</Text>
                   <TouchableOpacity
@@ -1950,7 +1862,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
             <View style={{ flexDirection: 'column', marginTop: 12 }}>
               {/* Place Logout and Close buttons side by side at the bottom */}
               <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 24, marginBottom: 8, gap: 16 }}>
-                {biometricSupported && biometricEnabled && biometricLoggedIn ? (
+                {biometricEnabled && biometricLoggedIn ? (
                   <TouchableOpacity style={[themedStyles.closeBtn, { flex: 1, minWidth: 120 }]} onPress={handleBiometricLogout}>
                     <Text style={themedStyles.closeBtnText}>Logout (Fingerprint)</Text>
                   </TouchableOpacity>
@@ -2187,3 +2099,4 @@ const styles = StyleSheet.create({
 });
 
 export default AdminDashboardScreen;
+
