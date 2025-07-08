@@ -586,7 +586,7 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
       {showEmployeeTasksPage && employeeTasksName && (
         <View style={[styles.fullPageOverlay, { backgroundColor: theme.background }]}> 
           <View style={[styles.fullPageContent, { backgroundColor: theme.card, borderRadius: 18, shadowColor: theme.shadow, shadowOpacity: 0.18, shadowRadius: 12, elevation: 8 }]}> 
-            <Text style={[styles.modalTitle, { color: theme.primary }]}>{employeeTasksName}'s Tasks</Text>
+            <Text style={[styles.modalTitle, { color: theme.primary }]}>{employeeTasksName}&apos;s Tasks</Text>
             <ScrollView>{renderEmployeeTasks(employeeTasksName)}</ScrollView>
             <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.primary }]} onPress={userAction(closeEmployeeTasks)}>
               <Text style={styles.closeBtnText}>Back</Text>
