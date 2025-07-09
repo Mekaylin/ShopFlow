@@ -7,8 +7,6 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { Sentry, getSession, initSentry, supabase } from '../services/cloud.js';
 
-useEffect(() => { initSentry(); }, []);
-
 export default Sentry.wrap(function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
@@ -16,6 +14,9 @@ export default Sentry.wrap(function RootLayout() {
   });
   const [restoring, setRestoring] = useState(true);
   const router = useRouter();
+
+  // Initialize Sentry once on mount
+  useEffect(() => { initSentry(); }, []);
 
   // Add browser back button handler for web
   useEffect(() => {
