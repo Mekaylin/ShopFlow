@@ -3,8 +3,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import * as Sharing from 'expo-sharing';
-import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, FlatList, Image, Modal, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
+import { Alert, FlatList, Image, Modal, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Animated, Easing } from 'react-native';
 import PerformanceManagement from '../../components/PerformanceManagement';
 import TaskRatingModal from '../../components/TaskRatingModal';
 import { generateBusinessCode, getBusinessCode, supabase, updateBusinessCode } from '../../services/cloud.js';
@@ -2036,8 +2036,87 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
     setShowAddDeptModal(false);
   };
 
+  // Add at the top of AdminDashboardScreen:
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  // Replace all initial data fetch useEffects with a single useEffect that fetches all required data in parallel:
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchAllInitialData() {
+      setInitialLoading(true);
+      try {
+        const [empRes, taskRes, matRes, deptRes, perfRes, clockRes] = await Promise.all([
+          supabase.from('employees').select('*').eq('business_id', user.business_id),
+          supabase.from('tasks').select('*').eq('business_id', user.business_id),
+          supabase.from('materials').select('*').eq('business_id', user.business_id),
+          supabase.from('departments').select('name').eq('business_id', user.business_id),
+          supabase.from('performance_settings').select('*').eq('business_id', user.business_id).single(),
+          supabase.from('clock_events').select('*').eq('business_id', user.business_id).order('clock_in', { ascending: false }),
+        ]);
+        if (!isMounted) return;
+        if (!empRes.error && empRes.data) setEmployees(empRes.data);
+        if (!taskRes.error && taskRes.data) setTasks(taskRes.data);
+        if (!matRes.error && matRes.data) setMaterials(matRes.data);
+        if (!deptRes.error && deptRes.data) setDepartments(deptRes.data.map(d => d.name));
+        if (!perfRes.error && perfRes.data) setPerformanceSettings({
+          ratingSystemEnabled: perfRes.data.rating_system_enabled ?? false,
+          autoRateCompletedTasks: perfRes.data.auto_rate_completed_tasks ?? false,
+          defaultRating: perfRes.data.default_rating ?? 3,
+        });
+        if (!clockRes.error && clockRes.data) setClockEvents(clockRes.data);
+      } catch (err) {
+        console.error('Initial data fetch error:', err);
+      }
+      setInitialLoading(false);
+    }
+    if (user?.business_id) fetchAllInitialData();
+    return () => { isMounted = false; };
+  }, [user?.business_id]);
+
+  // Add the animated spinner logic:
+  const spinAnim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.timing(spinAnim, {
+        toValue: 1,
+        duration: 1200,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, []);
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   return (
     <SafeAreaView style={[...themedStyles.container, { position: 'relative', flex: 1 }]}> {/* Ensure relative positioning for absolute children */}
+      {initialLoading && (
+        <View style={{
+          position: 'absolute',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(245,250,255,0.85)',
+          zIndex: 9999,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <Animated.View style={{
+            width: 80, height: 80, borderRadius: 40,
+            backgroundColor: '#1976d2',
+            shadowColor: '#1976d2',
+            shadowOpacity: 0.25,
+            shadowRadius: 16,
+            shadowOffset: { width: 0, height: 8 },
+            alignItems: 'center',
+            justifyContent: 'center',
+            transform: [{ rotate: spin }],
+          }}>
+            <FontAwesome5 name="sync" size={40} color="#fff" />
+          </Animated.View>
+          <Text style={{ marginTop: 24, color: '#1976d2', fontWeight: 'bold', fontSize: 18, letterSpacing: 1 }}>Loading Dashboard...</Text>
+        </View>
+      )}
       <View style={styles.container}>
         <View style={{ alignItems: 'center', marginTop: 8, marginBottom: 8 }}>
           <Text
