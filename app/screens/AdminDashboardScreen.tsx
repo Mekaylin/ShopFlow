@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, Image, Modal, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import PerformanceManagement from '../../components/PerformanceManagement';
 import TaskRatingModal from '../../components/TaskRatingModal';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../services/cloud.js';
 
 // Types
 interface Task {

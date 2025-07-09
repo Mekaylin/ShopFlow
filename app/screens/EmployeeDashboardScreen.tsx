@@ -3,7 +3,13 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Animated, FlatList, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../services/cloud.js';
+
+// Work hours constants
+const workStart = '08:00';
+const workEnd = '17:00';
+const lunchStart = '12:00';
+const lunchEnd = '13:00';
 
 // Demo employees (no login code needed)
 interface Employee {
@@ -44,9 +50,6 @@ const initialTasks: Task[] = [
   { id: '3', name: 'Oil change', start: '13:00', deadline: '14:00', completed: false, assignedTo: 'Sam Patel', materialsUsed: [] },
 ];
 
-// Removed auto-logout for all-day running app
-// const AUTO_LOGOUT_MS = 2 * 60 * 1000; // 2 minutes
-
 interface EmployeeDashboardScreenProps {
   onLogout: () => void;
   employee: any;
@@ -69,7 +72,7 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
   const [showEmployeeTasksPage, setShowEmployeeTasksPage] = useState(false);
   const [employeeTasksName, setEmployeeTasksName] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [materials, setMaterials] = useState<Material[]>(initialMaterials); // get from admin
+  const [materials] = useState<Material[]>(initialMaterials); // get from admin
   // taskMaterials: { [taskId]: { materialId, quantity }[] }
   const [taskMaterials, setTaskMaterials] = useState<{ [taskId: string]: { materialId: string; quantity: string }[] }>({});
   // Animation state
@@ -96,7 +99,7 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
         .order('clock_in', { ascending: false });
       if (!error && data) setClockEvents(data);
       // Set clockedIn state if there is an open event
-      setClockedIn(data && data.length > 0 && !data[0].clock_out);
+      setClockedIn(!!(data && data.length > 0 && !data[0].clock_out));
     }
     fetchClockEvents();
   }, [employee?.id, business?.id]);
@@ -137,18 +140,13 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
     return 'out';
   }
 
-  // Prompt for code or fingerprint on clock in/out
-  const handleClockInOutPress = () => {
-    setCodePromptVisible(true);
-    setEnteredCode('');
-  };
+
 
   // Handle clock action (in, lunch, lunchBack, out)
-  const handleClockAction = () => {
+  const handleClockAction = async () => {
     const action = getNextClockAction();
     if (action === 'in') {
-      setClockedIn(true);
-      setOnLunch(false);
+      await handleClockIn();
       setShowWelcome(true);
       Animated.timing(welcomeAnim, {
         toValue: 1,
@@ -163,7 +161,6 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
           }).start(() => setShowWelcome(false));
         }, 1800);
       });
-      Alert.alert('Clocked In', 'You are clocked in.');
     } else if (action === 'lunch') {
       setOnLunch(true);
       Alert.alert('Lunch Break', 'You are clocked out for lunch.');
@@ -171,9 +168,7 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
       setOnLunch(false);
       Alert.alert('Back from Lunch', 'You are clocked in from lunch.');
     } else if (action === 'out') {
-      setClockedIn(false);
-      setOnLunch(false);
-      Alert.alert('Clocked Out', 'You have clocked out for the day.');
+      await handleClockOut();
     }
     setCodePromptVisible(false);
   };
@@ -402,6 +397,9 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
       {/* Top bar with title and settings icon */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
         <Text style={[styles.title, { color: theme.text, flex: 1 }]}>Employee Dashboard</Text>
+        {employee?.name && (
+          <Text style={[styles.subtitle, { color: theme.subtext, marginTop: 4 }]}>Welcome, {employee.name}</Text>
+        )}
         <TouchableOpacity onPress={() => setSettingsVisible(true)} style={{ position: 'absolute', right: 0, padding: 8 }}>
           <FontAwesome5 name="cog" size={28} color={isDark ? '#b3c0e0' : '#1976d2'} />
         </TouchableOpacity>
@@ -479,7 +477,7 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
         }}>
           <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 32, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 16, elevation: 8, alignItems: 'center' }}>
             <FontAwesome5 name="smile-beam" size={60} color="#388e3c" style={{ marginBottom: 16 }} />
-            <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#1976d2', marginBottom: 8 }}>Welcome{currentEmployee?.name ? `, ${currentEmployee.name}` : ''}!</Text>
+            <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#1976d2', marginBottom: 8 }}>Welcome{employee?.name ? `, ${employee.name}` : ''}!</Text>
             <Text style={{ fontSize: 18, color: '#333' }}>Have a great shift!</Text>
           </View>
         </Animated.View>
@@ -584,6 +582,7 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
   title: { fontSize: 30, fontWeight: 'bold', marginBottom: 36, alignSelf: 'center', letterSpacing: 1 },
+  subtitle: { fontSize: 16, textAlign: 'center', marginBottom: 8 },
   buttonCol: { flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: 28 },
   actionBtn: { width: '92%', paddingVertical: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginHorizontal: 8, marginBottom: 0, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 6 },
   actionBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 24, letterSpacing: 0.5 },

@@ -1,10 +1,16 @@
 import { FontAwesome5 } from '@expo/vector-icons';
-import * as SecureStore from 'expo-secure-store';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../../lib/supabase';
+import { Sentry, supabase } from '../../services/cloud.js';
 
-export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admin' | 'employee') => void, onTest?: () => void }) {
+type LoginScreenProps = {
+  onLogin: (role: 'admin' | 'employee') => void,
+  setSession: (key: string, value: string) => Promise<void>,
+  onTest?: () => void
+};
+
+export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -17,6 +23,7 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [loginLocked, setLoginLocked] = useState(false);
   const [lockTimer, setLockTimer] = useState(0);
+  const router = useRouter();
 
   useEffect(() => {
     let timer: ReturnType<typeof setInterval>;
@@ -112,9 +119,9 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
         console.error('Auth error details:', signInError);
         throw new Error(signInError.message);
       }
-      // Store session securely
+      // Store session securely (cross-platform)
       if (signInData?.session) {
-        await SecureStore.setItemAsync('supabase-session', JSON.stringify(signInData.session));
+        await setSession('supabase-session', JSON.stringify(signInData.session));
       }
       // Check if email is confirmed (optional, but recommended)
       if (signInData?.user && !signInData.user.confirmed_at) {
@@ -156,6 +163,8 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
       }
       setLoginAttempts(0); // reset on success
       onLogin(role);
+      // Immediately redirect to root to trigger session check and dashboard redirect
+      router.replace('/');
     } catch (e: unknown) {
       let message = 'Unknown error';
       if (e instanceof Error) {
@@ -231,6 +240,12 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
                 <Text style={{ color: '#1976d2', textAlign: 'center' }}>Test Supabase Connection</Text>
               </TouchableOpacity>
             )}
+            <TouchableOpacity
+              style={{ marginTop: 24, backgroundColor: '#c62828', borderRadius: 8, padding: 12, alignItems: 'center' }}
+              onPress={() => Sentry.captureException(new Error('Sentry test error from LoginScreen'))}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Send Sentry Test Error</Text>
+            </TouchableOpacity>
           </Animated.View>
         </View>
       </KeyboardAvoidingView>

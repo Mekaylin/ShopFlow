@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Button, Text, View } from 'react-native';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../services/cloud.js';
 
 export default function TestSupabaseScreen({ onBack }: { onBack?: () => void }) {
   const [users, setUsers] = useState<any[]>([]);

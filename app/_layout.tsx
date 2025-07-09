@@ -1,15 +1,14 @@
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import 'react-native-reanimated';
-import { supabase } from '../lib/supabase';
+import { Sentry, getSession, initSentry, supabase } from '../services/cloud.js';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+initSentry();
 
-export default function RootLayout() {
+export default Sentry.wrap(function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -19,7 +18,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     const restoreSession = async () => {
-      const stored = await SecureStore.getItemAsync('supabase-session');
+      const stored = await getSession('supabase-session');
       if (stored) {
         const session = JSON.parse(stored);
         await supabase.auth.setSession(session);
@@ -44,7 +43,7 @@ export default function RootLayout() {
     return (
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <StatusBar style="auto" />
-        <Stack.Screen name="+loading" options={{ headerShown: false }} />
+        {/* <Stack.Screen name="+loading" options={{ headerShown: false }} /> */}
         <></>
       </ThemeProvider>
     );
@@ -61,4 +60,4 @@ export default function RootLayout() {
       <StatusBar style="auto" />
     </ThemeProvider>
   );
-}
+});
