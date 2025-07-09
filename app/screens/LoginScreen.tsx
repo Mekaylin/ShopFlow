@@ -18,6 +18,23 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
   const [loginLocked, setLoginLocked] = useState(false);
   const [lockTimer, setLockTimer] = useState(0);
 
+  useEffect(() => {
+    let timer: ReturnType<typeof setInterval>;
+    if (loginLocked && lockTimer > 0) {
+      timer = setInterval(() => {
+        setLockTimer((t) => {
+          if (t <= 1) {
+            setLoginLocked(false);
+            clearInterval(timer);
+            return 0;
+          }
+          return t - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [loginLocked, lockTimer]);
+
   if (showRegister) {
     return <RegistrationScreen onBack={() => setShowRegister(false)} />;
   }
@@ -72,23 +89,6 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
       </View>
     );
   }
-
-  useEffect(() => {
-    let timer: ReturnType<typeof setInterval>;
-    if (loginLocked && lockTimer > 0) {
-      timer = setInterval(() => {
-        setLockTimer((t) => {
-          if (t <= 1) {
-            setLoginLocked(false);
-            clearInterval(timer);
-            return 0;
-          }
-          return t - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [loginLocked, lockTimer]);
 
   const handleLogin = async () => {
     if (loginLocked) {
