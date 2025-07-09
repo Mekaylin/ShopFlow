@@ -1943,6 +1943,9 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
                   />
                 )}
               </View>
+              <TouchableOpacity onPress={() => setSettingsVisible(true)} style={{ padding: 8 }} accessibilityLabel="Open Settings">
+                <FontAwesome5 name="cog" size={24} color="#1976d2" />
+              </TouchableOpacity>
             </View>
             {/* Cards: Tasks, Late Employees, Materials Used, Best Performers */}
             <View style={{ flexDirection: 'column', gap: 16 }}>
