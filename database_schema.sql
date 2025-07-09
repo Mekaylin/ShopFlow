@@ -40,6 +40,15 @@ CREATE TABLE IF NOT EXISTS performance_metrics (
     UNIQUE(employee_id, business_id, period_type, period_start)
 );
 
+-- Departments table for business-linked departments
+create table if not exists departments (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  business_id uuid references businesses(id) on delete cascade not null,
+  inserted_at timestamp with time zone default timezone('utc', now()),
+  unique (business_id, name)
+);
+
 -- 4. RLS Policies for Task Ratings
 ALTER TABLE task_ratings ENABLE ROW LEVEL SECURITY;
 

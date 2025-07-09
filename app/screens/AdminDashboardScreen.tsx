@@ -344,7 +344,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   const [lateTaskNotifiedIds, setLateTaskNotifiedIds] = useState<string[]>([]);
 
   // Employee state
-  const [departments, setDepartments] = useState<string[]>(['Body Shop', 'Paint', 'Detailing']);
+  const [departments, setDepartments] = useState<string[]>([]);
   const [newDepartment, setNewDepartment] = useState('');
   // Late task notification effect
   useEffect(() => {
@@ -417,7 +417,10 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
 
   // Add employee to Supabase
   const handleAddEmployee = async () => {
-    if (!newEmployeeName || !newEmployeeCode) return;
+    if (!newEmployeeName || !newEmployeeCode) {
+      Alert.alert('Missing Fields', 'Please enter both name and code.');
+      return;
+    }
     const { data, error } = await supabase
       .from('employees')
       .insert({
@@ -431,7 +434,21 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
       })
       .select('*')
       .single();
-    if (!error && data) setEmployees([...employees, data]);
+    if (error || !data) {
+      console.error('Add employee error:', error, data);
+      Alert.alert('Error', error?.message || 'Failed to add employee.');
+      return;
+    }
+    // Refetch employees from Supabase to ensure UI is up to date
+    try {
+      const { data: allEmployees, error: fetchError } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('business_id', user.business_id);
+      if (!fetchError && allEmployees) setEmployees(allEmployees);
+    } catch (fetchErr) {
+      console.error('Refetch employees error:', fetchErr);
+    }
     setNewEmployeeName('');
     setNewEmployeeCode('');
     setNewEmployeeLunchStart('12:00');
@@ -573,7 +590,10 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   }, [user?.business_id]);
 
   const handleAddMaterial = async () => {
-    if (!newMaterialName || !newMaterialUnit) return;
+    if (!newMaterialName || !newMaterialUnit) {
+      Alert.alert('Missing Fields', 'Please enter both name and unit.');
+      return;
+    }
     const { data, error } = await supabase
       .from('materials')
       .insert({
@@ -583,13 +603,30 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
       })
       .select('*')
       .single();
-    if (!error && data) setMaterials([...materials, data]);
+    if (error || !data) {
+      Alert.alert('Error', error?.message || 'Failed to add material.');
+      return;
+    }
+    // Refetch materials from Supabase
+    try {
+      const { data: allMaterials, error: fetchError } = await supabase
+        .from('materials')
+        .select('*')
+        .eq('business_id', user.business_id);
+      if (!fetchError && allMaterials) setMaterials(allMaterials);
+    } catch (fetchErr) {
+      console.error('Refetch materials error:', fetchErr);
+    }
     setNewMaterialName('');
     setNewMaterialUnit('');
   };
 
   const handleEditMaterial = async () => {
     if (!editMaterial) return;
+    if (!newMaterialName || !newMaterialUnit) {
+      Alert.alert('Missing Fields', 'Please enter both name and unit.');
+      return;
+    }
     const { data, error } = await supabase
       .from('materials')
       .update({
@@ -599,7 +636,20 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
       .eq('id', editMaterial.id)
       .select('*')
       .single();
-    if (!error && data) setMaterials(materials.map(m => m.id === editMaterial.id ? data : m));
+    if (error || !data) {
+      Alert.alert('Error', error?.message || 'Failed to edit material.');
+      return;
+    }
+    // Refetch materials from Supabase
+    try {
+      const { data: allMaterials, error: fetchError } = await supabase
+        .from('materials')
+        .select('*')
+        .eq('business_id', user.business_id);
+      if (!fetchError && allMaterials) setMaterials(allMaterials);
+    } catch (fetchErr) {
+      console.error('Refetch materials error:', fetchErr);
+    }
     setEditMaterial(null);
     setNewMaterialName('');
     setNewMaterialUnit('');
@@ -610,7 +660,20 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
       .from('materials')
       .delete()
       .eq('id', id);
-    if (!error) setMaterials(materials.filter(m => m.id !== id));
+    if (error) {
+      Alert.alert('Error', error?.message || 'Failed to delete material.');
+      return;
+    }
+    // Refetch materials from Supabase
+    try {
+      const { data: allMaterials, error: fetchError } = await supabase
+        .from('materials')
+        .select('*')
+        .eq('business_id', user.business_id);
+      if (!fetchError && allMaterials) setMaterials(allMaterials);
+    } catch (fetchErr) {
+      console.error('Refetch materials error:', fetchErr);
+    }
   };
 
   // Add Material Type logic
@@ -627,20 +690,23 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   // Performance Management Functions
   useEffect(() => {
     async function fetchPerformanceSettings() {
+      setPerformanceSettingsLoading(true);
       if (!user?.business_id) return;
       const { data, error } = await supabase
         .from('performance_settings')
         .select('*')
         .eq('business_id', user.business_id)
         .single();
-      
       if (!error && data) {
         setPerformanceSettings({
-          ratingSystemEnabled: data.rating_system_enabled,
-          autoRateCompletedTasks: data.auto_rate_completed_tasks,
-          defaultRating: data.default_rating
+          ratingSystemEnabled: data.rating_system_enabled ?? false,
+          autoRateCompletedTasks: data.auto_rate_completed_tasks ?? false,
+          defaultRating: data.default_rating ?? 3,
         });
+      } else {
+        setPerformanceSettings(defaultPerformanceSettings);
       }
+      setPerformanceSettingsLoading(false);
     }
     fetchPerformanceSettings();
   }, [user?.business_id]);
@@ -964,10 +1030,28 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
       filename = 'attendance.csv';
     }
     if (exportType === 'all') filename = 'all_data.csv';
-    const fileUri = FileSystem.cacheDirectory + filename;
-    await FileSystem.writeAsStringAsync(fileUri, data, { encoding: FileSystem.EncodingType.UTF8 });
-    await Sharing.shareAsync(fileUri);
-    setExportModalVisible(false);
+    if (Platform.OS === 'web') {
+      try {
+        const blob = new Blob([data], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        setExportModalVisible(false);
+      } catch (err: any) {
+        alert('Export failed: ' + (err && err.message ? err.message : String(err)));
+      }
+    } else {
+      // Native: use FileSystem and Sharing
+      const fileUri = FileSystem.cacheDirectory + filename;
+      await FileSystem.writeAsStringAsync(fileUri, data, { encoding: FileSystem.EncodingType.UTF8 });
+      await Sharing.shareAsync(fileUri);
+      setExportModalVisible(false);
+    }
   };
 
   // Export Modal
@@ -987,13 +1071,31 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
           ))}
           <Text style={{ fontWeight: 'bold', marginTop: 12, marginBottom: 8 }}>Date Range</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-            <TouchableOpacity onPress={() => setShowExportStartPicker(true)} style={{ borderBottomWidth: 1, borderBottomColor: '#1976d2', marginRight: 12 }}>
-              <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>{getDateString(exportStartDate)}</Text>
-            </TouchableOpacity>
+            {Platform.OS === 'web' ? (
+              <input
+                type="date"
+                value={exportStartDate.toISOString().slice(0, 10)}
+                onChange={e => setExportStartDate(new Date(e.target.value))}
+                style={{ marginRight: 12, padding: 6, borderRadius: 6, border: '1px solid #1976d2' }}
+              />
+            ) : (
+              <TouchableOpacity onPress={() => setShowExportStartPicker(true)} style={{ borderBottomWidth: 1, borderBottomColor: '#1976d2', marginRight: 12 }}>
+                <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>{getDateString(exportStartDate)}</Text>
+              </TouchableOpacity>
+            )}
             <Text style={{ marginHorizontal: 8 }}>to</Text>
-            <TouchableOpacity onPress={() => setShowExportEndPicker(true)} style={{ borderBottomWidth: 1, borderBottomColor: '#1976d2', marginLeft: 12 }}>
-              <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>{getDateString(exportEndDate)}</Text>
-            </TouchableOpacity>
+            {Platform.OS === 'web' ? (
+              <input
+                type="date"
+                value={exportEndDate.toISOString().slice(0, 10)}
+                onChange={e => setExportEndDate(new Date(e.target.value))}
+                style={{ marginLeft: 12, padding: 6, borderRadius: 6, border: '1px solid #1976d2' }}
+              />
+            ) : (
+              <TouchableOpacity onPress={() => setShowExportEndPicker(true)} style={{ borderBottomWidth: 1, borderBottomColor: '#1976d2', marginLeft: 12 }}>
+                <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>{getDateString(exportEndDate)}</Text>
+              </TouchableOpacity>
+            )}
           </View>
           {showExportStartPicker && (
             <DateTimePicker
@@ -1118,13 +1220,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
           <View style={{ backgroundColor: '#fff', borderRadius: 14, padding: 24, width: '90%' }}>
             <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1976d2', marginBottom: 12 }}>Add Department</Text>
             <TextInput style={styles.input} placeholder="Department Name" value={newDepartment} onChangeText={setNewDepartment} />
-            <TouchableOpacity style={styles.addBtn} onPress={() => {
-              if (newDepartment && !departments.includes(newDepartment)) {
-                setDepartments([...departments, newDepartment]);
-                setNewDepartment('');
-                setShowAddDeptModal(false);
-              }
-            }}><Text style={styles.addBtnText}>Add</Text></TouchableOpacity>
+            <TouchableOpacity style={styles.addBtn} onPress={handleAddDepartment}><Text style={styles.addBtnText}>Add</Text></TouchableOpacity>
             <TouchableOpacity style={styles.closeBtn} onPress={() => setShowAddDeptModal(false)}>
               <Text style={styles.closeBtnText}>Close</Text>
             </TouchableOpacity>
@@ -1682,7 +1778,11 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
               )}
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <TouchableOpacity onPress={handleEditMaterial} style={{ marginRight: 8 }}>
+              <TouchableOpacity onPress={() => {
+                setEditMaterial(item);
+                setNewMaterialName(item.name);
+                setNewMaterialUnit(item.unit);
+              }} style={{ marginRight: 8 }}>
                 <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>Edit</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleDeleteMaterial(item.id)} style={{ marginRight: 8 }}>
@@ -1705,7 +1805,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
         <View style={{ flexDirection: 'row', marginBottom: 8 }}>
           <TextInput style={[styles.input, { flex: 2, marginRight: 6 }]} placeholder="Name" value={newMaterialName} onChangeText={setNewMaterialName} />
           <TextInput style={[styles.input, { flex: 1, marginRight: 6 }]} placeholder="Unit" value={newMaterialUnit} onChangeText={setNewMaterialUnit} />
-          <TouchableOpacity style={styles.saveBtn} onPress={handleAddMaterial}>
+          <TouchableOpacity style={styles.saveBtn} onPress={handleEditMaterial}>
             <Text style={styles.saveBtnText}>Save</Text>
           </TouchableOpacity>
         </View>
@@ -1793,11 +1893,13 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   // }
 
   // Performance Management State
-  const [performanceSettings, setPerformanceSettings] = useState({
-    ratingSystemEnabled: true,
+  const defaultPerformanceSettings = {
+    ratingSystemEnabled: false,
     autoRateCompletedTasks: false,
-    defaultRating: 3
-  });
+    defaultRating: 3,
+  };
+  const [performanceSettings, setPerformanceSettings] = useState(defaultPerformanceSettings);
+  const [performanceSettingsLoading, setPerformanceSettingsLoading] = useState(true);
   const [showPerformanceManagement, setShowPerformanceManagement] = useState(false);
   const [showTaskRatingModal, setShowTaskRatingModal] = useState(false);
   const [selectedTaskForRating, setSelectedTaskForRating] = useState<any>(null);
@@ -1898,343 +2000,399 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
     } catch {}
   };
 
+  // Fetch departments from Supabase
+  const fetchDepartments = async () => {
+    if (!user?.business_id) return;
+    const { data, error } = await supabase
+      .from('departments')
+      .select('name')
+      .eq('business_id', user.business_id);
+    if (!error && data) setDepartments(data.map(d => d.name));
+  };
+
+  useEffect(() => {
+    fetchDepartments();
+  }, [user?.business_id]);
+
+  // Add department to Supabase
+  const handleAddDepartment = async () => {
+    if (!newDepartment) {
+      Alert.alert('Missing Field', 'Please enter a department name.');
+      return;
+    }
+    if (departments.includes(newDepartment)) {
+      Alert.alert('Duplicate', 'This department already exists.');
+      return;
+    }
+    const { error } = await supabase
+      .from('departments')
+      .insert({ name: newDepartment, business_id: user.business_id });
+    if (error) {
+      Alert.alert('Error', error.message || 'Failed to add department.');
+      return;
+    }
+    await fetchDepartments();
+    setNewDepartment('');
+    setShowAddDeptModal(false);
+  };
+
   return (
     <SafeAreaView style={[...themedStyles.container, { position: 'relative', flex: 1 }]}> {/* Ensure relative positioning for absolute children */}
-      {renderTabBar()}
-      <View style={{ flex: 1 }}>
-        {/* Home Tab Content */}
-        {tab === 'home' && (
-          <ScrollView style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff', padding: 8 }} contentContainerStyle={{ paddingBottom: 100 }}>
-            {/* --- Range selector and Export/Filter controls --- */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              {/* Range Selector */}
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                {['day', 'week', 'month'].map(range => (
+      <View style={styles.container}>
+        <View style={{ alignItems: 'center', marginTop: 8, marginBottom: 8 }}>
+          <Text
+            style={{
+              fontSize: 32,
+              fontWeight: 'bold',
+              color: '#1976d2',
+              textAlign: 'center',
+              textShadowColor: 'rgba(25, 118, 210, 0.15)',
+              textShadowOffset: { width: 0, height: 2 },
+              textShadowRadius: 6,
+              letterSpacing: 1.2,
+            }}
+          >
+            Admin Dashboard
+          </Text>
+          <View style={{ height: 2, backgroundColor: '#e3f2fd', width: '80%', borderRadius: 1, marginTop: 8 }} />
+        </View>
+        {renderTabBar()}
+        <View style={{ flex: 1 }}>
+          {/* Home Tab Content */}
+          {tab === 'home' && (
+            <ScrollView style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff', padding: 8 }} contentContainerStyle={{ paddingBottom: 100 }}>
+              {/* --- Range selector and Export/Filter controls --- */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                {/* Range Selector */}
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  {['day', 'week', 'month'].map(range => (
+                    <TouchableOpacity
+                      key={range}
+                      style={{
+                        backgroundColor: summaryRange === range ? '#1976d2' : '#e3f2fd',
+                        borderRadius: 8,
+                        paddingVertical: 6,
+                        paddingHorizontal: 14,
+                        marginRight: 6,
+                      }}
+                      onPress={() => setSummaryRange(range as any)}
+                    >
+                      <Text style={{ color: summaryRange === range ? '#fff' : '#1976d2', fontWeight: 'bold', fontSize: 15 }}>{range.charAt(0).toUpperCase() + range.slice(1)}</Text>
+                    </TouchableOpacity>
+                  ))}
                   <TouchableOpacity
-                    key={range}
-                    style={{
-                      backgroundColor: summaryRange === range ? '#1976d2' : '#e3f2fd',
-                      borderRadius: 8,
-                      paddingVertical: 6,
-                      paddingHorizontal: 14,
-                      marginRight: 6,
-                    }}
-                    onPress={() => setSummaryRange(range as any)}
+                    style={{ marginLeft: 8, padding: 6, borderRadius: 8, backgroundColor: '#e3f2fd' }}
+                    onPress={() => setShowDatePicker(true)}
                   >
-                    <Text style={{ color: summaryRange === range ? '#fff' : '#1976d2', fontWeight: 'bold', fontSize: 15 }}>{range.charAt(0).toUpperCase() + range.slice(1)}</Text>
+                    <FontAwesome5 name="calendar" size={18} color="#1976d2" />
+                    <Text style={{ color: '#1976d2', fontSize: 13 }}>{getDateString(summaryDate)}</Text>
                   </TouchableOpacity>
-                ))}
-                <TouchableOpacity
-                  style={{ marginLeft: 8, padding: 6, borderRadius: 8, backgroundColor: '#e3f2fd' }}
-                  onPress={() => setShowDatePicker(true)}
-                >
-                  <FontAwesome5 name="calendar" size={18} color="#1976d2" />
-                  <Text style={{ color: '#1976d2', fontSize: 13 }}>{getDateString(summaryDate)}</Text>
+                  {showDatePicker && (
+                    <DateTimePicker
+                      value={summaryDate}
+                      mode="date"
+                      display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                      onChange={(event: any, date?: Date) => {
+                        setShowDatePicker(false);
+                        if (date) setSummaryDate(date);
+                      }}
+                    />
+                  )}
+                </View>
+                <TouchableOpacity onPress={() => setSettingsVisible(true)} style={{ padding: 8 }} accessibilityLabel="Open Settings">
+                  <FontAwesome5 name="cog" size={24} color="#1976d2" />
                 </TouchableOpacity>
-                {showDatePicker && (
-                  <DateTimePicker
-                    value={summaryDate}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={(event: any, date?: Date) => {
-                      setShowDatePicker(false);
-                      if (date) setSummaryDate(date);
-                    }}
-                  />
-                )}
               </View>
-              <TouchableOpacity onPress={() => setSettingsVisible(true)} style={{ padding: 8 }} accessibilityLabel="Open Settings">
-                <FontAwesome5 name="cog" size={24} color="#1976d2" />
+              {/* Cards: Tasks, Late Employees, Materials Used, Best Performers */}
+              <View style={{ flexDirection: 'column', gap: 16 }}>
+                {/* Tasks Card */}
+                <TouchableOpacity
+                  activeOpacity={canExpand ? 0.7 : 1}
+                  onPress={() => canExpand && setShowAllTasksModal(true)}
+                  style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
+                >
+                  <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', marginBottom: 6 }}>Tasks</Text>
+                  {limitLines(filteredTasks, 10).map((t, idx) => (
+                    <Text key={t.id} style={{ color: t.completed ? '#388e3c' : '#263238', fontSize: 15 }} numberOfLines={1} ellipsizeMode="tail">
+                      {idx + 1}. {t.name} {t.completed ? '(Completed)' : ''}
+                    </Text>
+                  ))}
+                  {filteredTasks.length > 10 && (
+                    <Text style={{ color: '#1976d2', fontWeight: 'bold', marginTop: 4 }}>+{filteredTasks.length - 10} more...</Text>
+                  )}
+                </TouchableOpacity>
+                {/* Late Employees Card */}
+                <TouchableOpacity
+                  activeOpacity={canExpand ? 0.7 : 1}
+                  onPress={() => canExpand && setShowAllLateEmpsModal(true)}
+                  style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
+                >
+                  <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#c62828', marginBottom: 6 }}>Late Employees</Text>
+                  {limitLines(getLateEmployeesByClockEvents(summaryDate), 10).map((name, idx) => (
+                    <Text key={name} style={{ color: '#c62828', fontSize: 15 }} numberOfLines={1} ellipsizeMode="tail">
+                      {idx + 1}. {name}
+                    </Text>
+                  ))}
+                  {getLateEmployeesByClockEvents(summaryDate).length > 10 && (
+                    <Text style={{ color: '#c62828', fontWeight: 'bold', marginTop: 4 }}>+{getLateEmployeesByClockEvents(summaryDate).length - 10} more...</Text>
+                  )}
+                </TouchableOpacity>
+                {/* Materials Used Card */}
+                <TouchableOpacity
+                  activeOpacity={canExpand ? 0.7 : 1}
+                  onPress={() => canExpand && setShowAllMaterialsModal(true)}
+                  style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
+                >
+                  <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', marginBottom: 6 }}>Materials Used</Text>
+                  {limitLines(materialsUsed, 10).map((mat, idx) => (
+                    <Text key={mat} style={{ color: '#263238', fontSize: 15 }} numberOfLines={1} ellipsizeMode="tail">
+                      {idx + 1}. {mat}
+                    </Text>
+                  ))}
+                  {materialsUsed.length > 10 && (
+                    <Text style={{ color: '#1976d2', fontWeight: 'bold', marginTop: 4 }}>+{materialsUsed.length - 10} more...</Text>
+                  )}
+                </TouchableOpacity>
+                {/* Best Performers Card */}
+                <TouchableOpacity
+                  activeOpacity={1}
+                  style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
+                >
+                  <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#388e3c', marginBottom: 6 }}>Best Performers</Text>
+                  {getBestPerformers(employees, filterTasksByDate, summaryRange, summaryDate).map((emp, idx) => (
+                    <Text key={emp.id} style={{ color: '#388e3c', fontSize: 15 }} numberOfLines={1} ellipsizeMode="tail">
+                      {idx + 1}. {emp.name} ({emp.performanceScore || 0})
+                    </Text>
+                  ))}
+                  {getBestPerformers(employees, filterTasksByDate, summaryRange, summaryDate).length === 0 && (
+                    <Text style={{ color: '#888', fontSize: 15 }}>No data for this period.</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+              {/* Modals for week/month full lists */}
+              <Modal visible={showAllTasksModal} animationType="slide" transparent onRequestClose={() => setShowAllTasksModal(false)}>
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>
+                  <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 24, width: '90%', maxHeight: '90%' }}>
+                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2', marginBottom: 10 }}>All Tasks</Text>
+                    <ScrollView style={{ maxHeight: 400 }}>
+                      {filteredTasks.map((t, idx) => (
+                        <Text key={t.id} style={{ color: t.completed ? '#388e3c' : '#263238', fontSize: 15, marginBottom: 2 }}>
+                          {idx + 1}. {t.name} {t.completed ? '(Completed)' : ''}
+                        </Text>
+                      ))}
+                    </ScrollView>
+                    <TouchableOpacity style={{ marginTop: 16, alignSelf: 'center' }} onPress={() => setShowAllTasksModal(false)}>
+                      <Text style={{ color: '#c62828', fontWeight: 'bold', fontSize: 16 }}>Close</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Modal>
+              <Modal visible={showAllLateEmpsModal} animationType="slide" transparent onRequestClose={() => setShowAllLateEmpsModal(false)}>
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>
+                  <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 24, width: '90%', maxHeight: '90%' }}>
+                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#c62828', marginBottom: 10 }}>All Late Employees</Text>
+                    <ScrollView style={{ maxHeight: 400 }}>
+                      {getLateEmployeesByClockEvents(summaryDate).map((name, idx) => (
+                        <Text key={name} style={{ color: '#c62828', fontSize: 15, marginBottom: 2 }}>
+                          {idx + 1}. {name}
+                        </Text>
+                      ))}
+                    </ScrollView>
+                    <TouchableOpacity style={{ marginTop: 16, alignSelf: 'center' }} onPress={() => setShowAllLateEmpsModal(false)}>
+                      <Text style={{ color: '#c62828', fontWeight: 'bold', fontSize: 16 }}>Close</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Modal>
+              <Modal visible={showAllMaterialsModal} animationType="slide" transparent onRequestClose={() => setShowAllMaterialsModal(false)}>
+                <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>
+                  <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 24, width: '90%', maxHeight: '90%' }}>
+                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2', marginBottom: 10 }}>All Materials Used</Text>
+                    <ScrollView style={{ maxHeight: 400 }}>
+                      {materialsUsed.map((mat, idx) => (
+                        <Text key={mat} style={{ color: '#263238', fontSize: 15, marginBottom: 2 }}>
+                          {idx + 1}. {mat}
+                        </Text>
+                      ))}
+                    </ScrollView>
+                    <TouchableOpacity style={{ marginTop: 16, alignSelf: 'center' }} onPress={() => setShowAllMaterialsModal(false)}>
+                      <Text style={{ color: '#c62828', fontWeight: 'bold', fontSize: 16 }}>Close</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </Modal>
+              {/* Export Modal */}
+              {renderExportModal()}
+            </ScrollView>
+          )}
+          {/* Move Export button to bottom of Home tab */}
+          {tab === 'home' && (
+            <View style={{ position: 'absolute', bottom: 16, left: 0, right: 0, alignItems: 'center', zIndex: 10 }}>
+              <TouchableOpacity style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 14, minWidth: 160, alignItems: 'center', shadowColor: '#1976d2', shadowOpacity: 0.12, shadowRadius: 8, elevation: 2 }} onPress={openExportModal}>
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Export Data</Text>
               </TouchableOpacity>
             </View>
-            {/* Cards: Tasks, Late Employees, Materials Used, Best Performers */}
-            <View style={{ flexDirection: 'column', gap: 16 }}>
-              {/* Tasks Card */}
-              <TouchableOpacity
-                activeOpacity={canExpand ? 0.7 : 1}
-                onPress={() => canExpand && setShowAllTasksModal(true)}
-                style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
-              >
-                <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', marginBottom: 6 }}>Tasks</Text>
-                {limitLines(filteredTasks, 10).map((t, idx) => (
-                  <Text key={t.id} style={{ color: t.completed ? '#388e3c' : '#263238', fontSize: 15 }} numberOfLines={1} ellipsizeMode="tail">
-                    {idx + 1}. {t.name} {t.completed ? '(Completed)' : ''}
-                  </Text>
-                ))}
-                {filteredTasks.length > 10 && (
-                  <Text style={{ color: '#1976d2', fontWeight: 'bold', marginTop: 4 }}>+{filteredTasks.length - 10} more...</Text>
-                )}
-              </TouchableOpacity>
-              {/* Late Employees Card */}
-              <TouchableOpacity
-                activeOpacity={canExpand ? 0.7 : 1}
-                onPress={() => canExpand && setShowAllLateEmpsModal(true)}
-                style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
-              >
-                <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#c62828', marginBottom: 6 }}>Late Employees</Text>
-                {limitLines(getLateEmployeesByClockEvents(summaryDate), 10).map((name, idx) => (
-                  <Text key={name} style={{ color: '#c62828', fontSize: 15 }} numberOfLines={1} ellipsizeMode="tail">
-                    {idx + 1}. {name}
-                  </Text>
-                ))}
-                {getLateEmployeesByClockEvents(summaryDate).length > 10 && (
-                  <Text style={{ color: '#c62828', fontWeight: 'bold', marginTop: 4 }}>+{getLateEmployeesByClockEvents(summaryDate).length - 10} more...</Text>
-                )}
-              </TouchableOpacity>
-              {/* Materials Used Card */}
-              <TouchableOpacity
-                activeOpacity={canExpand ? 0.7 : 1}
-                onPress={() => canExpand && setShowAllMaterialsModal(true)}
-                style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
-              >
-                <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', marginBottom: 6 }}>Materials Used</Text>
-                {limitLines(materialsUsed, 10).map((mat, idx) => (
-                  <Text key={mat} style={{ color: '#263238', fontSize: 15 }} numberOfLines={1} ellipsizeMode="tail">
-                    {idx + 1}. {mat}
-                  </Text>
-                ))}
-                {materialsUsed.length > 10 && (
-                  <Text style={{ color: '#1976d2', fontWeight: 'bold', marginTop: 4 }}>+{materialsUsed.length - 10} more...</Text>
-                )}
-              </TouchableOpacity>
-              {/* Best Performers Card */}
-              <TouchableOpacity
-                activeOpacity={1}
-                style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
-              >
-                <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#388e3c', marginBottom: 6 }}>Best Performers</Text>
-                {getBestPerformers(employees, filterTasksByDate, summaryRange, summaryDate).map((emp, idx) => (
-                  <Text key={emp.id} style={{ color: '#388e3c', fontSize: 15 }} numberOfLines={1} ellipsizeMode="tail">
-                    {idx + 1}. {emp.name} ({emp.performanceScore || 0})
-                  </Text>
-                ))}
-                {getBestPerformers(employees, filterTasksByDate, summaryRange, summaryDate).length === 0 && (
-                  <Text style={{ color: '#888', fontSize: 15 }}>No data for this period.</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-            {/* Modals for week/month full lists */}
-            <Modal visible={showAllTasksModal} animationType="slide" transparent onRequestClose={() => setShowAllTasksModal(false)}>
-              <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>
-                <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 24, width: '90%', maxHeight: '90%' }}>
-                  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2', marginBottom: 10 }}>All Tasks</Text>
-                  <ScrollView style={{ maxHeight: 400 }}>
-                    {filteredTasks.map((t, idx) => (
-                      <Text key={t.id} style={{ color: t.completed ? '#388e3c' : '#263238', fontSize: 15, marginBottom: 2 }}>
-                        {idx + 1}. {t.name} {t.completed ? '(Completed)' : ''}
-                      </Text>
-                    ))}
-                  </ScrollView>
-                  <TouchableOpacity style={{ marginTop: 16, alignSelf: 'center' }} onPress={() => setShowAllTasksModal(false)}>
-                    <Text style={{ color: '#c62828', fontWeight: 'bold', fontSize: 16 }}>Close</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Modal>
-            <Modal visible={showAllLateEmpsModal} animationType="slide" transparent onRequestClose={() => setShowAllLateEmpsModal(false)}>
-              <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>
-                <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 24, width: '90%', maxHeight: '90%' }}>
-                  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#c62828', marginBottom: 10 }}>All Late Employees</Text>
-                  <ScrollView style={{ maxHeight: 400 }}>
-                    {getLateEmployeesByClockEvents(summaryDate).map((name, idx) => (
-                      <Text key={name} style={{ color: '#c62828', fontSize: 15, marginBottom: 2 }}>
-                        {idx + 1}. {name}
-                      </Text>
-                    ))}
-                  </ScrollView>
-                  <TouchableOpacity style={{ marginTop: 16, alignSelf: 'center' }} onPress={() => setShowAllLateEmpsModal(false)}>
-                    <Text style={{ color: '#c62828', fontWeight: 'bold', fontSize: 16 }}>Close</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Modal>
-            <Modal visible={showAllMaterialsModal} animationType="slide" transparent onRequestClose={() => setShowAllMaterialsModal(false)}>
-              <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>
-                <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 24, width: '90%', maxHeight: '90%' }}>
-                  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2', marginBottom: 10 }}>All Materials Used</Text>
-                  <ScrollView style={{ maxHeight: 400 }}>
-                    {materialsUsed.map((mat, idx) => (
-                      <Text key={mat} style={{ color: '#263238', fontSize: 15, marginBottom: 2 }}>
-                        {idx + 1}. {mat}
-                      </Text>
-                    ))}
-                  </ScrollView>
-                  <TouchableOpacity style={{ marginTop: 16, alignSelf: 'center' }} onPress={() => setShowAllMaterialsModal(false)}>
-                    <Text style={{ color: '#c62828', fontWeight: 'bold', fontSize: 16 }}>Close</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Modal>
-            {/* Export Modal */}
-            {renderExportModal()}
-          </ScrollView>
-        )}
-        {/* Move Export button to bottom of Home tab */}
-        {tab === 'home' && (
-          <View style={{ position: 'absolute', bottom: 16, left: 0, right: 0, alignItems: 'center', zIndex: 10 }}>
-            <TouchableOpacity style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 14, minWidth: 160, alignItems: 'center', shadowColor: '#1976d2', shadowOpacity: 0.12, shadowRadius: 8, elevation: 2 }} onPress={openExportModal}>
-              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Export Data</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-        {tab === 'employees' && renderEmployees()}
-        {tab === 'tasks' && renderTasks()}
-        {tab === 'materials' && renderMaterials()}
-        {tab === 'clock' && renderClockEvents()}
-        {tab === 'performance' && (
-          <View style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff', padding: 16 }}>
-            <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 16 }}>
-              <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2', marginBottom: 16 }}>
-                Performance Management
-              </Text>
-              
-              {/* Performance Settings */}
-              <View style={{ marginBottom: 20 }}>
-                <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 12 }}>
-                  Rating System Settings
+          )}
+          {tab === 'employees' && renderEmployees()}
+          {tab === 'tasks' && renderTasks()}
+          {tab === 'materials' && renderMaterials()}
+          {tab === 'clock' && renderClockEvents()}
+          {tab === 'performance' && (
+            <View style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff', padding: 16 }}>
+              <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 16 }}>
+                <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2', marginBottom: 16 }}>
+                  Performance Management
                 </Text>
                 
-                <View style={{ marginBottom: 12 }}>
-                  <TouchableOpacity
-                    style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}
-                    onPress={() => updatePerformanceSettings({
-                      ...performanceSettings,
-                      ratingSystemEnabled: !performanceSettings.ratingSystemEnabled
-                    })}
-                  >
-                    <FontAwesome5
-                      name={performanceSettings.ratingSystemEnabled ? 'toggle-on' : 'toggle-off'}
-                      size={20}
-                      color={performanceSettings.ratingSystemEnabled ? '#4CAF50' : '#ccc'}
-                      style={{ marginRight: 12 }}
-                    />
-                    <Text style={{ fontSize: 14, color: '#333' }}>
-                      Enable Task Rating System
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View style={{ marginBottom: 12 }}>
-                  <TouchableOpacity
-                    style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}
-                    onPress={() => updatePerformanceSettings({
-                      ...performanceSettings,
-                      autoRateCompletedTasks: !performanceSettings.autoRateCompletedTasks
-                    })}
-                  >
-                    <FontAwesome5
-                      name={performanceSettings.autoRateCompletedTasks ? 'toggle-on' : 'toggle-off'}
-                      size={20}
-                      color={performanceSettings.autoRateCompletedTasks ? '#4CAF50' : '#ccc'}
-                      style={{ marginRight: 12 }}
-                    />
-                    <Text style={{ fontSize: 14, color: '#333' }}>
-                      Auto-rate Completed Tasks
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View style={{ marginBottom: 12 }}>
-                  <Text style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>
-                    Default Rating for Auto-rated Tasks:
+                {/* Performance Settings */}
+                <View style={{ marginBottom: 20 }}>
+                  <Text style={{ fontSize: 16, fontWeight: '600', color: '#333', marginBottom: 12 }}>
+                    Rating System Settings
                   </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    {[1, 2, 3, 4, 5].map((rating) => (
-                      <TouchableOpacity
-                        key={rating}
-                        onPress={() => updatePerformanceSettings({
-                          ...performanceSettings,
-                          defaultRating: rating
-                        })}
-                        style={{ marginRight: 8 }}
-                      >
-                        <FontAwesome5
-                          name={performanceSettings.defaultRating >= rating ? 'star' : 'star-o'}
-                          size={20}
-                          color={performanceSettings.defaultRating >= rating ? '#FFD700' : '#ccc'}
-                        />
-                      </TouchableOpacity>
-                    ))}
-                    <Text style={{ marginLeft: 8, fontSize: 14, color: '#666' }}>
-                      ({performanceSettings.defaultRating}/5)
+                  
+                  <View style={{ marginBottom: 12 }}>
+                    <TouchableOpacity
+                      style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}
+                      onPress={() => updatePerformanceSettings({
+                        ...performanceSettings,
+                        ratingSystemEnabled: !performanceSettings.ratingSystemEnabled
+                      })}
+                    >
+                      <FontAwesome5
+                        name={performanceSettings.ratingSystemEnabled ? 'toggle-on' : 'toggle-off'}
+                        size={20}
+                        color={performanceSettings.ratingSystemEnabled ? '#4CAF50' : '#ccc'}
+                        style={{ marginRight: 12 }}
+                      />
+                      <Text style={{ fontSize: 14, color: '#333' }}>
+                        Enable Task Rating System
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={{ marginBottom: 12 }}>
+                    <TouchableOpacity
+                      style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, opacity: performanceSettingsLoading ? 0.5 : 1 }}
+                      onPress={() => !performanceSettingsLoading && updatePerformanceSettings({
+                        ...performanceSettings,
+                        autoRateCompletedTasks: !performanceSettings.autoRateCompletedTasks
+                      })}
+                      disabled={performanceSettingsLoading}
+                    >
+                      <FontAwesome5
+                        name={performanceSettings.autoRateCompletedTasks ? 'toggle-on' : 'toggle-off'}
+                        size={20}
+                        color={performanceSettings.autoRateCompletedTasks ? '#4CAF50' : '#ccc'}
+                        style={{ marginRight: 12 }}
+                      />
+                      <Text style={{ fontSize: 14, color: '#333' }}>
+                        Auto-rate Completed Tasks
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={{ marginBottom: 12 }}>
+                    <Text style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>
+                      Default Rating for Auto-rated Tasks:
                     </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      {[1, 2, 3, 4, 5].map((rating) => (
+                        <TouchableOpacity
+                          key={rating}
+                          onPress={() => updatePerformanceSettings({
+                            ...performanceSettings,
+                            defaultRating: rating
+                          })}
+                          style={{ marginRight: 8 }}
+                        >
+                          <FontAwesome5
+                            name={performanceSettings.defaultRating >= rating ? 'star' : 'star-o'}
+                            size={20}
+                            color={performanceSettings.defaultRating >= rating ? '#FFD700' : '#ccc'}
+                          />
+                        </TouchableOpacity>
+                      ))}
+                      <Text style={{ marginLeft: 8, fontSize: 14, color: '#666' }}>
+                        ({performanceSettings.defaultRating}/5)
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Action Buttons */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: '#1976d2',
+                      borderRadius: 8,
+                      paddingVertical: 12,
+                      paddingHorizontal: 20,
+                      flex: 1,
+                      marginRight: 8,
+                      alignItems: 'center'
+                    }}
+                    onPress={() => {
+                      calculatePerformanceMetrics();
+                      setShowPerformanceManagement(true);
+                    }}
+                  >
+                    <FontAwesome5 name="chart-line" size={16} color="#fff" style={{ marginRight: 8 }} />
+                    <Text style={{ color: '#fff', fontWeight: '600' }}>View Performance</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={{
+                      backgroundColor: '#4CAF50',
+                      borderRadius: 8,
+                      paddingVertical: 12,
+                      paddingHorizontal: 20,
+                      flex: 1,
+                      marginLeft: 8,
+                      alignItems: 'center'
+                    }}
+                    onPress={calculatePerformanceMetrics}
+                  >
+                    <FontAwesome5 name="sync-alt" size={16} color="#fff" style={{ marginRight: 8 }} />
+                    <Text style={{ color: '#fff', fontWeight: '600' }}>Recalculate</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Quick Stats */}
+              <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20 }}>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 16 }}>
+                  Quick Stats
+                </Text>
+                
+                <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
+                  <View style={{ alignItems: 'center' }}>
+                    <FontAwesome5 name="tasks" size={24} color="#1976d2" />
+                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2', marginTop: 4 }}>
+                      {tasks.filter(t => t.completed).length}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: '#666' }}>Completed</Text>
+                  </View>
+                  
+                  <View style={{ alignItems: 'center' }}>
+                    <FontAwesome5 name="star" size={24} color="#FFD700" />
+                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#FFD700', marginTop: 4 }}>
+                      {employees.length}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: '#666' }}>Employees</Text>
+                  </View>
+                  
+                  <View style={{ alignItems: 'center' }}>
+                    <FontAwesome5 name="chart-bar" size={24} color="#4CAF50" />
+                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#4CAF50', marginTop: 4 }}>
+                      {tasks.filter(t => !t.completed).length}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: '#666' }}>Pending</Text>
                   </View>
                 </View>
               </View>
-
-              {/* Action Buttons */}
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: '#1976d2',
-                    borderRadius: 8,
-                    paddingVertical: 12,
-                    paddingHorizontal: 20,
-                    flex: 1,
-                    marginRight: 8,
-                    alignItems: 'center'
-                  }}
-                  onPress={() => {
-                    calculatePerformanceMetrics();
-                    setShowPerformanceManagement(true);
-                  }}
-                >
-                  <FontAwesome5 name="chart-line" size={16} color="#fff" style={{ marginRight: 8 }} />
-                  <Text style={{ color: '#fff', fontWeight: '600' }}>View Performance</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={{
-                    backgroundColor: '#4CAF50',
-                    borderRadius: 8,
-                    paddingVertical: 12,
-                    paddingHorizontal: 20,
-                    flex: 1,
-                    marginLeft: 8,
-                    alignItems: 'center'
-                  }}
-                  onPress={calculatePerformanceMetrics}
-                >
-                  <FontAwesome5 name="sync-alt" size={16} color="#fff" style={{ marginRight: 8 }} />
-                  <Text style={{ color: '#fff', fontWeight: '600' }}>Recalculate</Text>
-                </TouchableOpacity>
-              </View>
             </View>
-
-            {/* Quick Stats */}
-            <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20 }}>
-              <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 16 }}>
-                Quick Stats
-              </Text>
-              
-              <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-                <View style={{ alignItems: 'center' }}>
-                  <FontAwesome5 name="tasks" size={24} color="#1976d2" />
-                  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2', marginTop: 4 }}>
-                    {tasks.filter(t => t.completed).length}
-                  </Text>
-                  <Text style={{ fontSize: 12, color: '#666' }}>Completed</Text>
-                </View>
-                
-                <View style={{ alignItems: 'center' }}>
-                  <FontAwesome5 name="star" size={24} color="#FFD700" />
-                  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#FFD700', marginTop: 4 }}>
-                    {employees.length}
-                  </Text>
-                  <Text style={{ fontSize: 12, color: '#666' }}>Employees</Text>
-                </View>
-                
-                <View style={{ alignItems: 'center' }}>
-                  <FontAwesome5 name="chart-bar" size={24} color="#4CAF50" />
-                  <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#4CAF50', marginTop: 4 }}>
-                    {tasks.filter(t => !t.completed).length}
-                  </Text>
-                  <Text style={{ fontSize: 12, color: '#666' }}>Pending</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-        )}
+          )}
+        </View>
       </View>
       {/* Logout button moved to settings modal */}
       {/* Settings Modal */}
@@ -2346,6 +2504,73 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
                 <TouchableOpacity style={styles.saveBtn} onPress={saveTimes}>
                   <Text style={styles.saveBtnText}>Save</Text>
                 </TouchableOpacity>
+              </View>
+              <View style={themedStyles.settingsCard}>
+                <Text style={themedStyles.settingsTitle}>Rating System</Text>
+                <View style={{ marginBottom: 12 }}>
+                  <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}
+                    onPress={() => updatePerformanceSettings({
+                      ...performanceSettings,
+                      ratingSystemEnabled: !performanceSettings.ratingSystemEnabled
+                    })}
+                  >
+                    <FontAwesome5
+                      name={performanceSettings.ratingSystemEnabled ? 'toggle-on' : 'toggle-off'}
+                      size={20}
+                      color={performanceSettings.ratingSystemEnabled ? '#4CAF50' : '#ccc'}
+                      style={{ marginRight: 12 }}
+                    />
+                    <Text style={{ fontSize: 14, color: '#333' }}>
+                      Enable Task Rating System
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={{ marginBottom: 12 }}>
+                  <TouchableOpacity
+                    style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}
+                    onPress={() => updatePerformanceSettings({
+                      ...performanceSettings,
+                      autoRateCompletedTasks: !performanceSettings.autoRateCompletedTasks
+                    })}
+                  >
+                    <FontAwesome5
+                      name={performanceSettings.autoRateCompletedTasks ? 'toggle-on' : 'toggle-off'}
+                      size={20}
+                      color={performanceSettings.autoRateCompletedTasks ? '#4CAF50' : '#ccc'}
+                      style={{ marginRight: 12 }}
+                    />
+                    <Text style={{ fontSize: 14, color: '#333' }}>
+                      Auto-rate Completed Tasks
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>
+                    Default Rating for Auto-rated Tasks:
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {[1, 2, 3, 4, 5].map((rating) => (
+                      <TouchableOpacity
+                        key={rating}
+                        onPress={() => updatePerformanceSettings({
+                          ...performanceSettings,
+                          defaultRating: rating
+                        })}
+                        style={{ marginRight: 8 }}
+                      >
+                        <FontAwesome5
+                          name={performanceSettings.defaultRating >= rating ? 'star' : 'star-o'}
+                          size={20}
+                          color={performanceSettings.defaultRating >= rating ? '#FFD700' : '#ccc'}
+                        />
+                      </TouchableOpacity>
+                    ))}
+                    <Text style={{ marginLeft: 8, fontSize: 14, color: '#666' }}>
+                      ({performanceSettings.defaultRating}/5)
+                    </Text>
+                  </View>
+                </View>
               </View>
               {/* Add more settings here as needed */}
             </ScrollView>
