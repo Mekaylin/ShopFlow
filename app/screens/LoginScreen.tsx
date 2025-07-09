@@ -10,6 +10,14 @@ type LoginScreenProps = {
   onTest?: () => void
 };
 
+// Add global flags for debounce (TypeScript global augmentation)
+declare global {
+  interface Window {
+    __userUpserted?: boolean;
+    __userFetched?: boolean;
+  }
+}
+
 export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -115,6 +123,15 @@ export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreen
     );
   }
 
+  // Debounce utility
+  function debounce(fn: Function, delay: number) {
+    let timer: ReturnType<typeof setTimeout>;
+    return (...args: any[]) => {
+      clearTimeout(timer);
+      timer = setTimeout(() => fn(...args), delay);
+    };
+  }
+
   const handleLogin = async () => {
     if (loginLocked) {
       Alert.alert('Too Many Attempts', `Please wait ${lockTimer} seconds before trying again.`);
@@ -169,30 +186,46 @@ export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreen
       // Upsert user into users table after login
       if (signInData?.user) {
         const { id, email, user_metadata } = signInData.user;
-        const { name = '', role = '' } = user_metadata || {};
-        const { error: upsertError } = await supabase
-          .from('users')
-          .upsert({ id, email, name, role }, { onConflict: 'id' });
-        if (upsertError) {
-          console.warn('User upsert error:', upsertError);
-        } else {
-          console.log('User upserted:', { id, email, name, role });
+        const { name = '', role = '', business_id = null } = user_metadata || {};
+        // Defensive: Only upsert if not already upserting (debounced)
+        if (!window.__userUpserted) {
+          window.__userUpserted = true;
+          debounce(async () => {
+            const { error: upsertError } = await supabase
+              .from('users')
+              .upsert({ id, email, name, role, business_id }, { onConflict: 'id' });
+            if (upsertError) {
+              console.warn('User upsert error:', upsertError);
+            } else {
+              console.log('User upserted:', { id, email, name, role, business_id });
+            }
+          }, 1000)();
         }
       }
-      // Fetch user role from users table (only once)
+      // Fetch user role from users table (only once, debounced)
       let userRole = null;
       if (signInData?.user) {
         const { id } = signInData.user;
-        const { data: users, error: userError } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', id)
-          .limit(1);
-        if (userError || !users || users.length === 0) {
-          console.warn('User fetch error or not found:', userError, users);
-          throw new Error('User not found or missing role. ' + (userError?.message || ''));
+        if (!window.__userFetched) {
+          window.__userFetched = true;
+          debounce(async () => {
+            const { data: users, error: userError } = await supabase
+              .from('users')
+              .select('role, business_id')
+              .eq('id', id)
+              .limit(1);
+            if (userError || !users || users.length === 0) {
+              console.warn('User fetch error or not found:', userError, users);
+              throw new Error('User not found or missing role. ' + (userError?.message || ''));
+            }
+            userRole = users[0].role;
+            // Defensive: Check business_id
+            if (!users[0].business_id) {
+              console.warn('User is missing business_id. Prompt user to set or select a business.');
+              // Optionally, prompt user to select/create business here
+            }
+          }, 1000)();
         }
-        userRole = users[0].role;
       }
       if (userRole !== 'admin' && userRole !== 'employee') {
         throw new Error('Invalid user role.');
@@ -230,6 +263,11 @@ export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreen
       Alert.alert('Login failed', message);
     } finally {
       setLoading(false);
+      // Reset debounce flags after a short delay
+      setTimeout(() => {
+        window.__userUpserted = false;
+        window.__userFetched = false;
+      }, 2000);
     }
   };
 

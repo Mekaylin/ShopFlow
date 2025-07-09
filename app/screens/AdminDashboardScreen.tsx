@@ -2095,6 +2095,12 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
     outputRange: ['0deg', '360deg'],
   });
 
+  // Defensive: Always check user and user.business_id before using
+  if (!user || !user.business_id) {
+    console.warn('AdminDashboard: user or user.business_id is missing', user);
+    return;
+  }
+
   return (
     <SafeAreaView style={[...themedStyles.container, { position: 'relative', flex: 1 }]}> {/* Ensure relative positioning for absolute children */}
       {initialLoading && (

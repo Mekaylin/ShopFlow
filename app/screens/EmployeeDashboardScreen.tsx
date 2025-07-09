@@ -92,7 +92,11 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
   // Fetch clock events for this employee
   useEffect(() => {
     async function fetchClockEvents() {
-      if (!employee?.id || !business?.id) return;
+      // Defensive: Always check employee and business, and their .id, before using
+      if (!employee || !employee.id || !business || !business.id) {
+        console.warn('EmployeeDashboard: employee or business or their id is missing', employee, business);
+        return;
+      }
       const { data, error } = await supabase
         .from('clock_events')
         .select('*')
@@ -371,7 +375,11 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
 
   // Handle clock in
   const handleClockIn = async () => {
-    if (!employee?.id || !business?.id) return;
+    // Defensive: Always check employee and business, and their .id, before using
+    if (!employee || !employee.id || !business || !business.id) {
+      console.warn('EmployeeDashboard: employee or business or their id is missing', employee, business);
+      return;
+    }
     const { data, error } = await supabase
       .from('clock_events')
       .insert({
@@ -390,7 +398,11 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
 
   // Handle clock out
   const handleClockOut = async () => {
-    if (!employee?.id || !business?.id) return;
+    // Defensive: Always check employee and business, and their .id, before using
+    if (!employee || !employee.id || !business || !business.id) {
+      console.warn('EmployeeDashboard: employee or business or their id is missing', employee, business);
+      return;
+    }
     // Find latest open event
     const openEvent = clockEvents.find(e => !e.clock_out);
     if (!openEvent) return;
