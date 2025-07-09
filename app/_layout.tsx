@@ -58,6 +58,17 @@ export default Sentry.wrap(function RootLayout() {
     restoreSession();
   }, [router]);
 
+  // Register service worker for PWA (web only)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js').catch(err => {
+          console.warn('Service worker registration failed:', err);
+        });
+      });
+    }
+  }, []);
+
   if (!loaded || restoring) {
     return (
       <>
