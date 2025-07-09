@@ -2250,8 +2250,8 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
                   ))}
                   {getBestPerformers(employees, filterTasksByDate, summaryRange, summaryDate).length === 0 && (
                     <Text style={{ color: '#888', fontSize: 15 }}>No data for this period.</Text>
-                  )}
-                </TouchableOpacity>
+                )}
+              </TouchableOpacity>
             </View>
             {/* Modals for week/month full lists */}
             <Modal visible={showAllTasksModal} animationType="slide" transparent onRequestClose={() => setShowAllTasksModal(false)}>

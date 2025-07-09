@@ -36,21 +36,29 @@ export default Sentry.wrap(function RootLayout() {
   }, [router]);
 
   useEffect(() => {
+    let didFetch = false;
     const restoreSession = async () => {
       const stored = await getSession('supabase-session');
-      if (stored) {
+      if (stored && !didFetch) {
+        didFetch = true;
         const session = JSON.parse(stored);
         await supabase.auth.setSession(session);
         // Fetch user role and redirect
-        const { data: users } = await supabase
+        const { data: users, error: userError } = await supabase
           .from('users')
           .select('role')
           .eq('id', session.user.id)
           .limit(1);
+        if (userError) {
+          console.warn('User fetch error during session restore:', userError);
+        }
         if (users && users.length > 0) {
           const role = users[0].role;
+          console.log('Session restore: user role =', role);
           if (role === 'admin') router.replace('/admin-dashboard');
           else if (role === 'employee') router.replace('/employee-dashboard');
+        } else {
+          console.warn('Session restore: user not found in users table.');
         }
       }
       setRestoring(false);
@@ -98,7 +106,7 @@ export default Sentry.wrap(function RootLayout() {
         <meta name="theme-color" content="#1976d2" />
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon.png" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </Head>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

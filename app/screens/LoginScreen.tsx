@@ -26,6 +26,8 @@ export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreen
   const router = useRouter();
   const [isEmployeeLogin, setIsEmployeeLogin] = useState(false);
   const [businessCode, setBusinessCode] = useState('');
+  const [signupCooldown, setSignupCooldown] = useState(0);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
     let timer: ReturnType<typeof setInterval>;
@@ -43,6 +45,20 @@ export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreen
     }
     return () => clearInterval(timer);
   }, [loginLocked, lockTimer]);
+
+  // Cooldown timer effect
+  useEffect(() => {
+    if (signupCooldown > 0) {
+      const timer = setTimeout(() => setSignupCooldown(signupCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [signupCooldown]);
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   if (showRegister) {
     return <RegistrationScreen onBack={() => setShowRegister(false)} />;
@@ -150,21 +166,39 @@ export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreen
         );
         return;
       }
-      // Fetch user role from users table
-      const { data: users, error: userError } = await supabase
-        .from('users')
-        .select('role')
-        .eq('email', email)
-        .limit(1);
-      if (userError || !users || users.length === 0) {
-        throw new Error('User not found or missing role. ' + (userError?.message || ''));
+      // Upsert user into users table after login
+      if (signInData?.user) {
+        const { id, email, user_metadata } = signInData.user;
+        const { name = '', role = '' } = user_metadata || {};
+        const { error: upsertError } = await supabase
+          .from('users')
+          .upsert({ id, email, name, role }, { onConflict: 'id' });
+        if (upsertError) {
+          console.warn('User upsert error:', upsertError);
+        } else {
+          console.log('User upserted:', { id, email, name, role });
+        }
       }
-      const role = users[0].role;
-      if (role !== 'admin' && role !== 'employee') {
+      // Fetch user role from users table (only once)
+      let userRole = null;
+      if (signInData?.user) {
+        const { id } = signInData.user;
+        const { data: users, error: userError } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', id)
+          .limit(1);
+        if (userError || !users || users.length === 0) {
+          console.warn('User fetch error or not found:', userError, users);
+          throw new Error('User not found or missing role. ' + (userError?.message || ''));
+        }
+        userRole = users[0].role;
+      }
+      if (userRole !== 'admin' && userRole !== 'employee') {
         throw new Error('Invalid user role.');
       }
       setLoginAttempts(0); // reset on success
-      onLogin(role);
+      onLogin(userRole);
       // Immediately redirect to root to trigger session check and dashboard redirect
       router.replace('/');
     } catch (e: unknown) {
@@ -333,6 +367,8 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong'>('weak');
   // Add state for generated business code
   const [generatedBusinessCode, setGeneratedBusinessCode] = useState('');
+  const [signupCooldown, setSignupCooldown] = useState(0);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   // Password strength checker
   function checkPasswordStrength(pw: string): 'weak' | 'medium' | 'strong' {
@@ -349,6 +385,20 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
   useEffect(() => {
     setPasswordStrength(checkPasswordStrength(password));
   }, [password]);
+
+  // Cooldown timer effect
+  useEffect(() => {
+    if (signupCooldown > 0) {
+      const timer = setTimeout(() => setSignupCooldown(signupCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [signupCooldown]);
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   // Helper to resolve business code (short code or UUID)
   async function resolveBusinessId(input: string) {
@@ -405,6 +455,10 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
       if (signUpError) {
         if (signUpError.message.toLowerCase().includes('already registered')) {
           throw new Error('This email is already registered. Please log in or use a different email.');
+        }
+        if (signUpError.message.toLowerCase().includes('rate limit exceeded')) {
+          setSignupCooldown(10); // Set cooldown for 10 seconds
+          throw new Error('Too many sign-up attempts. Please try again in a few seconds.');
         }
         throw new Error('Auth sign up failed: ' + signUpError.message + ' (full error: ' + JSON.stringify(signUpError) + ')');
       }
@@ -577,8 +631,17 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
             />
           </>
         )}
-        <TouchableOpacity style={styles.loginBtn} onPress={handleRegister} disabled={loading}>
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginBtnText}>Sign Up</Text>}
+        <TouchableOpacity style={styles.loginBtn} onPress={handleRegister} disabled={loading || signupCooldown > 0}>
+          {loading || signupCooldown > 0 ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <ActivityIndicator color="#fff" />
+              <Text style={{ color: '#fff', marginLeft: 8 }}>
+                {loading ? 'Signing Up...' : `Signing Up in ${signupCooldown}s`}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.loginBtnText}>Sign Up</Text>
+          )}
         </TouchableOpacity>
         <TouchableOpacity onPress={onBack} style={{ marginTop: 16 }}>
           <Text style={{ color: '#1976d2', textAlign: 'center', fontWeight: 'bold' }}>Back to Login</Text>
