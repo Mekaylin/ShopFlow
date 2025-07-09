@@ -23,7 +23,7 @@ export default Sentry.wrap(function RootLayout() {
         const session = JSON.parse(stored);
         await supabase.auth.setSession(session);
         // Fetch user role and redirect
-        const { data: users, error } = await supabase
+        const { data: users } = await supabase
           .from('users')
           .select('role')
           .eq('id', session.user.id)
@@ -37,7 +37,7 @@ export default Sentry.wrap(function RootLayout() {
       setRestoring(false);
     };
     restoreSession();
-  }, []);
+  }, [router]);
 
   if (!loaded || restoring) {
     return (

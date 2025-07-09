@@ -31,4 +31,59 @@ export const setSession = async (key, value) => {
   }
 };
 
+// Lookup business by code for employee login
+export async function getBusinessByCode(code) {
+  const { data, error } = await supabase
+    .from('businesses')
+    .select('*')
+    .eq('code', code)
+    .single();
+  if (error || !data) return null;
+  return data;
+}
+
+// Get business code by business_id
+export async function getBusinessCode(business_id) {
+  const { data, error } = await supabase
+    .from('businesses')
+    .select('code')
+    .eq('id', business_id)
+    .single();
+  if (error || !data) return null;
+  return data.code;
+}
+
+// Update business code by business_id
+export async function updateBusinessCode(business_id, code) {
+  const { data, error } = await supabase
+    .from('businesses')
+    .update({ code })
+    .eq('id', business_id)
+    .select('code')
+    .single();
+  if (error || !data) throw new Error(error.message);
+  return data.code;
+}
+
+// Generate a random business code (6 uppercase alphanumeric)
+export function generateBusinessCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+// Fetch employee code by employee_id
+export async function getEmployeeCode(employee_id) {
+  const { data, error } = await supabase
+    .from('employees')
+    .select('code')
+    .eq('id', employee_id)
+    .single();
+  if (error || !data) return null;
+  return data.code;
+}
+
 export { SecureStore, Sentry, supabase };

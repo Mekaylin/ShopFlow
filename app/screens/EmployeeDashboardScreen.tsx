@@ -3,7 +3,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Animated, FlatList, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { supabase } from '../../services/cloud.js';
+import { getEmployeeCode, supabase } from '../../services/cloud.js';
 
 // Work hours constants
 const workStart = '08:00';
@@ -78,6 +78,8 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
   // Animation state
   const [showWelcome, setShowWelcome] = useState(false);
   const welcomeAnim = useRef(new Animated.Value(0)).current;
+  // For clock in/out, use the employee's code from Supabase
+  const [codeLoading, setCodeLoading] = useState(false);
 
   // Check for biometric support on mount
   useEffect(() => {
@@ -173,13 +175,25 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
     setCodePromptVisible(false);
   };
 
-  // For clock in/out, use a shared code (e.g., 'emp123')
-  const handleCodeSubmit = () => {
-    if (enteredCode.trim() !== 'emp123') {
-      Alert.alert('Invalid Code', 'Please enter the correct code to clock in/out.');
-      return;
+  // For clock in/out, use the employee's code from Supabase
+  const handleCodeSubmit = async () => {
+    setCodeLoading(true);
+    try {
+      const code = await getEmployeeCode(employee?.id);
+      setCodeLoading(false);
+      if (!code) {
+        Alert.alert('Error', 'Could not fetch your clock-in code. Please contact your admin.');
+        return;
+      }
+      if (enteredCode.trim() !== code) {
+        Alert.alert('Invalid Code', 'Please enter the correct code to clock in/out.');
+        return;
+      }
+      handleClockAction();
+    } catch (err) {
+      setCodeLoading(false);
+      Alert.alert('Error', 'Failed to validate code. Please try again.');
     }
-    handleClockAction();
   };
 
   // Remove selectedEmployee modal and use full page view instead
@@ -516,20 +530,29 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
               secureTextEntry
               autoFocus
             />
-            {biometricSupported && biometricEnabled && (
-              <TouchableOpacity style={{ marginTop: 16, backgroundColor: '#1976d2', borderRadius: 8, padding: 12, alignItems: 'center' }} onPress={async () => { const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Authenticate with fingerprint' }); if (result.success) { setBiometricLoggedIn(true); Alert.alert('Success', 'Fingerprint authentication successful!'); handleClockAction(); } else { setBiometricLoggedIn(false); Alert.alert('Failed', 'Fingerprint authentication failed.'); } }}>
-                <FontAwesome5 name="fingerprint" size={28} color="#fff" style={{ marginBottom: 4 }} />
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Login with Fingerprint</Text>
-              </TouchableOpacity>
+            {codeLoading && (
+              <View style={{ marginTop: 16, alignItems: 'center' }}>
+                <Text style={{ color: '#888', fontSize: 16 }}>Loading code...</Text>
+              </View>
             )}
-            <View style={styles.codeBtnRow}>
-              <TouchableOpacity style={styles.codeBtn} onPress={() => setCodePromptVisible(false)}>
-                <Text style={styles.closeBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.codeBtn} onPress={handleCodeSubmit}>
-                <Text style={styles.closeBtnText}>Submit</Text>
-              </TouchableOpacity>
-            </View>
+            {!codeLoading && (
+              <>
+                {biometricSupported && biometricEnabled && (
+                  <TouchableOpacity style={{ marginTop: 16, backgroundColor: '#1976d2', borderRadius: 8, padding: 12, alignItems: 'center' }} onPress={async () => { const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Authenticate with fingerprint' }); if (result.success) { setBiometricLoggedIn(true); Alert.alert('Success', 'Fingerprint authentication successful!'); handleClockAction(); } else { setBiometricLoggedIn(false); Alert.alert('Failed', 'Fingerprint authentication failed.'); } }}>
+                    <FontAwesome5 name="fingerprint" size={28} color="#fff" style={{ marginBottom: 4 }} />
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Login with Fingerprint</Text>
+                  </TouchableOpacity>
+                )}
+                <View style={styles.codeBtnRow}>
+                  <TouchableOpacity style={styles.codeBtn} onPress={() => setCodePromptVisible(false)}>
+                    <Text style={styles.closeBtnText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.codeBtn} onPress={handleCodeSubmit}>
+                    <Text style={styles.closeBtnText}>Submit</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
           </View>
         </View>
       </Modal>

@@ -57,7 +57,7 @@ export default function Index() {
       setChecking(false);
     };
     checkSession();
-  }, []);
+  }, [router]);
 
   if (checking) return null;
   if (error) return <View style={{flex:1,justifyContent:'center',alignItems:'center'}}><Text>{error}</Text></View>;

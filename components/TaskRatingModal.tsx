@@ -23,6 +23,8 @@ export default function TaskRatingModal({
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(false);
+  // Add state for rating period
+  const [period, setPeriod] = useState<'task' | 'day' | 'week' | 'month'>('task');
 
   const handleRatingSubmit = async () => {
     if (rating === 0) {
@@ -40,21 +42,24 @@ export default function TaskRatingModal({
       const { error } = await supabase
         .from('task_ratings')
         .insert({
-          task_id: task.id,
+          task_id: period === 'task' ? task.id : null,
           employee_id: employee.id,
           admin_id: user.id,
           rating: rating,
           feedback: feedback.trim() || null,
-          business_id: business.id
+          business_id: business.id,
+          period_type: period, // new field
+          period_date: period === 'task' ? (task.completedAt || null) : new Date().toISOString(),
         });
 
       if (error) throw error;
 
-      Alert.alert('Success', 'Task rating submitted successfully!');
+      Alert.alert('Success', `Rating for ${period === 'task' ? 'task' : period} submitted successfully!`);
       onRatingSubmitted();
       onClose();
       setRating(0);
       setFeedback('');
+      setPeriod('task');
     } catch (error: any) {
       console.error('Rating submission error:', error);
       Alert.alert('Error', 'Failed to submit rating. Please try again.');
@@ -100,6 +105,28 @@ export default function TaskRatingModal({
             <Text style={styles.completionDate}>
               Completed: {task?.completedAt ? new Date(task.completedAt).toLocaleDateString() : 'N/A'}
             </Text>
+          </View>
+
+          {/* Add period selector UI above rating section */}
+          <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 12 }}>
+            {['task', 'day', 'week', 'month'].map(p => (
+              <TouchableOpacity
+                key={p}
+                style={{
+                  backgroundColor: period === p ? '#1976d2' : '#e3f2fd',
+                  borderRadius: 8,
+                  paddingVertical: 6,
+                  paddingHorizontal: 14,
+                  marginHorizontal: 4,
+                }}
+                onPress={() => setPeriod(p as any)}
+                disabled={loading}
+              >
+                <Text style={{ color: period === p ? '#fff' : '#1976d2', fontWeight: 'bold', fontSize: 15 }}>
+                  {p === 'task' ? 'Task' : p.charAt(0).toUpperCase() + p.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
           </View>
 
           <View style={styles.ratingSection}>

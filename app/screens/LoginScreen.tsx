@@ -2,7 +2,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { Sentry, supabase } from '../../services/cloud.js';
+import { getBusinessByCode, Sentry, supabase } from '../../services/cloud.js';
 
 type LoginScreenProps = {
   onLogin: (role: 'admin' | 'employee') => void,
@@ -24,6 +24,8 @@ export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreen
   const [loginLocked, setLoginLocked] = useState(false);
   const [lockTimer, setLockTimer] = useState(0);
   const router = useRouter();
+  const [isEmployeeLogin, setIsEmployeeLogin] = useState(false);
+  const [businessCode, setBusinessCode] = useState('');
 
   useEffect(() => {
     let timer: ReturnType<typeof setInterval>;
@@ -187,65 +189,121 @@ export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreen
     }
   };
 
+  // New: Employee login handler
+  const handleEmployeeLogin = async () => {
+    if (!businessCode) {
+      Alert.alert('Missing Code', 'Please enter your business code.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const business = await getBusinessByCode(businessCode.trim());
+      if (!business) {
+        throw new Error('Invalid business code. Please check with your admin.');
+      }
+      // Store business info in session (or context)
+      await setSession('employee-business', JSON.stringify(business));
+      onLogin('employee');
+      router.replace('/employee-dashboard');
+    } catch (e: any) {
+      Alert.alert('Login failed', e.message || 'Unknown error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <View style={styles.bg}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={styles.centered}>
           <Animated.View style={[styles.card, { transform: [{ translateX: shakeAnim }] }]}> 
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              placeholderTextColor="#b0b8c1"
-              returnKeyType="next"
-              editable={!loading}
-            />
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={[styles.input, { flex: 1, marginBottom: 0 }]}
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                placeholderTextColor="#b0b8c1"
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={handleLogin}
-                editable={!loading}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword((v) => !v)}
-                style={styles.eyeBtn}
-                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-              >
-                <FontAwesome5 name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#1976d2" />
+            {/* Toggle between admin and employee login */}
+            <View style={{ flexDirection: 'row', marginBottom: 16, justifyContent: 'center' }}>
+              <TouchableOpacity onPress={() => setIsEmployeeLogin(false)} style={{ marginRight: 16 }}>
+                <Text style={{ color: !isEmployeeLogin ? '#1976d2' : '#888', fontWeight: !isEmployeeLogin ? 'bold' : 'normal', fontSize: 16 }}>Admin Login</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setIsEmployeeLogin(true)}>
+                <Text style={{ color: isEmployeeLogin ? '#1976d2' : '#888', fontWeight: isEmployeeLogin ? 'bold' : 'normal', fontSize: 16 }}>Employee Login</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} disabled={loading}>
-              <Text style={styles.loginBtnText}>{loading ? 'Logging in...' : 'Login'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowRegister(true)} style={{ marginTop: 16 }}>
-              <Text style={{ color: '#1976d2', textAlign: 'center', fontWeight: 'bold' }}>Don&apos;t have an account? Sign Up</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setShowReset(true)} style={{ marginTop: 12 }}>
-              <Text style={{ color: '#1976d2', textAlign: 'center' }}>Forgot Password?</Text>
-            </TouchableOpacity>
-            {onTest && (
-              <TouchableOpacity onPress={onTest} style={{ marginTop: 24 }}>
-                <Text style={{ color: '#1976d2', textAlign: 'center' }}>Test Supabase Connection</Text>
-              </TouchableOpacity>
+            {!isEmployeeLogin ? (
+              // Admin login UI (unchanged)
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  placeholderTextColor="#b0b8c1"
+                  returnKeyType="next"
+                  editable={!loading}
+                />
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                    placeholder="Password"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    placeholderTextColor="#b0b8c1"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    returnKeyType="done"
+                    onSubmitEditing={handleLogin}
+                    editable={!loading}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword((v) => !v)}
+                    style={styles.eyeBtn}
+                    accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    <FontAwesome5 name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#1976d2" />
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} disabled={loading}>
+                  <Text style={styles.loginBtnText}>{loading ? 'Logging in...' : 'Login'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowRegister(true)} style={{ marginTop: 16 }}>
+                  <Text style={{ color: '#1976d2', textAlign: 'center', fontWeight: 'bold' }}>Don&apos;t have an account? Sign Up</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowReset(true)} style={{ marginTop: 12 }}>
+                  <Text style={{ color: '#1976d2', textAlign: 'center' }}>Forgot Password?</Text>
+                </TouchableOpacity>
+                {onTest && (
+                  <TouchableOpacity onPress={onTest} style={{ marginTop: 24 }}>
+                    <Text style={{ color: '#1976d2', textAlign: 'center' }}>Test Supabase Connection</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={{ marginTop: 24, backgroundColor: '#c62828', borderRadius: 8, padding: 12, alignItems: 'center' }}
+                  onPress={() => Sentry.captureException(new Error('Sentry test error from LoginScreen'))}
+                >
+                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Send Sentry Test Error</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              // Employee login UI (business code only)
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Business Code"
+                  value={businessCode}
+                  onChangeText={setBusinessCode}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  placeholderTextColor="#b0b8c1"
+                  returnKeyType="done"
+                  editable={!loading}
+                  onSubmitEditing={handleEmployeeLogin}
+                />
+                <TouchableOpacity style={styles.loginBtn} onPress={handleEmployeeLogin} disabled={loading}>
+                  <Text style={styles.loginBtnText}>{loading ? 'Logging in...' : 'Login'}</Text>
+                </TouchableOpacity>
+              </>
             )}
-            <TouchableOpacity
-              style={{ marginTop: 24, backgroundColor: '#c62828', borderRadius: 8, padding: 12, alignItems: 'center' }}
-              onPress={() => Sentry.captureException(new Error('Sentry test error from LoginScreen'))}
-            >
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Send Sentry Test Error</Text>
-            </TouchableOpacity>
           </Animated.View>
         </View>
       </KeyboardAvoidingView>
@@ -263,6 +321,8 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
   const [businessCode, setBusinessCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong'>('weak');
+  // Add state for generated business code
+  const [generatedBusinessCode, setGeneratedBusinessCode] = useState('');
 
   // Password strength checker
   function checkPasswordStrength(pw: string): 'weak' | 'medium' | 'strong' {
@@ -353,20 +413,20 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
 
       // Step 3: Now handle business creation/assignment based on role
       if (role === 'admin') {
-        // Create new business (user is now authenticated, so RLS won't block)
+        // Create new business with code
         const { data: business, error: businessError } = await supabase
           .from('businesses')
-          .insert({ name: businessName })
-          .select('id')
+          .insert({ name: businessName, code: businessCode })
+          .select('id,code')
           .single();
-        console.log('Business insert result:', { business, businessError });
         if (businessError || !business) {
           if (businessError?.message?.toLowerCase().includes('duplicate')) {
-            throw new Error('This business name is already in use. Please choose a different name.');
+            throw new Error('This business name or code is already in use. Please choose a different one.');
           }
           throw new Error('Failed to create business: ' + (businessError?.message || 'Unknown error'));
         }
         business_id = business.id;
+        setGeneratedBusinessCode(business.code);
       } else {
         // Employee: resolve business by code or UUID
         business_id = await resolveBusinessId(businessCode);
@@ -465,22 +525,47 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
               passwordStrength === 'medium' ? 'Medium password' : 'Weak password'}
           </Text>
         </View>
-        {role === 'admin' ? (
-          <TextInput
-            style={styles.input}
-            placeholder="Business Name"
-            value={businessName}
-            onChangeText={setBusinessName}
-            editable={!loading}
-          />
-        ) : (
-          <TextInput
-            style={styles.input}
-            placeholder="Business Code (ask your admin)"
-            value={businessCode}
-            onChangeText={setBusinessCode}
-            editable={!loading}
-          />
+        {role === 'admin' && (
+          <>
+            <Text style={styles.inputLabel}>Business Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Business Name"
+              value={businessName}
+              onChangeText={setBusinessName}
+              autoCapitalize="words"
+              editable={!loading}
+            />
+            <Text style={styles.inputLabel}>Business Code (share with employees)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Create a business code (e.g. SCC123)"
+              value={businessCode}
+              onChangeText={setBusinessCode}
+              autoCapitalize="characters"
+              editable={!loading}
+              maxLength={12}
+            />
+            {generatedBusinessCode ? (
+              <Text style={{ color: '#388e3c', fontWeight: 'bold', marginTop: 8 }}>
+                Business code created: {generatedBusinessCode}
+              </Text>
+            ) : null}
+          </>
+        )}
+        {role === 'employee' && (
+          <>
+            <Text style={styles.inputLabel}>Business Code</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter your business code"
+              value={businessCode}
+              onChangeText={setBusinessCode}
+              autoCapitalize="characters"
+              editable={!loading}
+              maxLength={12}
+            />
+          </>
         )}
         <TouchableOpacity style={styles.loginBtn} onPress={handleRegister} disabled={loading}>
           {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginBtnText}>Sign Up</Text>}
@@ -584,5 +669,12 @@ const styles = StyleSheet.create({
   },
   roleBtnActive: {
     backgroundColor: '#1976d2',
+  },
+  inputLabel: {
+    fontSize: 16,
+    color: '#555',
+    marginBottom: 4,
+    alignSelf: 'flex-start',
+    marginLeft: 10,
   },
 });

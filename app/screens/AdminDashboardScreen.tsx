@@ -3,11 +3,11 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as FileSystem from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
 import * as Sharing from 'expo-sharing';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, FlatList, Image, Modal, Platform, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import PerformanceManagement from '../../components/PerformanceManagement';
 import TaskRatingModal from '../../components/TaskRatingModal';
-import { supabase } from '../../services/cloud.js';
+import { generateBusinessCode, getBusinessCode, supabase, updateBusinessCode } from '../../services/cloud.js';
 
 // Types
 interface Task {
@@ -63,6 +63,238 @@ function minutesLate(deadline: string): number {
   const deadlineDate = parseTimeToDate(deadline);
   return Math.floor((now.getTime() - deadlineDate.getTime()) / 60000);
 }
+
+// Move getBestPerformers above the component
+function getBestPerformers(
+  employees: Employee[],
+  filterTasksByDate: (range: 'day' | 'week' | 'month', refDate: Date) => Task[],
+  range: 'day' | 'week' | 'month',
+  refDate: Date
+): (Employee & { performanceScore: number })[] {
+  // Example: sort employees by completed tasks in period, fallback to 0
+  const filteredTasks = filterTasksByDate(range, refDate);
+  const scores: { [id: string]: number } = {};
+  filteredTasks.forEach((t: Task) => {
+    if (t.completed && t.assignedTo) {
+      scores[t.assignedTo] = (scores[t.assignedTo] || 0) + 1;
+    }
+  });
+  return employees
+    .map((e: Employee) => ({ ...e, performanceScore: scores[e.id] || 0 }))
+    .sort((a, b) => b.performanceScore - a.performanceScore)
+    .slice(0, 5);
+}
+
+const styles = StyleSheet.create({
+  addBtn: {
+    backgroundColor: '#1976d2',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 4,
+  },
+  addBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  addEmployeeInputsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#b3c0e0',
+    borderRadius: 8,
+    padding: 10,
+    fontSize: 16,
+    backgroundColor: '#fff',
+    marginBottom: 8,
+    flex: 1,
+  },
+  closeBtn: {
+    backgroundColor: '#c62828',
+    borderRadius: 8,
+    padding: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 4,
+  },
+  closeBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  saveBtn: {
+    backgroundColor: '#388e3c',
+    borderRadius: 8,
+    padding: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 4,
+  },
+  saveBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1976d2',
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  addEmployeeTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1976d2',
+    marginBottom: 8,
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#f5faff',
+    padding: 16,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1976d2',
+  },
+  logoutBtn: {
+    backgroundColor: '#c62828',
+    borderRadius: 8,
+    padding: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 4,
+  },
+  logoutBtnText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 24,
+    width: '90%',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#1976d2',
+    marginBottom: 16,
+  },
+  settingsCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#1976d2',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  addEmployeeCard: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 16,
+    marginVertical: 8,
+    shadowColor: '#1976d2',
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  inputLarge: {
+    borderWidth: 1,
+    borderColor: '#b3c0e0',
+    borderRadius: 8,
+    padding: 14,
+    fontSize: 18,
+    backgroundColor: '#fff',
+    marginBottom: 8,
+    flex: 1,
+  },
+  dropdownContainer: {
+    flexDirection: 'column',
+    marginBottom: 8,
+  },
+  dropdownLabel: {
+    fontSize: 14,
+    color: '#1976d2',
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: '#b3c0e0',
+    borderRadius: 8,
+    padding: 10,
+    backgroundColor: '#e3f2fd',
+    marginBottom: 4,
+  },
+  dropdownText: {
+    fontSize: 16,
+    color: '#1976d2',
+  },
+  settingsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1976d2',
+    marginBottom: 8,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#1976d2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  checkboxChecked: {
+    backgroundColor: '#1976d2',
+    borderRadius: 4,
+    width: 14,
+    height: 14,
+    alignSelf: 'center',
+  },
+  timeInput: {
+    borderWidth: 1,
+    borderColor: '#b3c0e0',
+    borderRadius: 8,
+    padding: 8,
+    fontSize: 16,
+    backgroundColor: '#fff',
+    marginBottom: 8,
+    width: 80,
+    textAlign: 'center',
+  },
+  timeLabel: {
+    fontSize: 14,
+    color: '#1976d2',
+    fontWeight: 'bold',
+    marginRight: 8,
+  },
+  // ...add any other referenced style keys as needed...
+});
 
 function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: any }) {
   // --- IMPORTS (assume at top, not shown in snippet) ---
@@ -131,7 +363,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
       const task = tasks.find(t => t.id === id);
       return task && !task.completed && minutesLate(task.deadline) >= lateThreshold;
     }));
-  }, [tasks, tab, lateThreshold]);
+  }, [tasks, tab, lateThreshold, lateTaskNotifiedIds]);
   const [editEmployee, setEditEmployee] = useState<Employee | null>(null);
   const [newEmployeeName, setNewEmployeeName] = useState('');
   const [newEmployeeCode, setNewEmployeeCode] = useState('');
@@ -140,7 +372,6 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   const [newEmployeePhotoUri, setNewEmployeePhotoUri] = useState<string | undefined>(undefined);
   const [newEmployeeDepartment, setNewEmployeeDepartment] = useState('');
   // Task state
-  const [editTask, setEditTask] = useState<Task | null>(null);
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskStart, setNewTaskStart] = useState('');
   const [newTaskDeadline, setNewTaskDeadline] = useState('');
@@ -157,7 +388,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   const [newMaterialTypeLabel, setNewMaterialTypeLabel] = useState('');
   const [selectedMaterialIdForType, setSelectedMaterialIdForType] = useState<string | null>(null);
   // Modal for viewing employee's tasks
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  // const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   // Working hours/lunch settings
   const [workStart, setWorkStart] = useState('08:00');
   const [workEnd, setWorkEnd] = useState('17:00');
@@ -276,57 +507,57 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
     fetchTasks();
   }, [user?.business_id]);
 
-  const handleAddTask = async () => {
-    if (!newTaskName || !newTaskStart || !newTaskDeadline || !selectedTaskEmployee) return;
-    const { data, error } = await supabase
-      .from('tasks')
-      .insert({
-        name: newTaskName,
-        assignedTo: selectedTaskEmployee.id,
-        business_id: user.business_id,
-        start: newTaskStart,
-        deadline: newTaskDeadline,
-        completed: false,
-        completedAt: null,
-        materialsUsed: [],
-      })
-      .select('*')
-      .single();
-    if (!error && data) setTasks([...tasks, data]);
-    setNewTaskName('');
-    setNewTaskStart('');
-    setNewTaskDeadline('');
-    setSelectedTaskEmployee(null);
-  };
+  // const handleAddTask = async () => {
+  //   if (!newTaskName || !newTaskStart || !newTaskDeadline || !selectedTaskEmployee) return;
+  //   const { data, error } = await supabase
+  //     .from('tasks')
+  //     .insert({
+  //       name: newTaskName,
+  //       assignedTo: selectedTaskEmployee.id,
+  //       business_id: user.business_id,
+  //       start: newTaskStart,
+  //       deadline: newTaskDeadline,
+  //       completed: false,
+  //       completedAt: null,
+  //       materialsUsed: [],
+  //     })
+  //     .select('*')
+  //     .single();
+  //   if (!error && data) setTasks([...tasks, data]);
+  //   setNewTaskName('');
+  //   setNewTaskStart('');
+  //   setNewTaskDeadline('');
+  //   setSelectedTaskEmployee(null);
+  // };
 
-  const handleEditTask = async () => {
-    if (!editTask) return;
-    const { data, error } = await supabase
-      .from('tasks')
-      .update({
-        name: newTaskName,
-        assignedTo: newEmployeeCode, // assuming newEmployeeCode is employee id
-        start: newTaskStart,
-        deadline: newTaskDeadline,
-      })
-      .eq('id', editTask.id)
-      .select('*')
-      .single();
-    if (!error && data) setTasks(tasks.map(t => t.id === editTask.id ? data : t));
-    setEditTask(null);
-    setNewTaskName('');
-    setNewTaskStart('');
-    setNewTaskDeadline('');
-    setNewEmployeeCode('');
-  };
+  // const handleEditTask = async () => {
+  //   if (!editTask) return;
+  //   const { data, error } = await supabase
+  //     .from('tasks')
+  //     .update({
+  //       name: newTaskName,
+  //       assignedTo: newEmployeeCode, // assuming newEmployeeCode is employee id
+  //       start: newTaskStart,
+  //       deadline: newTaskDeadline,
+  //     })
+  //     .eq('id', editTask.id)
+  //     .select('*')
+  //     .single();
+  //   if (!error && data) setTasks(tasks.map(t => t.id === editTask.id ? data : t));
+  //   setEditTask(null);
+  //   setNewTaskName('');
+  //   setNewTaskStart('');
+  //   setNewTaskDeadline('');
+  //   setNewEmployeeCode('');
+  // };
 
-  const handleDeleteTask = async (id: string) => {
-    const { error } = await supabase
-      .from('tasks')
-      .delete()
-      .eq('id', id);
-    if (!error) setTasks(tasks.filter(t => t.id !== id));
-  };
+  // const handleDeleteTask = async (id: string) => {
+  //   const { error } = await supabase
+  //     .from('tasks')
+  //     .delete()
+  //     .eq('id', id);
+  //   if (!error) setTasks(tasks.filter(t => t.id !== id));
+  // };
 
   // Material CRUD
   useEffect(() => {
@@ -506,11 +737,11 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
 
   // View employee's tasks
   const openEmployeeTasks = (employee: Employee) => {
-    setSelectedEmployee(employee);
+    // setSelectedEmployee(employee);
   };
-  const closeEmployeeTasks = () => {
-    setSelectedEmployee(null);
-  };
+  // const closeEmployeeTasks = () => {
+  //   setSelectedEmployee(null);
+  // };
 
   // Mark task complete from employee modal
   const handleCompleteTask = (taskId: string) => {
@@ -565,13 +796,11 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   }
 
   // Helper: filter tasks by date (today, week, month)
-  function filterTasksByDate(range: 'day' | 'week' | 'month', refDate: Date) {
+  const filterTasksByDate = useCallback((range: 'day' | 'week' | 'month', refDate: Date) => {
     if (!tasks.length) return [];
     const today = new Date(refDate);
     return tasks.filter(task => {
       if (!task.start) return false;
-      // Assume task.start is in HH:MM and task has a createdAt or fallback to today
-      // For demo, use completedAt or fallback to today
       let date = task.completedAt ? new Date(task.completedAt) : today;
       if (range === 'day') {
         return getDateString(date) === getDateString(today);
@@ -586,7 +815,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
       }
       return false;
     });
-  }
+  }, [tasks]);
 
   // Helper: filter materials used by date
   function getMaterialsUsed(range: 'day' | 'week' | 'month', refDate: Date) {
@@ -607,12 +836,27 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   }
 
   // Helper: get late employees (arrived after workStart)
-  function getLateEmployees(refDate: Date) {
-    // For demo, randomly pick employees as late
-    // In real app, would compare clock-in time to workStart
-    if (!employees.length) return [];
-    const late = employees.filter((e, i) => i % 3 === 0); // 1/3 late for demo
-    return late.map(e => e.name);
+  function getLateEmployeesByClockEvents(date: Date): string[] {
+    const workStartTime = workStart || '08:00';
+    const lateList: string[] = [];
+    employees.forEach(emp => {
+      const events = clockEventsByEmployee[emp.id] || [];
+      // Find first clock_in for this day
+      const event = events.find(ev => {
+        const d = new Date(ev.clock_in);
+        return d.toDateString() === date.toDateString();
+      });
+      if (event) {
+        const clockIn = new Date(event.clock_in);
+        const [h, m] = workStartTime.split(':').map(Number);
+        const workStartDate = new Date(clockIn);
+        workStartDate.setHours(h, m, 0, 0);
+        if (clockIn > workStartDate) {
+          lateList.push(emp.name);
+        }
+      }
+    });
+    return lateList;
   }
 
   // Home tab state
@@ -642,7 +886,38 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   // For week/month, show modal with all data when card is pressed
   const canExpand = summaryRange === 'week' || summaryRange === 'month';
 
-  // Export logic
+  // Fix export and calendar logic
+  // 1. When opening the export modal from the home tab, default exportStartDate/exportEndDate to summaryDate (for day), week range, or month range
+  // 2. When exporting, filter by the selected range and date, not just completedAt
+  // 3. Add comments for clarity
+
+  // Helper to get start/end for week/month
+  function getRangeDates(range: 'day' | 'week' | 'month', refDate: Date) {
+    if (range === 'day') {
+      return { start: new Date(refDate), end: new Date(refDate) };
+    } else if (range === 'week') {
+      const weekStart = new Date(refDate);
+      weekStart.setDate(refDate.getDate() - refDate.getDay());
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+      return { start: weekStart, end: weekEnd };
+    } else if (range === 'month') {
+      const monthStart = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+      const monthEnd = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 0);
+      return { start: monthStart, end: monthEnd };
+    }
+    return { start: new Date(refDate), end: new Date(refDate) };
+  }
+
+  // When opening export modal, set exportStartDate/exportEndDate to match summaryRange/summaryDate
+  const openExportModal = () => {
+    const { start, end } = getRangeDates(summaryRange, summaryDate);
+    setExportStartDate(start);
+    setExportEndDate(end);
+    setExportModalVisible(true);
+  };
+
+  // In export logic, filter by exportStartDate/exportEndDate for all types
   const handleExport = async () => {
     let data = '';
     let filename = '';
@@ -679,7 +954,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
     if (exportType === 'attendance' || exportType === 'all') {
       data += '\nEmployee Name,Clock In,Clock Out\n';
       employees.forEach(emp => {
-        const events = (clockEvents || []).filter(ev => ev.employee_id === emp.id);
+        const events = (clockEvents || []).filter(ev => ev.employee_id === emp.id && inRange(new Date(ev.clock_in)));
         events.forEach(ev => {
           const clockIn = ev.clock_in ? new Date(ev.clock_in).toLocaleString() : '';
           const clockOut = ev.clock_out ? new Date(ev.clock_out).toLocaleString() : '';
@@ -694,6 +969,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
     await Sharing.shareAsync(fileUri);
     setExportModalVisible(false);
   };
+
   // Export Modal
   const renderExportModal = () => (
     <Modal visible={exportModalVisible} animationType="slide" transparent onRequestClose={() => setExportModalVisible(false)}>
@@ -919,13 +1195,13 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
     }
   };
 
-  const handleDeleteTaskForEmployee = async (taskId: string) => {
-    const { error } = await supabase
-      .from('tasks')
-      .delete()
-      .eq('id', taskId);
-    if (!error) setTasks(tasks.filter(t => t.id !== taskId));
-  };
+  // const handleDeleteTaskForEmployee = async (taskId: string) => {
+  //   const { error } = await supabase
+  //     .from('tasks')
+  //     .delete()
+  //     .eq('id', taskId);
+  //   if (!error) setTasks(tasks.filter(t => t.id !== taskId));
+  // };
 
   // --- Add material to new task ---
   const handleAddMaterialToTask = () => {
@@ -946,19 +1222,13 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
 
   // Redesigned Tasks page: FlatList-based, no nested ScrollView/FlatList
   const renderTasks = () => {
-    // Header: title, cog, and "View Tasks by Employee" section
+    // Header: title only (no cog/settings)
     const ListHeaderComponent = (
       <>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <Text style={styles.sectionTitle}>Tasks</Text>
-          <TouchableOpacity onPress={() => {
-            setSelectedTaskEmployee(null);
-            setSettingsVisible(true);
-          }} style={{ padding: 6 }}>
-            <FontAwesome5 name="cog" size={24} color="#1976d2" />
-          </TouchableOpacity>
         </View>
-                {/* Removed 'View Tasks by Employee' heading and box */}
+        {/* Removed redundant settings button */}
         {!selectedTaskEmployee ? null : (
           <>
             <Text style={[styles.addEmployeeTitle, { marginBottom: 8 }]}>Tasks for {selectedTaskEmployee.name}</Text>
@@ -1162,7 +1432,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
                   <Text style={{ color: '#fff', fontWeight: 'bold' }}>Mark Complete</Text>
                 </TouchableOpacity>
               )}
-              <TouchableOpacity style={{ backgroundColor: '#c62828', borderRadius: 8, padding: 8 }} onPress={() => handleDeleteTaskForEmployee(item.id)}>
+              <TouchableOpacity style={{ backgroundColor: '#c62828', borderRadius: 8, padding: 8 }} onPress={() => handleDeleteEmployee(item.id)}>
                 <Text style={{ color: '#fff', fontWeight: 'bold' }}>Delete</Text>
               </TouchableOpacity>
             </View>
@@ -1208,6 +1478,170 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
           contentContainerStyle={{ paddingBottom: 32, paddingHorizontal: 8 }}
           keyboardShouldPersistTaps="handled"
         />
+        <TouchableOpacity
+          style={{
+            position: 'absolute',
+            bottom: 24,
+            right: 24,
+            backgroundColor: '#1976d2',
+            borderRadius: 32,
+            width: 56,
+            height: 56,
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: '#1976d2',
+            shadowOpacity: 0.18,
+            shadowRadius: 8,
+            elevation: 4,
+            zIndex: 100,
+          }}
+          onPress={() => setShowAddTaskModal(true)}
+          accessibilityLabel="Add Task"
+        >
+          <FontAwesome5 name="plus" size={28} color="#fff" />
+        </TouchableOpacity>
+        {/* Add Task Modal */}
+        <Modal visible={showAddTaskModal} transparent animationType="slide" onRequestClose={() => setShowAddTaskModal(false)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>
+            <View style={{ backgroundColor: '#fff', borderRadius: 14, padding: 24, width: '90%' }}>
+              {!addTaskEmployee ? (
+                <>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1976d2', marginBottom: 12 }}>Select Employee</Text>
+                  <FlatList
+                    data={employees}
+                    keyExtractor={item => item.id}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' }}
+                        onPress={() => setAddTaskEmployee(item)}
+                      >
+                        <Text style={{ fontSize: 16 }}>{item.name}</Text>
+                      </TouchableOpacity>
+                    )}
+                  />
+                  <TouchableOpacity style={styles.closeBtn} onPress={() => setShowAddTaskModal(false)}>
+                    <Text style={styles.closeBtnText}>Cancel</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1976d2', marginBottom: 12 }}>Add Task for {addTaskEmployee.name}</Text>
+                  <TextInput style={styles.input} placeholder="Task Title" value={newTaskName} onChangeText={setNewTaskName} />
+                  <TextInput style={styles.input} placeholder="Start Time (e.g. 09:00)" value={newTaskStart} onChangeText={setNewTaskStart} />
+                  <TextInput style={styles.input} placeholder="Deadline (e.g. 17:00)" value={newTaskDeadline} onChangeText={setNewTaskDeadline} />
+                  {/* Materials selection (reuse existing logic) */}
+                  <View style={{ marginTop: 12, marginBottom: 12, backgroundColor: '#f5faff', borderRadius: 10, padding: 10 }}>
+                    <Text style={{ fontWeight: 'bold', color: '#1976d2', marginBottom: 4 }}>Add Materials Used</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                      <Text style={{ marginRight: 6 }}>Material:</Text>
+                      <View style={{ flex: 1 }}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                          {materials.map(mat => (
+                            <TouchableOpacity
+                              key={mat.id}
+                              style={{
+                                backgroundColor: selectedMaterialForTask === mat.id ? '#1976d2' : '#e3f2fd',
+                                borderRadius: 8,
+                                padding: 6,
+                                marginRight: 6,
+                              }}
+                              onPress={() => {
+                                setSelectedMaterialForTask(mat.id);
+                                setSelectedMaterialTypeForTask('');
+                              }}
+                            >
+                              <Text style={{ color: selectedMaterialForTask === mat.id ? '#fff' : '#1976d2' }}>{mat.name}</Text>
+                            </TouchableOpacity>
+                          ))}
+                        </ScrollView>
+                      </View>
+                    </View>
+                    {selectedMaterialForTask && (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                        <Text style={{ marginRight: 6 }}>Type:</Text>
+                        <View style={{ flex: 1 }}>
+                          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                            {(materialTypes[selectedMaterialForTask] || []).map(type => (
+                              <TouchableOpacity
+                                key={type.id}
+                                style={{
+                                  backgroundColor: selectedMaterialTypeForTask === type.id ? '#1976d2' : '#e3f2fd',
+                                  borderRadius: 8,
+                                  padding: 6,
+                                  marginRight: 6,
+                                }}
+                                onPress={() => setSelectedMaterialTypeForTask(type.id)}
+                              >
+                                <Text style={{ color: selectedMaterialTypeForTask === type.id ? '#fff' : '#1976d2' }}>{type.label}</Text>
+                              </TouchableOpacity>
+                            ))}
+                          </ScrollView>
+                        </View>
+                      </View>
+                    )}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                      <Text style={{ marginRight: 6 }}>Quantity:</Text>
+                      <TextInput
+                        style={[styles.input, { flex: 1 }]}
+                        placeholder="Quantity"
+                        value={materialQuantityForTask}
+                        onChangeText={setMaterialQuantityForTask}
+                        keyboardType="numeric"
+                      />
+                      <TouchableOpacity style={styles.addBtn} onPress={handleAddMaterialToTask}>
+                        <Text style={styles.addBtnText}>Add</Text>
+                      </TouchableOpacity>
+                    </View>
+                    {/* List added materials for this task */}
+                    {materialsForNewTask.length > 0 && (
+                      <View style={{ marginTop: 8 }}>
+                        <Text style={{ fontWeight: 'bold', color: '#1976d2' }}>Materials for Task:</Text>
+                        {materialsForNewTask.map((mu, idx) => {
+                          const mat = materials.find(m => m.id === mu.materialId);
+                          const type = mu.materialTypeId && materialTypes[mu.materialId]?.find(t => t.id === mu.materialTypeId);
+                          return (
+                            <Text key={idx} style={{ fontSize: 14 }}>{mat?.name}{type ? ` (${type.label})` : ''}: {mu.quantity} {mat?.unit}</Text>
+                          );
+                        })}
+                      </View>
+                    )}
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
+                    <TouchableOpacity style={styles.addBtn} onPress={async () => {
+                      if (!newTaskName || !newTaskStart || !newTaskDeadline || !addTaskEmployee) return;
+                      const { data, error } = await supabase
+                        .from('tasks')
+                        .insert({
+                          name: newTaskName,
+                          assignedTo: addTaskEmployee.id,
+                          business_id: user.business_id,
+                          start: newTaskStart,
+                          deadline: newTaskDeadline,
+                          completed: false,
+                          completedAt: null,
+                          materialsUsed: materialsForNewTask,
+                        })
+                        .select('*')
+                        .single();
+                      if (!error && data) setTasks([...tasks, data]);
+                      setNewTaskName('');
+                      setNewTaskStart('');
+                      setNewTaskDeadline('');
+                      setMaterialsForNewTask([]);
+                      setAddTaskEmployee(null);
+                      setShowAddTaskModal(false);
+                    }}>
+                      <Text style={styles.addBtnText}>Add Task</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.closeBtn} onPress={() => setAddTaskEmployee(null)}>
+                      <Text style={styles.closeBtnText}>Back</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     );
   };
@@ -1335,28 +1769,28 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   }, {} as Record<string, any[]>);
 
   // Helper: get late employees for a given day
-  function getLateEmployeesByClockEvents(date: Date) {
-    const workStartTime = workStart || '08:00';
-    const lateList: string[] = [];
-    employees.forEach(emp => {
-      const events = clockEventsByEmployee[emp.id] || [];
-      // Find first clock_in for this day
-      const event = events.find(ev => {
-        const d = new Date(ev.clock_in);
-        return d.toDateString() === date.toDateString();
-      });
-      if (event) {
-        const clockIn = new Date(event.clock_in);
-        const [h, m] = workStartTime.split(':').map(Number);
-        const workStartDate = new Date(clockIn);
-        workStartDate.setHours(h, m, 0, 0);
-        if (clockIn > workStartDate) {
-          lateList.push(emp.name);
-        }
-      }
-    });
-    return lateList;
-  }
+  // function getLateEmployeesByClockEvents(date: Date) {
+  //   const workStartTime = workStart || '08:00';
+  //   const lateList: string[] = [];
+  //   employees.forEach(emp => {
+  //     const events = clockEventsByEmployee[emp.id] || [];
+  //     // Find first clock_in for this day
+  //     const event = events.find(ev => {
+  //       const d = new Date(ev.clock_in);
+  //       return d.toDateString() === date.toDateString();
+  //     });
+  //     if (event) {
+  //       const clockIn = new Date(event.clock_in);
+  //       const [h, m] = workStartTime.split(':').map(Number);
+  //       const workStartDate = new Date(clockIn);
+  //       workStartDate.setHours(h, m, 0, 0);
+  //       if (clockIn > workStartDate) {
+  //         lateList.push(emp.name);
+  //       }
+  //     }
+  //   });
+  //   return lateList;
+  // }
 
   // Performance Management State
   const [performanceSettings, setPerformanceSettings] = useState({
@@ -1410,25 +1844,62 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   // const [clockEvents, setClockEvents] = useState<any[]>([]);
   
   // UI state variables
-  const [showWorkHours, setShowWorkHours] = useState(false);
+  // const [showWorkHours, setShowWorkHours] = useState(false);
 
   // Calculate filtered tasks and materials when summary range or date changes
   useEffect(() => {
-    const filtered = filterTasksByDate(summaryRange, summaryDate);
-  }, [summaryRange, summaryDate, tasks, materials]);
+    filterTasksByDate(summaryRange, summaryDate);
+  }, [summaryRange, summaryDate, tasks, materials, filterTasksByDate]);
+
+  // 1. Add state for Add Task modal and selected employee
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [addTaskEmployee, setAddTaskEmployee] = useState<Employee | null>(null);
+
+  // Add state for business code UI
+  const [businessCode, setBusinessCode] = useState<string | null>(null);
+  const [businessCodeLoading, setBusinessCodeLoading] = useState(false);
+  const [businessCodeError, setBusinessCodeError] = useState<string | null>(null);
+  const [showCodeCopied, setShowCodeCopied] = useState(false);
+
+  // Fetch business code on mount (if admin)
+  useEffect(() => {
+    if (user?.role === 'admin' && user.business_id) {
+      setBusinessCodeLoading(true);
+      getBusinessCode(user.business_id)
+        .then(code => setBusinessCode(code))
+        .catch(e => setBusinessCodeError(e instanceof Error ? e.message : String(e)))
+        .finally(() => setBusinessCodeLoading(false));
+    }
+  }, [user?.role, user?.business_id]);
+
+  // Handler to generate and update code
+  const handleGenerateBusinessCode = async () => {
+    if (!user?.business_id) return;
+    const newCode = generateBusinessCode();
+    setBusinessCodeLoading(true);
+    setBusinessCodeError(null);
+    try {
+      const updated = await updateBusinessCode(user.business_id, newCode);
+      setBusinessCode(updated);
+    } catch (e: any) {
+      setBusinessCodeError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusinessCodeLoading(false);
+    }
+  };
+
+  // Handler to copy code
+  const handleCopyBusinessCode = async () => {
+    if (!businessCode) return;
+    try {
+      await navigator.clipboard.writeText(businessCode);
+      setShowCodeCopied(true);
+      setTimeout(() => setShowCodeCopied(false), 1500);
+    } catch {}
+  };
 
   return (
     <SafeAreaView style={[...themedStyles.container, { position: 'relative', flex: 1 }]}> {/* Ensure relative positioning for absolute children */}
-      <View style={themedStyles.headerRow}>
-        <FontAwesome5 name="user" size={32} color={darkMode ? '#b3c0e0' : '#1976d2'} style={{ marginRight: 10 }} />
-        <Text style={themedStyles.title}>Admin Dashboard</Text>
-        <TouchableOpacity
-          style={{ marginLeft: 'auto', padding: 6 }}
-          onPress={() => setSettingsVisible(true)}
-        >
-          <FontAwesome5 name="cog" size={26} color={darkMode ? '#b3c0e0' : '#1976d2'} />
-        </TouchableOpacity>
-      </View>
       {renderTabBar()}
       <View style={{ flex: 1 }}>
         {/* Home Tab Content */}
@@ -1472,9 +1943,8 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
                   />
                 )}
               </View>
-              {/* (Export button moved to bottom) */}
             </View>
-            {/* Cards: Tasks, Late Employees, Materials Used */}
+            {/* Cards: Tasks, Late Employees, Materials Used, Best Performers */}
             <View style={{ flexDirection: 'column', gap: 16 }}>
               {/* Tasks Card */}
               <TouchableOpacity
@@ -1522,6 +1992,21 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
                 ))}
                 {materialsUsed.length > 10 && (
                   <Text style={{ color: '#1976d2', fontWeight: 'bold', marginTop: 4 }}>+{materialsUsed.length - 10} more...</Text>
+                )}
+              </TouchableOpacity>
+              {/* Best Performers Card */}
+              <TouchableOpacity
+                activeOpacity={1}
+                style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
+              >
+                <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#388e3c', marginBottom: 6 }}>Best Performers</Text>
+                {getBestPerformers(employees, filterTasksByDate, summaryRange, summaryDate).map((emp, idx) => (
+                  <Text key={emp.id} style={{ color: '#388e3c', fontSize: 15 }} numberOfLines={1} ellipsizeMode="tail">
+                    {idx + 1}. {emp.name} ({emp.performanceScore || 0})
+                  </Text>
+                ))}
+                {getBestPerformers(employees, filterTasksByDate, summaryRange, summaryDate).length === 0 && (
+                  <Text style={{ color: '#888', fontSize: 15 }}>No data for this period.</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -1584,7 +2069,7 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
         {/* Move Export button to bottom of Home tab */}
         {tab === 'home' && (
           <View style={{ position: 'absolute', bottom: 16, left: 0, right: 0, alignItems: 'center', zIndex: 10 }}>
-            <TouchableOpacity style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 14, minWidth: 160, alignItems: 'center', shadowColor: '#1976d2', shadowOpacity: 0.12, shadowRadius: 8, elevation: 2 }} onPress={() => setExportModalVisible(true)}>
+            <TouchableOpacity style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 14, minWidth: 160, alignItems: 'center', shadowColor: '#1976d2', shadowOpacity: 0.12, shadowRadius: 8, elevation: 2 }} onPress={openExportModal}>
               <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Export Data</Text>
             </TouchableOpacity>
           </View>
@@ -1910,197 +2395,34 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
           onClose={() => setShowPerformanceManagement(false)}
         />
       </Modal>
+
+      {/* Business Code Management Card */}
+      {user?.role === 'admin' && (
+        <View style={styles.settingsCard}>
+          <Text style={styles.sectionTitle}>Business Code</Text>
+          {businessCodeLoading ? (
+            <Text>Loading...</Text>
+          ) : businessCodeError ? (
+            <Text style={{ color: '#c62828' }}>{businessCodeError}</Text>
+          ) : (
+            <>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1976d2', marginRight: 12 }}>{businessCode || 'N/A'}</Text>
+                <TouchableOpacity onPress={handleCopyBusinessCode} style={{ marginRight: 8 }}>
+                  <FontAwesome5 name="copy" size={18} color="#1976d2" />
+                </TouchableOpacity>
+                {showCodeCopied && <Text style={{ color: '#388e3c', marginLeft: 4 }}>Copied!</Text>}
+              </View>
+              <TouchableOpacity style={styles.addBtn} onPress={handleGenerateBusinessCode}>
+                <Text style={styles.addBtnText}>Generate New Code</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      )}
     </SafeAreaView>
   );
 }
-
-
-const styles = StyleSheet.create({
-  taskEmployeeCard: {
-    backgroundColor: '#f5faff',
-    borderRadius: 14,
-    padding: 16,
-    marginTop: 18,
-    marginBottom: 18,
-    shadowColor: '#1976d2',
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 1,
-    alignItems: 'center',
-  },
-  inputLarge: {
-    borderWidth: 1,
-    borderColor: '#bbb',
-    borderRadius: 8,
-    padding: 16,
-    marginHorizontal: 4,
-    fontSize: 20,
-    minWidth: 100,
-    backgroundColor: '#fff',
-    color: '#222',
-    marginBottom: 8,
-    fontWeight: 'bold',
-  },
-  taskNameLarge: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#263238',
-    marginBottom: 4,
-  },
-  dropdownContainer: {
-    flex: 1,
-    marginHorizontal: 4,
-    alignItems: 'flex-start',
-  },
-  dropdownLabel: {
-    fontSize: 14,
-    color: '#1976d2',
-    marginBottom: 2,
-    fontWeight: 'bold',
-  },
-  dropdown: {
-    borderWidth: 1,
-    borderColor: '#bbb',
-    borderRadius: 8,
-    padding: 10,
-    backgroundColor: '#fff',
-    minWidth: 80,
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  dropdownText: {
-    fontSize: 16,
-    color: '#222',
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: '#1976d2',
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxChecked: {
-    backgroundColor: '#1976d2',
-    borderColor: '#1976d2',
-  },
-  settingsCard: {
-    backgroundColor: '#e3f2fd',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 18,
-    shadowColor: '#1976d2',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  settingsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1976d2',
-    marginBottom: 10,
-  },
-  addEmployeeCard: {
-    backgroundColor: '#e3f2fd',
-    borderRadius: 14,
-    padding: 16,
-    marginTop: 18,
-    marginBottom: 18,
-    shadowColor: '#1976d2',
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
-    alignItems: 'center',
-  },
-  addEmployeeTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1976d2',
-    marginBottom: 10,
-    alignSelf: 'flex-start',
-  },
-  addEmployeeInputsRow: {
-    flexDirection: 'row',
-    width: '100%',
-    marginBottom: 8,
-    gap: 8,
-  },
-  editBtnText: { color: '#1976d2', fontWeight: 'bold', fontSize: 16 },
-  container: { flex: 1, padding: 20, backgroundColor: '#f8fafd' },
-  headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, marginTop: 8 },
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 8, color: '#1a237e' },
-  sectionTitle: { fontSize: 20, fontWeight: 'bold', marginTop: 18, marginBottom: 8, color: '#333' },
-  timeCard: { backgroundColor: '#e3f2fd', borderRadius: 14, padding: 16, marginBottom: 18, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
-  timeSummaryRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  timeSummary: { fontSize: 16, color: '#1976d2', fontWeight: 'bold', marginRight: 12 },
-  timeEditRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' },
-  timeInput: { borderWidth: 1, borderColor: '#bbb', borderRadius: 8, padding: 8, width: 60, fontSize: 16, marginHorizontal: 4, backgroundColor: '#fff', color: '#222' },
-  timeSep: { fontSize: 18, color: '#888', marginHorizontal: 2 },
-  timeLabel: { fontSize: 15, color: '#333', marginHorizontal: 6 },
-  employeeBlock: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, borderBottomWidth: 1, borderBottomColor: '#eee', paddingBottom: 4 },
-  employeeName: { fontSize: 16, fontWeight: 'bold', color: '#1a237e', flex: 1 },
-  editBtn: { color: '#1976d2', marginHorizontal: 8 },
-  deleteBtn: { color: '#c62828', marginHorizontal: 8 },
-  addRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
-  editRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#bbb',
-    borderRadius: 8,
-    padding: 12,
-    marginHorizontal: 4,
-    flex: 1.5,
-    fontSize: 17,
-    minWidth: 100,
-    backgroundColor: '#fff',
-    color: '#222',
-  },
-  addBtn: { backgroundColor: '#388e3c', borderRadius: 8, padding: 10, marginLeft: 8 },
-  addBtnText: { color: '#fff', fontWeight: 'bold' },
-  saveBtn: { backgroundColor: '#1976d2', borderRadius: 8, padding: 10, marginLeft: 8 },
-  saveBtnText: { color: '#fff', fontWeight: 'bold' },
-  taskBlock: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, borderBottomWidth: 1, borderBottomColor: '#eee', paddingBottom: 4 },
-  taskName: { fontSize: 16, color: '#263238', flex: 1 },
-  task: { backgroundColor: '#e3f2fd', padding: 12, borderRadius: 8, marginBottom: 10 },
-  taskCompleted: { backgroundColor: '#c8e6c9' },
-  taskTime: { fontSize: 14, color: '#666', marginBottom: 8 },
-  completeBtn: { backgroundColor: '#388e3c', padding: 8, borderRadius: 6, alignItems: 'center', marginTop: 6 },
-  completeBtnText: { color: '#fff', fontWeight: 'bold' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#fff', borderRadius: 12, padding: 20, width: '90%', maxHeight: '80%' },
-  modalTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 12, color: '#1976d2', alignSelf: 'center' },
-  closeBtn: { marginTop: 16, backgroundColor: '#1976d2', borderRadius: 8, padding: 12, alignItems: 'center', minWidth: 90 },
-  closeBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16, textAlign: 'center' },
-
-  materialBlock: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, borderBottomWidth: 1, borderBottomColor: '#eee', paddingBottom: 4 },
-  materialName: { fontSize: 16, color: '#263238', flex: 1 },
-
-  // New style for logout button at the bottom
-  logoutBtn: {
-    alignSelf: 'center',
-    position: 'absolute',
-    bottom: 24,
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 18,
-    borderWidth: 1,
-    borderColor: '#1976d2',
-    minWidth: 60,
-    elevation: 2,
-    shadowColor: '#1976d2',
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-  },
-  logoutBtnText: {
-    color: '#1976d2',
-    fontWeight: 'bold',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-});
 
 export default AdminDashboardScreen;
 
