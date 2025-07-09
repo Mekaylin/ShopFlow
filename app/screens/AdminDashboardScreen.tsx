@@ -691,7 +691,10 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   useEffect(() => {
     async function fetchPerformanceSettings() {
       setPerformanceSettingsLoading(true);
-      if (!user?.business_id) return;
+      if (!user || !user.business_id) {
+        console.warn('fetchPerformanceSettings: user or user.business_id is missing', user);
+        return;
+      }
       const { data, error } = await supabase
         .from('performance_settings')
         .select('*')
@@ -712,8 +715,10 @@ function AdminDashboardScreen({ onLogout, user }: { onLogout: () => void, user: 
   }, [user?.business_id]);
 
   const updatePerformanceSettings = async (newSettings: any) => {
-    if (!user?.business_id) return;
-    
+    if (!user || !user.business_id) {
+      console.warn('updatePerformanceSettings: user or user.business_id is missing', user);
+      return;
+    }
     const { error } = await supabase
       .from('performance_settings')
       .upsert({
