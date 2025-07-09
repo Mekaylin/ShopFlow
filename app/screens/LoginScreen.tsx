@@ -295,8 +295,16 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
     }
     setLoading(true);
     try {
+      // Check if a Supabase session exists before starting
+      const { data: { session: existingSession } } = await supabase.auth.getSession();
+      if (existingSession) {
+        Alert.alert('Already Logged In', 'You are already logged in. Please log out first.');
+        return;
+      }
+
       let business_id = null;
-      // Register user with Supabase Auth first
+      
+      // Step 1: Register user with Supabase Auth
       const { data: authData, error: signUpError } = await supabase.auth.signUp({ 
         email, 
         password,
@@ -318,8 +326,19 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
       if (!authData.user) {
         throw new Error('User not returned from sign up.');
       }
+
+      // Step 2: Wait for confirmation that the user is authenticated
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        throw new Error('Failed to get session after signup: ' + sessionError.message);
+      }
+      if (!session) {
+        throw new Error('No session found after signup. Please try again.');
+      }
+
+      // Step 3: Now handle business creation/assignment based on role
       if (role === 'admin') {
-        // Now create new business (user is authenticated, so RLS won't block)
+        // Create new business (user is now authenticated, so RLS won't block)
         const { data: business, error: businessError } = await supabase
           .from('businesses')
           .insert({ name: businessName })
@@ -336,15 +355,21 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
       } else {
         // Employee: resolve business by code or UUID
         business_id = await resolveBusinessId(businessCode);
-        if (!business_id) throw new Error('Invalid business code. Please check with your admin.');
+        if (!business_id) {
+          throw new Error('Invalid business code. Please check with your admin.');
+        }
       }
-      // Update user with business_id
+
+      // Step 4: Update user with business_id using authData.user.id
       const { error: userError } = await supabase
         .from('users')
         .update({ name, role, business_id })
         .eq('id', authData.user.id);
       console.log('User update result:', { userError });
-      if (userError) throw new Error('User update failed: ' + userError.message + ' (full error: ' + JSON.stringify(userError) + ')');
+      if (userError) {
+        throw new Error('User update failed: ' + userError.message + ' (full error: ' + JSON.stringify(userError) + ')');
+      }
+
       Alert.alert('Check your email', 'Registration successful! Please check your email to confirm your account before logging in.');
       setTimeout(onBack, 1200); // Delay to allow alert to show
     } catch (err: any) {
