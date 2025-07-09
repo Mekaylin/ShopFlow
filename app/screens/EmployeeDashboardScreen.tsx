@@ -1,7 +1,7 @@
 import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, FlatList, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { Alert, Animated, FlatList, Modal, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getEmployeeCode, supabase } from '../../services/cloud.js';
 
@@ -28,11 +28,11 @@ interface Material {
   unit: string;
 }
 // Demo materials (managed by admin)
-const initialMaterials: Material[] = [
-  { id: 'm1', name: 'Steel', unit: 'kg' },
-  { id: 'm2', name: 'Paint', unit: 'liters' },
-  { id: 'm3', name: 'Oil', unit: 'liters' },
-];
+// const initialMaterials: Material[] = [
+//   { id: 'm1', name: 'Steel', unit: 'kg' },
+//   { id: 'm2', name: 'Paint', unit: 'liters' },
+//   { id: 'm3', name: 'Oil', unit: 'liters' },
+// ];
 
 interface Task {
   id: string;
@@ -44,11 +44,11 @@ interface Task {
   assignedTo: string;
   materialsUsed?: { materialId: string; quantity: number }[];
 }
-const initialTasks: Task[] = [
-  { id: '1', name: 'Replace windshield', start: '8:00', deadline: '10:00', completed: false, assignedTo: 'Alex Johnson', materialsUsed: [] },
-  { id: '2', name: 'Paint bumper', start: '10:15', deadline: '12:00', completed: false, assignedTo: 'Maria Lopez', materialsUsed: [] },
-  { id: '3', name: 'Oil change', start: '13:00', deadline: '14:00', completed: false, assignedTo: 'Sam Patel', materialsUsed: [] },
-];
+// const initialTasks: Task[] = [
+//   { id: '1', name: 'Replace windshield', start: '8:00', deadline: '10:00', completed: false, assignedTo: 'Alex Johnson', materialsUsed: [] },
+//   { id: '2', name: 'Paint bumper', start: '10:15', deadline: '12:00', completed: false, assignedTo: 'Maria Lopez', materialsUsed: [] },
+//   { id: '3', name: 'Oil change', start: '13:00', deadline: '14:00', completed: false, assignedTo: 'Sam Patel', materialsUsed: [] },
+// ];
 
 interface EmployeeDashboardScreenProps {
   onLogout: () => void;
@@ -72,7 +72,7 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
   const [showEmployeeTasksPage, setShowEmployeeTasksPage] = useState(false);
   const [employeeTasksName, setEmployeeTasksName] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [materials] = useState<Material[]>(initialMaterials); // get from admin
+  const [materials] = useState<Material[]>([]); // get from admin
   // taskMaterials: { [taskId]: { materialId, quantity }[] }
   const [taskMaterials, setTaskMaterials] = useState<{ [taskId: string]: { materialId: string; quantity: string }[] }>({});
   // Animation state
@@ -123,7 +123,7 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
     Alert.alert('Logged out', 'Fingerprint session ended.');
   };
   const insets = useSafeAreaInsets();
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [onLunch, setOnLunch] = useState(false);
 
   // Helper to get current time as HH:mm
@@ -153,13 +153,13 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
       Animated.timing(welcomeAnim, {
         toValue: 1,
         duration: 700,
-        useNativeDriver: false,
+        useNativeDriver: Platform.OS !== 'web',
       }).start(() => {
         setTimeout(() => {
           Animated.timing(welcomeAnim, {
             toValue: 0,
             duration: 500,
-            useNativeDriver: false,
+            useNativeDriver: Platform.OS !== 'web',
           }).start(() => setShowWelcome(false));
         }, 1800);
       });

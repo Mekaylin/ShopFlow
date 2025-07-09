@@ -177,11 +177,21 @@ export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreen
         message = JSON.stringify(e) || 'Unknown error';
       }
       Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: false }),
-        Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: false }),
-        Animated.timing(shakeAnim, { toValue: 6, duration: 60, useNativeDriver: false }),
-        Animated.timing(shakeAnim, { toValue: -6, duration: 60, useNativeDriver: false }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: false }),
+        Animated.timing(shakeAnim, {
+          toValue: 10,
+          duration: 100,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+        Animated.timing(shakeAnim, {
+          toValue: -10,
+          duration: 100,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
+        Animated.timing(shakeAnim, {
+          toValue: 0,
+          duration: 100,
+          useNativeDriver: Platform.OS !== 'web',
+        }),
       ]).start();
       Alert.alert('Login failed', message);
     } finally {
