@@ -4,38 +4,42 @@ import { Alert, Animated, KeyboardAvoidingView, Platform, StyleSheet, Text, Text
 import { supabase } from '../../lib/supabase';
 
 export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admin' | 'employee') => void, onTest?: () => void }) {
-  const [code, setCode] = useState('');
+  const [businessCode, setBusinessCode] = useState('');
+  const [userCode, setUserCode] = useState('');
   const [shakeAnim] = useState(new Animated.Value(0));
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (code === 'admin123') {
-      await authenticateUser('admin123', 'admin');
-    } else if (code === 'emp123') {
-      await authenticateUser('emp123', 'employee');
-    } else {
-      Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 6, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -6, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
-      ]).start();
-      Alert.alert('Invalid code', 'Please enter a valid code.');
+    if (!businessCode.trim() || !userCode.trim()) {
+      Alert.alert('Missing Fields', 'Please enter both business code and user code.');
+      return;
     }
-  };
 
-  const authenticateUser = async (userCode: string, role: 'admin' | 'employee') => {
     setLoading(true);
     try {
-      const email = `${userCode}@shopflow.local`;
+      // Look up the business by code
+      const { data: business, error: businessError } = await supabase
+        .from('businesses')
+        .select('*')
+        .eq('code', businessCode)
+        .single();
+
+      if (businessError || !business) {
+        console.error('Business lookup error:', businessError);
+        Alert.alert('Business Not Found', 'Please check your business code and try again.');
+        return;
+      }
+
+      console.log('Business found:', business);
+
+      // Create a unique email for this user
+      const email = `${userCode}@${businessCode}.shopflow.local`;
       const password = 'defaultPassword123!';
       
-      console.log('Authenticating user:', { email, role });
+      console.log('Attempting authentication:', { email, businessId: business.id });
       
       // Try to sign in first
       let authData: any = null;
-      let authError: any = null;
       
       const signInResult = await supabase.auth.signInWithPassword({
         email,
@@ -51,7 +55,7 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
           options: {
             data: {
               code: userCode,
-              role: role
+              business_code: businessCode
             }
           }
         });
@@ -62,10 +66,8 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
         }
         
         authData = signUpResult.data;
-        authError = signUpResult.error;
       } else {
         authData = signInResult.data;
-        authError = signInResult.error;
       }
 
       if (authData?.user) {
@@ -77,8 +79,8 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
           .upsert({
             id: authData.user.id,
             email: authData.user.email,
-            role: role,
-            business_id: role === 'admin' ? 'admin-business' : 'employee-business',
+            role: 'employee', // Default to employee, can be changed later
+            business_id: business.id,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }, {
@@ -100,13 +102,22 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
           }
         }
 
-        onLogin(role);
+        // For now, redirect to employee dashboard
+        // You can add role detection logic later
+        onLogin('employee');
       } else {
         throw new Error('Authentication failed');
       }
     } catch (error) {
       console.error('Authentication error:', error);
-      Alert.alert('Login Failed', 'Please try again.');
+      Animated.sequence([
+        Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 6, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -6, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+      ]).start();
+      Alert.alert('Login Failed', 'Please check your codes and try again.');
     } finally {
       setLoading(false);
     }
@@ -120,11 +131,24 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
             <FontAwesome5 name="tools" size={54} color="#1976d2" style={{ marginBottom: 18 }} />
             <Text style={styles.title}>ShopFlow</Text>
             <Text style={styles.subtitle}>Sign in to continue</Text>
+            
             <TextInput
               style={styles.input}
-              placeholder="Enter code (admin123 or emp123)"
-              value={code}
-              onChangeText={setCode}
+              placeholder="Business Code"
+              value={businessCode}
+              onChangeText={setBusinessCode}
+              placeholderTextColor="#b0b8c1"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="next"
+              editable={!loading}
+            />
+            
+            <TextInput
+              style={styles.input}
+              placeholder="User Code"
+              value={userCode}
+              onChangeText={setUserCode}
               secureTextEntry
               placeholderTextColor="#b0b8c1"
               autoCapitalize="none"
@@ -133,6 +157,7 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
               onSubmitEditing={handleLogin}
               editable={!loading}
             />
+            
             <TouchableOpacity 
               style={[styles.loginBtn, loading && styles.loginBtnDisabled]} 
               onPress={handleLogin}
