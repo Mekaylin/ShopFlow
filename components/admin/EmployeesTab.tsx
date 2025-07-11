@@ -43,77 +43,116 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
 
   // Handlers
   const handleAddEmployee = async () => {
+    console.log('handleAddEmployee called');
+    console.log('User:', user);
+    console.log('Payload:', {
+      name: newEmployeeName,
+      code: newEmployeeCode,
+      lunchStart: newEmployeeLunchStart,
+      lunchEnd: newEmployeeLunchEnd,
+      photo_uri: newEmployeePhotoUri,
+      department: newEmployeeDepartment,
+      business_id: user.business_id,
+    });
     if (!newEmployeeName || !newEmployeeCode) {
       Alert.alert('Missing Fields', 'Please enter both name and code.');
       return;
     }
-    const { data, error } = await supabase
-      .from('employees')
-      .insert({
-        name: newEmployeeName,
-        code: newEmployeeCode,
-        lunchStart: newEmployeeLunchStart,
-        lunchEnd: newEmployeeLunchEnd,
-        photo_uri: newEmployeePhotoUri,
-        department: newEmployeeDepartment,
-        business_id: user.business_id,
-      })
-      .select('*')
-      .single();
-    if (error || !data) {
-      console.error('Add employee error:', error, data);
-      Alert.alert('Error', error?.message || 'Failed to add employee.');
-      return;
-    }
-    // Refetch employees from Supabase to ensure UI is up to date
     try {
-      const { data: allEmployees, error: fetchError } = await supabase
+      const { data, error } = await supabase
         .from('employees')
+        .insert({
+          name: newEmployeeName,
+          code: newEmployeeCode,
+          lunchStart: newEmployeeLunchStart,
+          lunchEnd: newEmployeeLunchEnd,
+          photo_uri: newEmployeePhotoUri,
+          department: newEmployeeDepartment,
+          business_id: user.business_id,
+        })
         .select('*')
-        .eq('business_id', user.business_id);
-      if (!fetchError && allEmployees) setEmployees(allEmployees);
-    } catch (fetchErr) {
-      console.error('Refetch employees error:', fetchErr);
+        .single();
+      console.log('Add employee response:', { data, error });
+      if (error || !data) {
+        console.error('Add employee error:', error, data);
+        Alert.alert('Error', error?.message || 'Failed to add employee.');
+        return;
+      }
+      // Refetch employees from Supabase to ensure UI is up to date
+      try {
+        const { data: allEmployees, error: fetchError } = await supabase
+          .from('employees')
+          .select('*')
+          .eq('business_id', user.business_id);
+        console.log('Refetch employees response:', { allEmployees, fetchError });
+        if (!fetchError && allEmployees) setEmployees(allEmployees);
+      } catch (fetchErr) {
+        console.error('Refetch employees error:', fetchErr);
+      }
+      setNewEmployeeName('');
+      setNewEmployeeCode('');
+      setNewEmployeeLunchStart('12:00');
+      setNewEmployeeLunchEnd('12:30');
+      setNewEmployeePhotoUri(undefined);
+      setNewEmployeeDepartment('');
+    } catch (err) {
+      console.error('handleAddEmployee exception:', err);
     }
-    setNewEmployeeName('');
-    setNewEmployeeCode('');
-    setNewEmployeeLunchStart('12:00');
-    setNewEmployeeLunchEnd('12:30');
-    setNewEmployeePhotoUri(undefined);
-    setNewEmployeeDepartment('');
   };
 
   const handleSaveEmployee = async () => {
     if (!editEmployee) return;
-    const { data, error } = await supabase
-      .from('employees')
-      .update({
-        name: newEmployeeName,
-        code: newEmployeeCode,
-        lunchStart: newEmployeeLunchStart,
-        lunchEnd: newEmployeeLunchEnd,
-        photo_uri: newEmployeePhotoUri,
-        department: newEmployeeDepartment,
-      })
-      .eq('id', editEmployee.id)
-      .select('*')
-      .single();
-    if (!error && data) setEmployees(employees.map(e => e.id === editEmployee.id ? data : e));
-    setEditEmployee(null);
-    setNewEmployeeName('');
-    setNewEmployeeCode('');
-    setNewEmployeeLunchStart('12:00');
-    setNewEmployeeLunchEnd('12:30');
-    setNewEmployeePhotoUri(undefined);
-    setNewEmployeeDepartment('');
+    console.log('handleSaveEmployee called');
+    console.log('User:', user);
+    console.log('EditEmployee:', editEmployee);
+    console.log('Payload:', {
+      name: newEmployeeName,
+      code: newEmployeeCode,
+      lunchStart: newEmployeeLunchStart,
+      lunchEnd: newEmployeeLunchEnd,
+      photo_uri: newEmployeePhotoUri,
+      department: newEmployeeDepartment,
+    });
+    try {
+      const { data, error } = await supabase
+        .from('employees')
+        .update({
+          name: newEmployeeName,
+          code: newEmployeeCode,
+          lunchStart: newEmployeeLunchStart,
+          lunchEnd: newEmployeeLunchEnd,
+          photo_uri: newEmployeePhotoUri,
+          department: newEmployeeDepartment,
+        })
+        .eq('id', editEmployee.id)
+        .select('*')
+        .single();
+      console.log('Save employee response:', { data, error });
+      if (!error && data) setEmployees(employees.map(e => e.id === editEmployee.id ? data : e));
+      setEditEmployee(null);
+      setNewEmployeeName('');
+      setNewEmployeeCode('');
+      setNewEmployeeLunchStart('12:00');
+      setNewEmployeeLunchEnd('12:30');
+      setNewEmployeePhotoUri(undefined);
+      setNewEmployeeDepartment('');
+    } catch (err) {
+      console.error('handleSaveEmployee exception:', err);
+    }
   };
 
   const handleDeleteEmployee = async (id: string) => {
-    const { error } = await supabase
-      .from('employees')
-      .delete()
-      .eq('id', id);
-    if (!error) setEmployees(employees.filter(e => e.id !== id));
+    console.log('handleDeleteEmployee called for id:', id);
+    try {
+      const { error } = await supabase
+        .from('employees')
+        .delete()
+        .eq('id', id);
+      console.log('Delete employee response:', { error });
+      if (!error) setEmployees(employees.filter(e => e.id !== id));
+    } catch (err) {
+      console.error('handleDeleteEmployee exception:', err);
+    }
   };
 
   const pickEmployeePhoto = async () => {
@@ -134,6 +173,12 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   };
 
   const handleAddDepartment = async () => {
+    console.log('handleAddDepartment called');
+    console.log('User:', user);
+    console.log('Payload:', {
+      name: newDepartment,
+      business_id: user.business_id,
+    });
     if (!newDepartment) {
       Alert.alert('Missing Field', 'Please enter a department name.');
       return;
@@ -142,16 +187,21 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       Alert.alert('Duplicate', 'This department already exists.');
       return;
     }
-    const { error } = await supabase
-      .from('departments')
-      .insert({ name: newDepartment, business_id: user.business_id });
-    if (error) {
-      Alert.alert('Error', error.message || 'Failed to add department.');
-      return;
+    try {
+      const { error } = await supabase
+        .from('departments')
+        .insert({ name: newDepartment, business_id: user.business_id });
+      console.log('Add department response:', { error });
+      if (error) {
+        Alert.alert('Error', error.message || 'Failed to add department.');
+        return;
+      }
+      setDepartments([...departments, newDepartment]);
+      setNewDepartment('');
+      setShowAddDeptModal(false);
+    } catch (err) {
+      console.error('handleAddDepartment exception:', err);
     }
-    setDepartments([...departments, newDepartment]);
-    setNewDepartment('');
-    setShowAddDeptModal(false);
   };
 
   return (
@@ -186,7 +236,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       {/* Add Employee Modal */}
       <AdminModal visible={showAddEmployeeModal} onClose={() => setShowAddEmployeeModal(false)} title="Add New Employee">
         <View style={adminStyles.addEmployeeInputsRow}>
-          <TextInput style={adminStyles.inputText} placeholder="Name" value={newEmployeeName} onChangeText={setNewEmployeeName} />
+          <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Name" value={newEmployeeName} onChangeText={setNewEmployeeName} />
           <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
             <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Code" value={newEmployeeCode} onChangeText={setNewEmployeeCode} />
             {biometricEnabled && (
@@ -202,11 +252,11 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
           </View>
         </View>
         <View style={adminStyles.addEmployeeInputsRow}>
-          <TextInput style={adminStyles.inputText} placeholder="Lunch Start" value={newEmployeeLunchStart} onChangeText={setNewEmployeeLunchStart} />
-          <TextInput style={adminStyles.inputText} placeholder="Lunch End" value={newEmployeeLunchEnd} onChangeText={setNewEmployeeLunchEnd} />
+          <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Lunch Start" value={newEmployeeLunchStart} onChangeText={setNewEmployeeLunchStart} />
+          <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Lunch End" value={newEmployeeLunchEnd} onChangeText={setNewEmployeeLunchEnd} />
         </View>
         <View style={adminStyles.addEmployeeInputsRow}>
-          <TextInput style={adminStyles.inputText} placeholder="Department" value={newEmployeeDepartment} onChangeText={setNewEmployeeDepartment} />
+          <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Department" value={newEmployeeDepartment} onChangeText={setNewEmployeeDepartment} />
         </View>
         <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }} onPress={pickEmployeePhoto}>
           {newEmployeePhotoUri ? (
