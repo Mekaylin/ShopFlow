@@ -1,6 +1,6 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { Alert, Animated, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import ClockEventsTab from '../../components/admin/ClockEventsTab';
 import EmployeesTab from '../../components/admin/EmployeesTab';
@@ -271,61 +271,69 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
       </View>
 
       {/* Settings Modal */}
-      <SettingsModal
-        visible={settingsModalVisible}
-        onClose={() => setSettingsModalVisible(false)}
-        user={user}
-        darkMode={darkMode}
-        biometricEnabled={biometricEnabled}
-        biometricLoggedIn={biometricLoggedIn}
-        workStart={workStart}
-        workEnd={workEnd}
-        lunchStart={lunchStart}
-        lunchEnd={lunchEnd}
-        lateThreshold={lateThreshold}
-        onLogout={onLogout}
-        onUpdateWorkHours={({ start, end, lunchStart: ls, lunchEnd: le }) => {
-          setWorkStart(start);
-          setWorkEnd(end);
-          setLunchStart(ls);
-          setLunchEnd(le);
-        }}
-        onUpdateLateThreshold={setLateThreshold}
-      />
+      <Suspense fallback={null}>
+        <SettingsModal
+          visible={settingsModalVisible}
+          onClose={() => setSettingsModalVisible(false)}
+          user={user}
+          darkMode={darkMode}
+          biometricEnabled={biometricEnabled}
+          biometricLoggedIn={biometricLoggedIn}
+          workStart={workStart}
+          workEnd={workEnd}
+          lunchStart={lunchStart}
+          lunchEnd={lunchEnd}
+          lateThreshold={lateThreshold}
+          onLogout={onLogout}
+          onUpdateWorkHours={({ start, end, lunchStart: ls, lunchEnd: le }) => {
+            setWorkStart(start);
+            setWorkEnd(end);
+            setLunchStart(ls);
+            setLunchEnd(le);
+          }}
+          onUpdateLateThreshold={setLateThreshold}
+        />
+      </Suspense>
 
       {/* Export Modal */}
-      <ExportModal
-        visible={exportModalVisible}
-        onClose={() => setExportModalVisible(false)}
-        employees={employees}
-        tasks={tasks}
-        materials={materials}
-        clockEvents={clockEvents}
-        user={user}
-      />
+      <Suspense fallback={null}>
+        <ExportModal
+          visible={exportModalVisible}
+          onClose={() => setExportModalVisible(false)}
+          employees={employees}
+          tasks={tasks}
+          materials={materials}
+          clockEvents={clockEvents}
+          user={user}
+        />
+      </Suspense>
 
       {/* Task Rating Modal */}
-      {selectedTaskForRating && (
-        <TaskRatingModal
-          visible={!!selectedTaskForRating}
-          task={selectedTaskForRating}
-          employee={employees.find(e => e.id === selectedTaskForRating.assignedTo)}
-          business={user}
-          onClose={() => setSelectedTaskForRating(null)}
-          onRatingSubmitted={() => {
-            // Handle task rating submission
-            setSelectedTaskForRating(null);
-          }}
-        />
-      )}
+      <Suspense fallback={null}>
+        {selectedTaskForRating && (
+          <TaskRatingModal
+            visible={!!selectedTaskForRating}
+            task={selectedTaskForRating}
+            employee={employees.find(e => e.id === selectedTaskForRating.assignedTo)}
+            business={user}
+            onClose={() => setSelectedTaskForRating(null)}
+            onRatingSubmitted={() => {
+              // Handle task rating submission
+              setSelectedTaskForRating(null);
+            }}
+          />
+        )}
+      </Suspense>
 
       {/* Performance Management Modal */}
-      {showPerformanceManagement && (
-        <PerformanceManagement
-          business={user}
-          onClose={() => setShowPerformanceManagement(false)}
-        />
-      )}
+      <Suspense fallback={null}>
+        {showPerformanceManagement && (
+          <PerformanceManagement
+            business={user}
+            onClose={() => setShowPerformanceManagement(false)}
+          />
+        )}
+      </Suspense>
     </SafeAreaView>
   );
 }

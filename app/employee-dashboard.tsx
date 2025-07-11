@@ -10,28 +10,46 @@ export default function EmployeeDashboard() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      console.log('supabase.auth.getUser() result (employee):', { data, error });
-      if (error || !data?.user) {
-        console.log('No authenticated user found, redirecting to login.');
+      try {
+        // Get the authenticated user
+        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+        console.log('supabase.auth.getUser() result (employee):', { authUser, authError });
+        
+        if (authError || !authUser) {
+          console.log('No authenticated user found, redirecting to login.');
+          router.replace('/');
+          return;
+        }
+
+        // Fetch user record from users table
+        const { data: userRecord, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authUser.id)
+          .single();
+          
+        console.log('User record fetch from users table (employee):', { userRecord, userError });
+        
+        if (userError || !userRecord) {
+          console.log('User not found in users table, redirecting to login.');
+          router.replace('/');
+          return;
+        }
+
+        // Ensure user has employee role
+        if (userRecord.role !== 'employee') {
+          console.log('User is not an employee, redirecting to login.');
+          router.replace('/');
+          return;
+        }
+
+        setUser(userRecord);
+        setLoading(false);
+        console.log('Final user object passed to employee dashboard:', userRecord);
+      } catch (error) {
+        console.error('Error fetching user:', error);
         router.replace('/');
-        return;
       }
-      // Fetch user record from users table
-      const { data: users, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', data.user.id)
-        .single();
-      console.log('User record fetch from users table (employee):', { users, userError });
-      if (userError || !users) {
-        console.log('User not found in users table, redirecting to login.');
-        router.replace('/');
-        return;
-      }
-      setUser(users);
-      setLoading(false);
-      console.log('Final user object passed to employee dashboard:', users);
     };
     fetchUser();
   }, [router]);

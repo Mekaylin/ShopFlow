@@ -114,6 +114,7 @@ export default function RootLayout() {
           <link rel="apple-touch-icon" href="/icon.png" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+          <link rel="stylesheet" href="/styles.css" />
         </Head>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <StatusBar style="auto" />
@@ -134,6 +135,7 @@ export default function RootLayout() {
         <link rel="apple-touch-icon" href="/icon.png" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <link rel="stylesheet" href="/styles.css" />
       </Head>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack>

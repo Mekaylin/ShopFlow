@@ -29,18 +29,27 @@ export default function Index() {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const stored = await getSession('supabase-session');
-        console.log('Stored session:', stored);
-        if (stored) {
-          const session = JSON.parse(stored);
-          await supabase.auth.setSession(session);
-          // Fetch user role and redirect
+        // Check if user is already authenticated
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError) {
+          console.log('Auth error:', authError);
+          setChecking(false);
+          return;
+        }
+
+        if (user) {
+          console.log('User is authenticated:', user.id);
+          
+          // Fetch user role from users table
           const { data: users, error: userError } = await supabase
             .from('users')
             .select('role')
-            .eq('id', session.user.id)
+            .eq('id', user.id)
             .limit(1);
+            
           console.log('User fetch result:', users, userError);
+          
           if (users && users.length > 0) {
             const role = users[0].role;
             console.log('Redirecting to dashboard for role:', role);
@@ -48,13 +57,18 @@ export default function Index() {
             else if (role === 'employee') router.replace('/employee-dashboard');
             return;
           } else {
-            setError('User not found or missing role.');
+            console.log('User not found in users table, redirecting to login');
+            setChecking(false);
           }
+        } else {
+          console.log('No authenticated user found');
+          setChecking(false);
         }
       } catch (e) {
+        console.error('Error during session check:', e);
         setError('Error during session check: ' + (e instanceof Error ? e.message : JSON.stringify(e)));
+        setChecking(false);
       }
-      setChecking(false);
     };
     checkSession();
   }, [router]);

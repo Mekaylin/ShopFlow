@@ -1,15 +1,100 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Alert, Animated, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { supabase } from '../../lib/supabase';
 
 export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admin' | 'employee') => void, onTest?: () => void }) {
   const [code, setCode] = useState('');
   const [shakeAnim] = useState(new Animated.Value(0));
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    if (code === 'admin123') onLogin('admin');
-    else if (code === 'emp123') onLogin('employee');
-    else {
+  const handleLogin = async () => {
+    if (!code.trim()) {
+      Alert.alert('Missing Code', 'Please enter a valid code.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Try to sign in with the code as email and a default password
+      const email = `${code}@shopflow.local`;
+      const password = 'defaultPassword123!';
+      
+      console.log('Attempting to sign in with:', { email, code });
+      
+      // First try to sign in
+      const signInResult = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      let data, error;
+      
+      // If sign in fails, try to sign up
+      if (signInResult.error) {
+        console.log('Sign in failed, attempting sign up:', signInResult.error.message);
+        const signUpResult = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              code: code,
+              role: code === 'admin123' ? 'admin' : 'employee'
+            }
+          }
+        });
+        
+        if (signUpResult.error) {
+          console.error('Sign up error:', signUpResult.error);
+          throw signUpResult.error;
+        }
+        
+        data = signUpResult.data;
+        error = signUpResult.error;
+      } else {
+        data = signInResult.data;
+        error = signInResult.error;
+      }
+
+      if (data?.user) {
+        console.log('Authentication successful:', data.user);
+        
+        // Create or update user record in users table
+        const { error: upsertError } = await supabase
+          .from('users')
+          .upsert({
+            id: data.user.id,
+            email: data.user.email,
+            role: code === 'admin123' ? 'admin' : 'employee',
+            business_id: code === 'admin123' ? 'admin-business' : 'employee-business',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'id'
+          });
+
+        if (upsertError) {
+          console.error('Error upserting user:', upsertError);
+          // Don't throw here, as the user is authenticated
+        }
+
+        // Store session
+        if (data.session) {
+          const sessionStr = JSON.stringify(data.session);
+          if (Platform.OS === 'web') {
+            localStorage.setItem('supabase-session', sessionStr);
+          } else {
+            const SecureStore = require('expo-secure-store');
+            await SecureStore.setItemAsync('supabase-session', sessionStr);
+          }
+        }
+
+        onLogin(code === 'admin123' ? 'admin' : 'employee');
+      } else {
+        throw new Error('Authentication failed');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
       Animated.sequence([
         Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
         Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
@@ -17,7 +102,9 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
         Animated.timing(shakeAnim, { toValue: -6, duration: 60, useNativeDriver: true }),
         Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
       ]).start();
-      Alert.alert('Invalid code', 'Please enter a valid code.');
+      Alert.alert('Login Failed', 'Please check your code and try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -40,9 +127,16 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
               autoCorrect={false}
               returnKeyType="done"
               onSubmitEditing={handleLogin}
+              editable={!loading}
             />
-            <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-              <Text style={styles.loginBtnText}>Login</Text>
+            <TouchableOpacity 
+              style={[styles.loginBtn, loading && styles.loginBtnDisabled]} 
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              <Text style={styles.loginBtnText}>
+                {loading ? 'Signing in...' : 'Login'}
+              </Text>
             </TouchableOpacity>
             {onTest && (
               <TouchableOpacity onPress={onTest} style={{ marginTop: 24 }}>
@@ -117,6 +211,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
+  },
+  loginBtnDisabled: {
+    backgroundColor: '#b0b8c1',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   loginBtnText: {
     color: '#fff',
