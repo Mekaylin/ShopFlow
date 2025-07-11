@@ -2,15 +2,14 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { getBusinessByCode, Sentry, supabase } from '../../services/cloud.js';
+import { getBusinessByCode, supabase } from '../../services/cloud.js';
 
 type LoginScreenProps = {
   onLogin: (role: 'admin' | 'employee') => void,
-  setSession: (key: string, value: string) => Promise<void>,
   onTest?: () => void
 };
 
-export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreenProps) {
+export default function LoginScreen({ onLogin, onTest }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -137,10 +136,7 @@ export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreen
         console.error('Auth error details:', signInError);
         throw new Error(signInError.message);
       }
-      // Store session securely (cross-platform)
-      if (signInData?.session) {
-        await setSession('supabase-session', JSON.stringify(signInData.session));
-      }
+      // No manual session storage needed
       // Check if email is confirmed (optional, but recommended)
       if (signInData?.user && !signInData.user.confirmed_at) {
         Alert.alert(
@@ -246,7 +242,9 @@ export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreen
         throw new Error('Invalid business code. Please check with your admin.');
       }
       // Store business info in session (or context)
-      await setSession('employee-business', JSON.stringify(business));
+      // This part of the code was removed as per the edit hint.
+      // The original code had `await setSession('employee-business', JSON.stringify(business));`
+      // which is no longer needed.
       onLogin('employee');
       router.replace('/employee-dashboard');
     } catch (e: any) {
@@ -321,12 +319,6 @@ export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreen
                     <Text style={{ color: '#1976d2', textAlign: 'center' }}>Test Supabase Connection</Text>
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity
-                  style={{ marginTop: 24, backgroundColor: '#c62828', borderRadius: 8, padding: 12, alignItems: 'center' }}
-                  onPress={() => Sentry.captureException(new Error('Sentry test error from LoginScreen'))}
-                >
-                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Send Sentry Test Error</Text>
-                </TouchableOpacity>
               </>
             ) : (
               // Employee login UI (business code only)
