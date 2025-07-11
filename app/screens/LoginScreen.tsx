@@ -9,37 +9,49 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!code.trim()) {
-      Alert.alert('Missing Code', 'Please enter a valid code.');
-      return;
+    if (code === 'admin123') {
+      await authenticateUser('admin123', 'admin');
+    } else if (code === 'emp123') {
+      await authenticateUser('emp123', 'employee');
+    } else {
+      Animated.sequence([
+        Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 6, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: -6, duration: 60, useNativeDriver: true }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
+      ]).start();
+      Alert.alert('Invalid code', 'Please enter a valid code.');
     }
+  };
 
+  const authenticateUser = async (userCode: string, role: 'admin' | 'employee') => {
     setLoading(true);
     try {
-      // Try to sign in with the code as email and a default password
-      const email = `${code}@shopflow.local`;
+      const email = `${userCode}@shopflow.local`;
       const password = 'defaultPassword123!';
       
-      console.log('Attempting to sign in with:', { email, code });
+      console.log('Authenticating user:', { email, role });
       
-      // First try to sign in
+      // Try to sign in first
+      let authData: any = null;
+      let authError: any = null;
+      
       const signInResult = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      let data, error;
-      
-      // If sign in fails, try to sign up
+      // If sign in fails, create new user
       if (signInResult.error) {
-        console.log('Sign in failed, attempting sign up:', signInResult.error.message);
+        console.log('Sign in failed, creating new user:', signInResult.error.message);
         const signUpResult = await supabase.auth.signUp({
           email,
           password,
           options: {
             data: {
-              code: code,
-              role: code === 'admin123' ? 'admin' : 'employee'
+              code: userCode,
+              role: role
             }
           }
         });
@@ -49,24 +61,24 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
           throw signUpResult.error;
         }
         
-        data = signUpResult.data;
-        error = signUpResult.error;
+        authData = signUpResult.data;
+        authError = signUpResult.error;
       } else {
-        data = signInResult.data;
-        error = signInResult.error;
+        authData = signInResult.data;
+        authError = signInResult.error;
       }
 
-      if (data?.user) {
-        console.log('Authentication successful:', data.user);
+      if (authData?.user) {
+        console.log('Authentication successful:', authData.user);
         
         // Create or update user record in users table
         const { error: upsertError } = await supabase
           .from('users')
           .upsert({
-            id: data.user.id,
-            email: data.user.email,
-            role: code === 'admin123' ? 'admin' : 'employee',
-            business_id: code === 'admin123' ? 'admin-business' : 'employee-business',
+            id: authData.user.id,
+            email: authData.user.email,
+            role: role,
+            business_id: role === 'admin' ? 'admin-business' : 'employee-business',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }, {
@@ -75,12 +87,11 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
 
         if (upsertError) {
           console.error('Error upserting user:', upsertError);
-          // Don't throw here, as the user is authenticated
         }
 
         // Store session
-        if (data.session) {
-          const sessionStr = JSON.stringify(data.session);
+        if (authData.session) {
+          const sessionStr = JSON.stringify(authData.session);
           if (Platform.OS === 'web') {
             localStorage.setItem('supabase-session', sessionStr);
           } else {
@@ -89,20 +100,13 @@ export default function LoginScreen({ onLogin, onTest }: { onLogin: (role: 'admi
           }
         }
 
-        onLogin(code === 'admin123' ? 'admin' : 'employee');
+        onLogin(role);
       } else {
         throw new Error('Authentication failed');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      Animated.sequence([
-        Animated.timing(shakeAnim, { toValue: 10, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -10, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 6, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: -6, duration: 60, useNativeDriver: true }),
-        Animated.timing(shakeAnim, { toValue: 0, duration: 60, useNativeDriver: true }),
-      ]).start();
-      Alert.alert('Login Failed', 'Please check your code and try again.');
+      console.error('Authentication error:', error);
+      Alert.alert('Login Failed', 'Please try again.');
     } finally {
       setLoading(false);
     }
