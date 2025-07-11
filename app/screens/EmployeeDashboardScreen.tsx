@@ -48,9 +48,10 @@ const initialTasks: Task[] = [
 
 interface EmployeeDashboardScreenProps {
   onLogout: () => void;
+  user: any;
 }
 
-export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
+export default function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProps) {
   const colorScheme = useColorScheme();
   const [darkMode, setDarkMode] = useState(colorScheme === 'dark');
   const isDark = darkMode;

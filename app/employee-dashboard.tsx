@@ -1,12 +1,41 @@
 import { useRouter } from 'expo-router';
-import { Business, Employee } from '../components/utility/types';
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
 import EmployeeDashboardScreen from './screens/EmployeeDashboardScreen';
-
-// Correct placeholder objects with all required fields
-const placeholderEmployee: Employee = { id: 'placeholder', name: 'Placeholder', code: '0000', business_id: 'placeholder' };
-const placeholderBusiness: Business = { id: 'placeholder', name: 'Placeholder Business', code: '0000', created_at: new Date().toISOString() };
 
 export default function EmployeeDashboard() {
   const router = useRouter();
-  return <EmployeeDashboardScreen onLogout={() => router.replace('/')} />;
+  const [user, setUser] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      console.log('supabase.auth.getUser() result (employee):', { data, error });
+      if (error || !data?.user) {
+        console.log('No authenticated user found, redirecting to login.');
+        router.replace('/');
+        return;
+      }
+      // Fetch user record from users table
+      const { data: users, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', data.user.id)
+        .single();
+      console.log('User record fetch from users table (employee):', { users, userError });
+      if (userError || !users) {
+        console.log('User not found in users table, redirecting to login.');
+        router.replace('/');
+        return;
+      }
+      setUser(users);
+      setLoading(false);
+      console.log('Final user object passed to employee dashboard:', users);
+    };
+    fetchUser();
+  }, [router]);
+
+  if (loading || !user) return null;
+  return <EmployeeDashboardScreen onLogout={() => router.replace('/')} user={user} />;
 } 
