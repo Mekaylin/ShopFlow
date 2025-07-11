@@ -1,0 +1,2077 @@
+{
+  "statistics": {
+    "detectionDate": "2025-07-11T08:10:39.675Z",
+    "formats": {
+      "javascript": {
+        "sources": {
+          "./app/screens/TestSupabaseScreen.tsx": {
+            "lines": 27,
+            "tokens": 416,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/screens/LoginScreen.tsx": {
+            "lines": 24,
+            "tokens": 325,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/screens/EmployeeDashboardScreen.tsx": {
+            "lines": 296,
+            "tokens": 4536,
+            "sources": 1,
+            "clones": 4,
+            "duplicatedLines": 46,
+            "duplicatedTokens": 642,
+            "percentage": 15.54,
+            "percentageTokens": 14.15,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/screens/AdminDashboardScreen.tsx": {
+            "lines": 191,
+            "tokens": 1645,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/auth/callback.tsx": {
+            "lines": 32,
+            "tokens": 380,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/(tabs)/explore.tsx": {
+            "lines": 47,
+            "tokens": 613,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/(tabs)/_layout.tsx": {
+            "lines": 7,
+            "tokens": 85,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/index.tsx": {
+            "lines": 5,
+            "tokens": 84,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/employee-dashboard.tsx": {
+            "lines": 0,
+            "tokens": 12,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/admin-dashboard.tsx": {
+            "lines": 0,
+            "tokens": 18,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/_layout.tsx": {
+            "lines": 24,
+            "tokens": 291,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/+not-found.tsx": {
+            "lines": 3,
+            "tokens": 66,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/ui/IconSymbol.tsx": {
+            "lines": 0,
+            "tokens": 24,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/ui/IconSymbol.ios.tsx": {
+            "lines": 10,
+            "tokens": 44,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/TasksTab.tsx": {
+            "lines": 405,
+            "tokens": 5121,
+            "sources": 1,
+            "clones": 12,
+            "duplicatedLines": 154,
+            "duplicatedTokens": 1864,
+            "percentage": 38.02,
+            "percentageTokens": 36.4,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/SettingsModal.tsx": {
+            "lines": 108,
+            "tokens": 1242,
+            "sources": 1,
+            "clones": 3,
+            "duplicatedLines": 35,
+            "duplicatedTokens": 391,
+            "percentage": 32.41,
+            "percentageTokens": 31.48,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/PerformanceTab.tsx": {
+            "lines": 147,
+            "tokens": 1550,
+            "sources": 1,
+            "clones": 7,
+            "duplicatedLines": 71,
+            "duplicatedTokens": 775,
+            "percentage": 48.3,
+            "percentageTokens": 50,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/MaterialsTab.tsx": {
+            "lines": 72,
+            "tokens": 1168,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/HomeTab.tsx": {
+            "lines": 154,
+            "tokens": 2430,
+            "sources": 1,
+            "clones": 6,
+            "duplicatedLines": 38,
+            "duplicatedTokens": 898,
+            "percentage": 24.68,
+            "percentageTokens": 36.95,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/ExportModal.tsx": {
+            "lines": 29,
+            "tokens": 427,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/EmployeesTab.tsx": {
+            "lines": 100,
+            "tokens": 1797,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 38,
+            "duplicatedTokens": 724,
+            "percentage": 38,
+            "percentageTokens": 40.29,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/ClockEventsTab.tsx": {
+            "lines": 27,
+            "tokens": 361,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/AdminRow.tsx": {
+            "lines": 9,
+            "tokens": 138,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/AdminModal.tsx": {
+            "lines": 6,
+            "tokens": 103,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/ThemedView.tsx": {
+            "lines": 0,
+            "tokens": 9,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/ThemedText.tsx": {
+            "lines": 8,
+            "tokens": 83,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/TaskRatingModal.tsx": {
+            "lines": 98,
+            "tokens": 915,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/PerformanceManagement.tsx": {
+            "lines": 378,
+            "tokens": 3822,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 34,
+            "duplicatedTokens": 424,
+            "percentage": 8.99,
+            "percentageTokens": 11.09,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/ParallaxScrollView.tsx": {
+            "lines": 14,
+            "tokens": 99,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/HelloWave.tsx": {
+            "lines": 1,
+            "tokens": 16,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/Collapsible.tsx": {
+            "lines": 13,
+            "tokens": 156,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 2235,
+          "tokens": 27976,
+          "sources": 31,
+          "clones": 18,
+          "duplicatedLines": 208,
+          "duplicatedTokens": 2859,
+          "percentage": 9.31,
+          "percentageTokens": 10.22,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "tsx": {
+        "sources": {
+          "./app/screens/TestSupabaseScreen.tsx": {
+            "lines": 78,
+            "tokens": 904,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/screens/LoginScreen.tsx": {
+            "lines": 126,
+            "tokens": 1270,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/screens/EmployeeDashboardScreen.tsx": {
+            "lines": 568,
+            "tokens": 8190,
+            "sources": 1,
+            "clones": 6,
+            "duplicatedLines": 54,
+            "duplicatedTokens": 912,
+            "percentage": 9.51,
+            "percentageTokens": 11.14,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/screens/AdminDashboardScreen.tsx": {
+            "lines": 332,
+            "tokens": 3386,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 8,
+            "duplicatedTokens": 89,
+            "percentage": 2.41,
+            "percentageTokens": 2.63,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/auth/callback.tsx": {
+            "lines": 106,
+            "tokens": 1102,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/(tabs)/explore.tsx": {
+            "lines": 109,
+            "tokens": 1230,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/(tabs)/_layout.tsx": {
+            "lines": 44,
+            "tokens": 381,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/index.tsx": {
+            "lines": 68,
+            "tokens": 776,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/employee-dashboard.tsx": {
+            "lines": 11,
+            "tokens": 172,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/admin-dashboard.tsx": {
+            "lines": 8,
+            "tokens": 106,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/_layout.tsx": {
+            "lines": 148,
+            "tokens": 1299,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 16,
+            "duplicatedTokens": 218,
+            "percentage": 10.81,
+            "percentageTokens": 16.78,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./app/+not-found.tsx": {
+            "lines": 31,
+            "tokens": 272,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/ui/TabBarBackground.tsx": {
+            "lines": 2,
+            "tokens": 18,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/ui/TabBarBackground.ios.tsx": {
+            "lines": 13,
+            "tokens": 83,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/ui/IconSymbol.tsx": {
+            "lines": 40,
+            "tokens": 272,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/ui/IconSymbol.ios.tsx": {
+            "lines": 31,
+            "tokens": 188,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/TasksTab.tsx": {
+            "lines": 528,
+            "tokens": 6299,
+            "sources": 1,
+            "clones": 12,
+            "duplicatedLines": 130,
+            "duplicatedTokens": 1762,
+            "percentage": 24.62,
+            "percentageTokens": 27.97,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/SettingsModal.tsx": {
+            "lines": 223,
+            "tokens": 2250,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/PerformanceTab.tsx": {
+            "lines": 227,
+            "tokens": 2211,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/MaterialsTab.tsx": {
+            "lines": 212,
+            "tokens": 2483,
+            "sources": 1,
+            "clones": 4,
+            "duplicatedLines": 52,
+            "duplicatedTokens": 456,
+            "percentage": 24.53,
+            "percentageTokens": 18.36,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/HomeTab.tsx": {
+            "lines": 226,
+            "tokens": 3080,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/ExportModal.tsx": {
+            "lines": 144,
+            "tokens": 1753,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/EmployeesTab.tsx": {
+            "lines": 264,
+            "tokens": 3372,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 38,
+            "duplicatedTokens": 758,
+            "percentage": 14.39,
+            "percentageTokens": 22.48,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/ClockEventsTab.tsx": {
+            "lines": 80,
+            "tokens": 907,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 8,
+            "duplicatedTokens": 89,
+            "percentage": 10,
+            "percentageTokens": 9.81,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/AdminRow.tsx": {
+            "lines": 66,
+            "tokens": 582,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/admin/AdminModal.tsx": {
+            "lines": 63,
+            "tokens": 524,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/ThemedView.tsx": {
+            "lines": 13,
+            "tokens": 151,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/ThemedText.tsx": {
+            "lines": 59,
+            "tokens": 428,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/TaskRatingModal.tsx": {
+            "lines": 296,
+            "tokens": 2385,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/PerformanceManagement.tsx": {
+            "lines": 489,
+            "tokens": 4953,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/ParallaxScrollView.tsx": {
+            "lines": 79,
+            "tokens": 584,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/HelloWave.tsx": {
+            "lines": 39,
+            "tokens": 312,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/HapticTab.tsx": {
+            "lines": 17,
+            "tokens": 140,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/ExternalLink.tsx": {
+            "lines": 23,
+            "tokens": 210,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/Collapsible.tsx": {
+            "lines": 44,
+            "tokens": 429,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 4807,
+          "tokens": 52702,
+          "sources": 35,
+          "clones": 14,
+          "duplicatedLines": 153,
+          "duplicatedTokens": 2142,
+          "percentage": 3.18,
+          "percentageTokens": 4.06,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "css": {
+        "sources": {
+          "./app/_layout.tsx": {
+            "lines": 26,
+            "tokens": 302,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 26,
+          "tokens": 302,
+          "sources": 1,
+          "clones": 0,
+          "duplicatedLines": 0,
+          "duplicatedTokens": 0,
+          "percentage": 0,
+          "percentageTokens": 0,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "typescript": {
+        "sources": {
+          "./components/utility/utils.ts": {
+            "lines": 495,
+            "tokens": 5630,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/utility/types.ts": {
+            "lines": 416,
+            "tokens": 2509,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "./components/utility/styles.ts": {
+            "lines": 756,
+            "tokens": 4460,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 1667,
+          "tokens": 12599,
+          "sources": 3,
+          "clones": 0,
+          "duplicatedLines": 0,
+          "duplicatedTokens": 0,
+          "percentage": 0,
+          "percentageTokens": 0,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      }
+    },
+    "total": {
+      "lines": 8735,
+      "tokens": 93579,
+      "sources": 70,
+      "clones": 32,
+      "duplicatedLines": 361,
+      "duplicatedTokens": 5001,
+      "percentage": 4.13,
+      "percentageTokens": 5.34,
+      "newDuplicatedLines": 0,
+      "newClones": 0
+    }
+  },
+  "duplicates": [
+    {
+      "format": "javascript",
+      "lines": 17,
+      "fragment": " }}>Mark Complete</Text>\n                </TouchableOpacity>\n              </View>\n            )}\n            {task.completed && task.materialsUsed && task.materialsUsed.length > 0 && (\n              <View style={{ marginTop: 8 }}>\n                <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Materials Used:</Text>\n                {task.materialsUsed.map(mu => {\n                  const mat = materials.find(m => m.id === mu.materialId);\n                  if (!mat) return null;\n                  return (\n                    <Text key={mat.id} style={{ fontSize: 14 }}>{mat.name}: {mu.quantity} {mat.unit}</Text>\n                  );\n                })}\n              </View>\n            )}\n            <TouchableOpacity style={[",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 317,
+        "end": 333,
+        "startLoc": {
+          "line": 317,
+          "column": 3,
+          "position": 3897
+        },
+        "endLoc": {
+          "line": 333,
+          "column": 2,
+          "position": 4126
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 249,
+        "end": 276,
+        "startLoc": {
+          "line": 249,
+          "column": 2,
+          "position": 2804
+        },
+        "endLoc": {
+          "line": 276,
+          "column": 2,
+          "position": 3138
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 8,
+      "fragment": " }}\n              />\n            </View>\n            {biometricSupported && (\n              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>\n                <Text style={{ fontSize: 17, color: isDark ? '#b3c0e0' : '#263238', flex: 1 }}>Fingerprint Login</Text>\n                <Switch\n                  value={biometricEnabled",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 380,
+        "end": 387,
+        "startLoc": {
+          "line": 380,
+          "column": 10,
+          "position": 4791
+        },
+        "endLoc": {
+          "line": 387,
+          "column": 17,
+          "position": 4883
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 373,
+        "end": 377,
+        "startLoc": {
+          "line": 373,
+          "column": 3,
+          "position": 4672
+        },
+        "endLoc": {
+          "line": 377,
+          "column": 9,
+          "position": 4754
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 7,
+      "fragment": ",\n                materialsUsed: (taskMaterials[taskId] || [])\n                  .filter(m => m.quantity && !isNaN(Number(m.quantity)))\n                  .map(m => ({ materialId: m.materialId, quantity: Number(m.quantity) })),\n              };\n            }));\n            Alert.alert('Task Completed'",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 221,
+        "end": 227,
+        "startLoc": {
+          "line": 221,
+          "column": 2,
+          "position": 2410
+        },
+        "endLoc": {
+          "line": 227,
+          "column": 17,
+          "position": 2503
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 200,
+        "end": 206,
+        "startLoc": {
+          "line": 200,
+          "column": 2,
+          "position": 2163
+        },
+        "endLoc": {
+          "line": 206,
+          "column": 8,
+          "position": 2256
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 8,
+      "fragment": "> \n            <Text style={styles.modalTitle}>{task.name}</Text>\n            <Text style={styles.taskTime}>Start: {task.start} | Due: {task.deadline}</Text>\n            <Text style={styles.taskStatus}>{task.completed ? 'Completed' : 'In Progress'}</Text>\n            {task.completed && task.completedAt && (\n              <Text style={{ color: '#888', fontSize: 13, marginBottom: 4 }}>Completed at: {new Date(task.completedAt).toLocaleString()}</Text>\n            )}\n            {!",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 282,
+        "end": 289,
+        "startLoc": {
+          "line": 282,
+          "column": 2,
+          "position": 3206
+        },
+        "endLoc": {
+          "line": 289,
+          "column": 2,
+          "position": 3365
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 244,
+        "end": 251,
+        "startLoc": {
+          "line": 244,
+          "column": 13,
+          "position": 2679
+        },
+        "endLoc": {
+          "line": 251,
+          "column": 5,
+          "position": 2837
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 15,
+      "fragment": ">\n            )}\n            {task.completed && task.materialsUsed && task.materialsUsed.length > 0 && (\n              <View style={{ marginTop: 8 }}>\n                <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Materials Used:</Text>\n                {task.materialsUsed.map(mu => {\n                  const mat = materials.find(m => m.id === mu.materialId);\n                  if (!mat) return null;\n                  return (\n                    <Text key={mat.id} style={{ fontSize: 14 }}>{mat.name}: {mu.quantity} {mat.unit}</Text>\n                  );\n                })}\n              </View>\n            )}\n            <",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 319,
+        "end": 333,
+        "startLoc": {
+          "line": 319,
+          "column": 5,
+          "position": 3916
+        },
+        "endLoc": {
+          "line": 333,
+          "column": 2,
+          "position": 4120
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 249,
+        "end": 263,
+        "startLoc": {
+          "line": 249,
+          "column": 5,
+          "position": 2829
+        },
+        "endLoc": {
+          "line": 263,
+          "column": 3,
+          "position": 3033
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 9,
+      "fragment": "return (\n    <>\n      <Head>\n        <title>ShopFlow - Cloud Business Dashboard</title>\n        <meta name=\"description\" content=\"ShopFlow: Cloud-based business management for teams. Fast, modern, and mobile-friendly.\" />\n        <meta name=\"theme-color\" content=\"#1976d2\" />\n        <link rel=\"manifest\" href=\"/manifest.json\" />\n        <link rel=\"apple-touch-icon\" href=\"/icon.png\" />\n        <meta name=\"mobile-web-app-capable",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/_layout.tsx",
+        "start": 127,
+        "end": 135,
+        "startLoc": {
+          "line": 127,
+          "column": 3,
+          "position": 1018
+        },
+        "endLoc": {
+          "line": 135,
+          "column": 23,
+          "position": 1127
+        }
+      },
+      "secondFile": {
+        "name": "app/_layout.tsx",
+        "start": 107,
+        "end": 115,
+        "startLoc": {
+          "line": 107,
+          "column": 5,
+          "position": 814
+        },
+        "endLoc": {
+          "line": 115,
+          "column": 29,
+          "position": 923
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 7,
+      "fragment": ": 6 }]}>\n          <Text style={adminStyles.dropdownLabel}>Deadline</Text>\n          <TouchableOpacity\n            style={[adminStyles.dropdown, { width: '100%' }]}\n            onPress={() => {\n              const times = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];\n              const idx = times.indexOf(newTaskDeadline",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 147,
+        "end": 153,
+        "startLoc": {
+          "line": 147,
+          "column": 12,
+          "position": 1671
+        },
+        "endLoc": {
+          "line": 153,
+          "column": 16,
+          "position": 1773
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 134,
+        "end": 140,
+        "startLoc": {
+          "line": 134,
+          "column": 13,
+          "position": 1488
+        },
+        "endLoc": {
+          "line": 140,
+          "column": 13,
+          "position": 1590
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 14,
+      "fragment": " }}>{mat.name}</Text>\n                </TouchableOpacity>\n              ))}\n            </ScrollView>\n          </View>\n        </View>\n        {selectedMaterialForTask && (\n          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>\n            <Text style={{ marginRight: 6 }}>Type:</Text>\n            <View style={{ flex: 1 }}>\n              <ScrollView horizontal showsHorizontalScrollIndicator={false}>\n                {(materialTypes[selectedMaterialForTask] || []).map(type => (\n                  <TouchableOpacity\n                    key={type",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 183,
+        "end": 196,
+        "startLoc": {
+          "line": 183,
+          "column": 10,
+          "position": 2110
+        },
+        "endLoc": {
+          "line": 196,
+          "column": 5,
+          "position": 2264
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 164,
+        "end": 171,
+        "startLoc": {
+          "line": 164,
+          "column": 2,
+          "position": 1905
+        },
+        "endLoc": {
+          "line": 171,
+          "column": 4,
+          "position": 2016
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 11,
+      "fragment": ".id ? '#fff' : '#1976d2' }}>{type.name}</Text>\n                  </TouchableOpacity>\n                ))}\n              </ScrollView>\n            </View>\n          </View>\n        )}\n        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>\n          <Text style={{ marginRight: 6 }}>Quantity:</Text>\n          <TextInput\n            style={[",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 205,
+        "end": 215,
+        "startLoc": {
+          "line": 205,
+          "column": 5,
+          "position": 2340
+        },
+        "endLoc": {
+          "line": 215,
+          "column": 2,
+          "position": 2447
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 183,
+        "end": 192,
+        "startLoc": {
+          "line": 183,
+          "column": 5,
+          "position": 2101
+        },
+        "endLoc": {
+          "line": 192,
+          "column": 2,
+          "position": 2212
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 13,
+      "fragment": "} />\n            {/* Materials selection (reuse existing logic) */}\n            <View style={{ marginTop: 12, marginBottom: 12, backgroundColor: '#f5faff', borderRadius: 10, padding: 10 }}>\n              <Text style={{ fontWeight: 'bold', color: '#1976d2', marginBottom: 4 }}>Add Materials Used</Text>\n              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>\n                <Text style={{ marginRight: 6 }}>Material:</Text>\n                <View style={{ flex: 1 }}>\n                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>\n                    {materials.map(mat => (\n                      <TouchableOpacity\n                        key={mat.id}\n                        style={{\n                          backgroundColor",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 413,
+        "end": 425,
+        "startLoc": {
+          "line": 413,
+          "column": 19,
+          "position": 4992
+        },
+        "endLoc": {
+          "line": 425,
+          "column": 42,
+          "position": 5180
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 157,
+        "end": 173,
+        "startLoc": {
+          "line": 157,
+          "column": 13,
+          "position": 1811
+        },
+        "endLoc": {
+          "line": 173,
+          "column": 36,
+          "position": 2025
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 18,
+      "fragment": "}}\n                      >\n                        <Text style={{ color: selectedMaterialForTask === mat.id ? '#fff' : '#1976d2' }}>{mat.name}</Text>\n                      </TouchableOpacity>\n                    ))}\n                  </ScrollView>\n                </View>\n              </View>\n              {selectedMaterialForTask && (\n                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>\n                  <Text style={{ marginRight: 6 }}>Type:</Text>\n                  <View style={{ flex: 1 }}>\n                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>\n                      {(materialTypes[selectedMaterialForTask] || []).map(type => (\n                        <TouchableOpacity\n                          key={type.id}\n                          style={{\n                            backgroundColor",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 433,
+        "end": 450,
+        "startLoc": {
+          "line": 433,
+          "column": 25,
+          "position": 5238
+        },
+        "endLoc": {
+          "line": 450,
+          "column": 44,
+          "position": 5428
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 181,
+        "end": 198,
+        "startLoc": {
+          "line": 181,
+          "column": 19,
+          "position": 2083
+        },
+        "endLoc": {
+          "line": 198,
+          "column": 38,
+          "position": 2273
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 20,
+      "fragment": "}}\n                          onPress={() => setSelectedMaterialTypeForTask(type.id)}\n                        >\n                          <Text style={{ color: selectedMaterialTypeForTask === type.id ? '#fff' : '#1976d2' }}>{type.name}</Text>\n                        </TouchableOpacity>\n                      ))}\n                    </ScrollView>\n                  </View>\n                </View>\n              )}\n              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>\n                <Text style={{ marginRight: 6 }}>Quantity:</Text>\n                <TextInput\n                  style={[adminStyles.inputText, { flex: 1 }]}\n                  placeholder=\"Quantity\"\n                  value={materialQuantityForTask}\n                  onChangeText={setMaterialQuantityForTask}\n                  keyboardType=\"numeric\"\n                />\n                <TouchableOpacity style={adminStyles",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 454,
+        "end": 473,
+        "startLoc": {
+          "line": 454,
+          "column": 27,
+          "position": 5460
+        },
+        "endLoc": {
+          "line": 473,
+          "column": 12,
+          "position": 5651
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 202,
+        "end": 221,
+        "startLoc": {
+          "line": 202,
+          "column": 21,
+          "position": 2305
+        },
+        "endLoc": {
+          "line": 221,
+          "column": 2,
+          "position": 2496
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 11,
+      "fragment": ") => {\n                const mat = materials.find(m => m.id === mu.materialId);\n                const type = mu.materialTypeId && materialTypes[mu.materialId]?.find(t => t.id === mu.materialTypeId);\n                return (\n                  <Text key={idx2} style={{ fontSize: 14 }}>{mat?.name}{type ? ` (${type.name})` : ''}: {mu.quantity} {mat?.unit}</Text>\n                );\n              })}\n            </View>\n          )}\n          \n          {",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 278,
+        "end": 288,
+        "startLoc": {
+          "line": 278,
+          "column": 5,
+          "position": 3482
+        },
+        "endLoc": {
+          "line": 288,
+          "column": 2,
+          "position": 3643
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 228,
+        "end": 237,
+        "startLoc": {
+          "line": 228,
+          "column": 4,
+          "position": 2615
+        },
+        "endLoc": {
+          "line": 237,
+          "column": 3,
+          "position": 2774
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 10,
+      "fragment": "}\n            <View style={{ marginTop: 12, marginBottom: 12, backgroundColor: '#f5faff', borderRadius: 10, padding: 10 }}>\n              <Text style={{ fontWeight: 'bold', color: '#1976d2', marginBottom: 4 }}>Add Materials Used</Text>\n              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>\n                <Text style={{ marginRight: 6 }}>Material:</Text>\n                <View style={{ flex: 1 }}>\n                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>\n                    {materials.map(mat => (\n                      <TouchableOpacity\n                        ",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 414,
+        "end": 423,
+        "startLoc": {
+          "line": 414,
+          "column": 49,
+          "position": 4999
+        },
+        "endLoc": {
+          "line": 423,
+          "column": 25,
+          "position": 5167
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 162,
+        "end": 171,
+        "startLoc": {
+          "line": 162,
+          "column": 28,
+          "position": 1844
+        },
+        "endLoc": {
+          "line": 171,
+          "column": 19,
+          "position": 2012
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 15,
+      "fragment": ">\n                        <Text style={{ color: selectedMaterialForTask === mat.id ? '#fff' : '#1976d2' }}>{mat.name}</Text>\n                      </TouchableOpacity>\n                    ))}\n                  </ScrollView>\n                </View>\n              </View>\n              {selectedMaterialForTask && (\n                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>\n                  <Text style={{ marginRight: 6 }}>Type:</Text>\n                  <View style={{ flex: 1 }}>\n                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>\n                      {(materialTypes[selectedMaterialForTask] || []).map(type => (\n                        <TouchableOpacity\n                          ",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 434,
+        "end": 448,
+        "startLoc": {
+          "line": 434,
+          "column": 23,
+          "position": 5241
+        },
+        "endLoc": {
+          "line": 448,
+          "column": 27,
+          "position": 5415
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 182,
+        "end": 196,
+        "startLoc": {
+          "line": 182,
+          "column": 17,
+          "position": 2086
+        },
+        "endLoc": {
+          "line": 196,
+          "column": 21,
+          "position": 2260
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 12,
+      "fragment": ">\n                          <Text style={{ color: selectedMaterialTypeForTask === type.id ? '#fff' : '#1976d2' }}>{type.name}</Text>\n                        </TouchableOpacity>\n                      ))}\n                    </ScrollView>\n                  </View>\n                </View>\n              )}\n              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>\n                <Text style={{ marginRight: 6 }}>Quantity:</Text>\n                <TextInput\n                  ",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 456,
+        "end": 467,
+        "startLoc": {
+          "line": 456,
+          "column": 25,
+          "position": 5479
+        },
+        "endLoc": {
+          "line": 467,
+          "column": 19,
+          "position": 5598
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 204,
+        "end": 215,
+        "startLoc": {
+          "line": 204,
+          "column": 19,
+          "position": 2324
+        },
+        "endLoc": {
+          "line": 215,
+          "column": 13,
+          "position": 2443
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 12,
+      "fragment": ":</Text>\n                  {materialsForNewTask.map((mu, idx) => {\n                    const mat = materials.find(m => m.id === mu.materialId);\n                    const type = mu.materialTypeId && materialTypes[mu.materialId]?.find(t => t.id === mu.materialTypeId);\n                    return (\n                      <Text key={idx} style={{ fontSize: 14 }}>{mat?.name}{type ? ` (${type.name})` : ''}: {mu.quantity} {mat?.unit}</Text>\n                    );\n                  })}\n                </View>\n              )}\n            </View>\n            <View",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 480,
+        "end": 491,
+        "startLoc": {
+          "line": 480,
+          "column": 5,
+          "position": 5752
+        },
+        "endLoc": {
+          "line": 491,
+          "column": 5,
+          "position": 5933
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 227,
+        "end": 238,
+        "startLoc": {
+          "line": 227,
+          "column": 6,
+          "position": 2599
+        },
+        "endLoc": {
+          "line": 238,
+          "column": 17,
+          "position": 2780
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 11,
+      "fragment": ".id,\n                    business_id: user.business_id,\n                    start: newTaskStart,\n                    deadline: newTaskDeadline,\n                    completed: false,\n                    completedAt: null,\n                    materialsUsed: materialsForNewTask,\n                  })\n                  .select('*')\n                  .single();\n                if (!error && data) setTasks",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 498,
+        "end": 508,
+        "startLoc": {
+          "line": 498,
+          "column": 16,
+          "position": 6051
+        },
+        "endLoc": {
+          "line": 508,
+          "column": 9,
+          "position": 6129
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 59,
+        "end": 70,
+        "startLoc": {
+          "line": 59,
+          "column": 21,
+          "position": 666
+        },
+        "endLoc": {
+          "line": 70,
+          "column": 2,
+          "position": 746
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 12,
+      "fragment": "}>\n                <Text style={adminStyles.addBtnText}>Save Hours</Text>\n              </TouchableOpacity>\n            </View>\n\n            {/* Business Code Management (Admin Only) */}\n            {user?.role === 'admin' && (\n              <View style={adminStyles.settingsCard}>\n                <Text style={adminStyles.settingsTitle}>Business Code</Text>\n                \n                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>\n                  <TouchableOpacity style={[",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/SettingsModal.tsx",
+        "start": 173,
+        "end": 184,
+        "startLoc": {
+          "line": 173,
+          "column": 20,
+          "position": 1665
+        },
+        "endLoc": {
+          "line": 184,
+          "column": 2,
+          "position": 1786
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/SettingsModal.tsx",
+        "start": 128,
+        "end": 140,
+        "startLoc": {
+          "line": 128,
+          "column": 24,
+          "position": 1297
+        },
+        "endLoc": {
+          "line": 140,
+          "column": 12,
+          "position": 1411
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 12,
+      "fragment": " }}>\n                Enable Task Rating System\n              </Text>\n            </TouchableOpacity>\n          </View>\n          \n          <View style={{ marginBottom: 12 }}>\n            <TouchableOpacity\n              style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}\n              onPress={() => updatePerformanceSettings({\n                ...performanceSettings,\n                autoRateCompletedTasks",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 100,
+        "end": 111,
+        "startLoc": {
+          "line": 100,
+          "column": 7,
+          "position": 938
+        },
+        "endLoc": {
+          "line": 111,
+          "column": 39,
+          "position": 1027
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 82,
+        "end": 91,
+        "startLoc": {
+          "line": 82,
+          "column": 2,
+          "position": 779
+        },
+        "endLoc": {
+          "line": 91,
+          "column": 36,
+          "position": 854
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 11,
+      "fragment": "? '#4CAF50' : '#ccc'}\n                style={{ marginRight: 12 }}\n              />\n              <Text style={{ fontSize: 14, color: '#333' }}>\n                Auto-rate Completed Tasks\n              </Text>\n            </TouchableOpacity>\n          </View>\n          \n          <View style={{ marginBottom: 12 }}>\n            <Text style={{ fontSize",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 117,
+        "end": 127,
+        "startLoc": {
+          "line": 117,
+          "column": 24,
+          "position": 1071
+        },
+        "endLoc": {
+          "line": 127,
+          "column": 10,
+          "position": 1167
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 97,
+        "end": 108,
+        "startLoc": {
+          "line": 97,
+          "column": 21,
+          "position": 898
+        },
+        "endLoc": {
+          "line": 108,
+          "column": 15,
+          "position": 994
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 14,
+      "fragment": "}>\n                Auto-rate Completed Tasks\n              </Text>\n            </TouchableOpacity>\n          </View>\n          \n          <View style={{ marginBottom: 12 }}>\n            <Text style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>\n              Default Rating for Auto-rated Tasks:\n            </Text>\n            <View style={{ flexDirection: 'row', alignItems: 'center' }}>\n              {[1, 2, 3, 4, 5].map((rating) => (\n                <TouchableOpacity\n                  key={rating",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 120,
+        "end": 133,
+        "startLoc": {
+          "line": 120,
+          "column": 2,
+          "position": 1113
+        },
+        "endLoc": {
+          "line": 133,
+          "column": 7,
+          "position": 1262
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/SettingsModal.tsx",
+        "start": 114,
+        "end": 122,
+        "startLoc": {
+          "line": 114,
+          "column": 14,
+          "position": 1124
+        },
+        "endLoc": {
+          "line": 122,
+          "column": 2,
+          "position": 1223
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 9,
+      "fragment": ", marginTop: 4 }}>\n              {tasks.filter(t => t.completed).length}\n            </Text>\n            <Text style={{ fontSize: 12, color: '#666' }}>Rated</Text>\n          </View>\n          \n          <View style={{ alignItems: 'center' }}>\n            <FontAwesome5 name=\"users\" size={24} color=\"#4CAF50\" />\n            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#4CAF50'",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 209,
+        "end": 217,
+        "startLoc": {
+          "line": 209,
+          "column": 10,
+          "position": 2001
+        },
+        "endLoc": {
+          "line": 217,
+          "column": 10,
+          "position": 2129
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 201,
+        "end": 209,
+        "startLoc": {
+          "line": 201,
+          "column": 10,
+          "position": 1872
+        },
+        "endLoc": {
+          "line": 209,
+          "column": 10,
+          "position": 2000
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 14,
+      "fragment": ");\n      return;\n    }\n    // Refetch materials from Supabase\n    try {\n      const { data: allMaterials, error: fetchError } = await supabase\n        .from('materials')\n        .select('*')\n        .eq('business_id', user.business_id);\n      if (!fetchError && allMaterials) setMaterials(allMaterials);\n    } catch (fetchErr) {\n      console.error('Refetch materials error:', fetchErr);\n    }\n    setEditMaterial",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/MaterialsTab.tsx",
+        "start": 81,
+        "end": 94,
+        "startLoc": {
+          "line": 81,
+          "column": 27,
+          "position": 794
+        },
+        "endLoc": {
+          "line": 94,
+          "column": 16,
+          "position": 908
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/MaterialsTab.tsx",
+        "start": 48,
+        "end": 61,
+        "startLoc": {
+          "line": 48,
+          "column": 26,
+          "position": 496
+        },
+        "endLoc": {
+          "line": 61,
+          "column": 19,
+          "position": 610
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 14,
+      "fragment": ");\n      return;\n    }\n    // Refetch materials from Supabase\n    try {\n      const { data: allMaterials, error: fetchError } = await supabase\n        .from('materials')\n        .select('*')\n        .eq('business_id', user.business_id);\n      if (!fetchError && allMaterials) setMaterials(allMaterials);\n    } catch (fetchErr) {\n      console.error('Refetch materials error:', fetchErr);\n    }\n  }",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/MaterialsTab.tsx",
+        "start": 105,
+        "end": 118,
+        "startLoc": {
+          "line": 105,
+          "column": 29,
+          "position": 1017
+        },
+        "endLoc": {
+          "line": 118,
+          "column": 2,
+          "position": 1131
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/MaterialsTab.tsx",
+        "start": 48,
+        "end": 61,
+        "startLoc": {
+          "line": 48,
+          "column": 26,
+          "position": 496
+        },
+        "endLoc": {
+          "line": 61,
+          "column": 19,
+          "position": 610
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 6,
+      "fragment": "(true)}\n        style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}\n      >\n        <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', marginBottom: 6 }}>Materials Used</Text>\n        {Object.entries(materialsUsed).slice(0, 10).map(([matId, qty], idx) => (\n          <Text key={matId",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 124,
+        "end": 129,
+        "startLoc": {
+          "line": 124,
+          "column": 25,
+          "position": 1484
+        },
+        "endLoc": {
+          "line": 129,
+          "column": 6,
+          "position": 1618
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 90,
+        "end": 95,
+        "startLoc": {
+          "line": 90,
+          "column": 21,
+          "position": 874
+        },
+        "endLoc": {
+          "line": 95,
+          "column": 2,
+          "position": 994
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 9,
+      "fragment": "}>+{Object.keys(materialsUsed).length - 10} more...</Text>\n        )}\n      </TouchableOpacity>\n\n      {/* Best Performers Card */}\n      <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}>\n        <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', marginBottom: 6 }}>Best Performers</Text>\n        {bestPerformers.slice(0, 5).map((emp, idx) => (\n          <Text key={emp",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 134,
+        "end": 142,
+        "startLoc": {
+          "line": 134,
+          "column": 2,
+          "position": 1723
+        },
+        "endLoc": {
+          "line": 142,
+          "column": 4,
+          "position": 1884
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 90,
+        "end": 95,
+        "startLoc": {
+          "line": 90,
+          "column": 2,
+          "position": 877
+        },
+        "endLoc": {
+          "line": 95,
+          "column": 2,
+          "position": 994
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 7,
+      "fragment": "(false)}>\n        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>\n          <View style={{ backgroundColor: '#fff', borderRadius: 14, padding: 24, width: '90%', maxHeight: '80%' }}>\n            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1976d2', marginBottom: 12 }}>All Materials Used</Text>\n            <ScrollView>\n              {Object.entries(materialsUsed).map(([matId, qty], idx) => (\n                <Text key={matId",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 206,
+        "end": 212,
+        "startLoc": {
+          "line": 206,
+          "column": 25,
+          "position": 2784
+        },
+        "endLoc": {
+          "line": 212,
+          "column": 6,
+          "position": 2938
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 168,
+        "end": 174,
+        "startLoc": {
+          "line": 168,
+          "column": 21,
+          "position": 2168
+        },
+        "endLoc": {
+          "line": 174,
+          "column": 5,
+          "position": 2310
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 20,
+      "fragment": "} />\n        </View>\n        <View style={adminStyles.addEmployeeInputsRow}>\n          <TextInput style={adminStyles.inputText} placeholder=\"Lunch Start\" value={newEmployeeLunchStart} onChangeText={setNewEmployeeLunchStart} />\n          <TextInput style={adminStyles.inputText} placeholder=\"Lunch End\" value={newEmployeeLunchEnd} onChangeText={setNewEmployeeLunchEnd} />\n        </View>\n        <View style={adminStyles.addEmployeeInputsRow}>\n          <TextInput style={adminStyles.inputText} placeholder=\"Department\" value={newEmployeeDepartment} onChangeText={setNewEmployeeDepartment} />\n        </View>\n        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }} onPress={pickEmployeePhoto}>\n          {newEmployeePhotoUri ? (\n            <Image source={{ uri: newEmployeePhotoUri }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 8 }} />\n          ) : (\n            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#e3f2fd', marginRight: 8, alignItems: 'center', justifyContent: 'center' }}>\n              <FontAwesome5 name=\"camera\" size={20} color=\"#1976d2\" />\n            </View>\n          )}\n          <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>{newEmployeePhotoUri ? 'Change Photo' : 'Add Photo'}</Text>\n        </TouchableOpacity>\n        <TouchableOpacity style={adminStyles.saveBtn",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/EmployeesTab.tsx",
+        "start": 238,
+        "end": 257,
+        "startLoc": {
+          "line": 238,
+          "column": 19,
+          "position": 2955
+        },
+        "endLoc": {
+          "line": 257,
+          "column": 8,
+          "position": 3317
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/EmployeesTab.tsx",
+        "start": 199,
+        "end": 221,
+        "startLoc": {
+          "line": 199,
+          "column": 2,
+          "position": 2284
+        },
+        "endLoc": {
+          "line": 221,
+          "column": 7,
+          "position": 2673
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 20,
+      "fragment": "</View>\n        <View style={adminStyles.addEmployeeInputsRow}>\n          <TextInput style={adminStyles.inputText} placeholder=\"Lunch Start\" value={newEmployeeLunchStart} onChangeText={setNewEmployeeLunchStart} />\n          <TextInput style={adminStyles.inputText} placeholder=\"Lunch End\" value={newEmployeeLunchEnd} onChangeText={setNewEmployeeLunchEnd} />\n        </View>\n        <View style={adminStyles.addEmployeeInputsRow}>\n          <TextInput style={adminStyles.inputText} placeholder=\"Department\" value={newEmployeeDepartment} onChangeText={setNewEmployeeDepartment} />\n        </View>\n        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }} onPress={pickEmployeePhoto}>\n          {newEmployeePhotoUri ? (\n            <Image source={{ uri: newEmployeePhotoUri }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 8 }} />\n          ) : (\n            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#e3f2fd', marginRight: 8, alignItems: 'center', justifyContent: 'center' }}>\n              <FontAwesome5 name=\"camera\" size={20} color=\"#1976d2\" />\n            </View>\n          )}\n          <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>{newEmployeePhotoUri ? 'Change Photo' : 'Add Photo'}</Text>\n        </TouchableOpacity>\n        <TouchableOpacity style={adminStyles.saveBtn} onPress={handleSaveEmployee}>\n          <Text style={adminStyles.saveBtnText}>Save",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/EmployeesTab.tsx",
+        "start": 239,
+        "end": 258,
+        "startLoc": {
+          "line": 239,
+          "column": 9,
+          "position": 2960
+        },
+        "endLoc": {
+          "line": 258,
+          "column": 5,
+          "position": 3339
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/EmployeesTab.tsx",
+        "start": 203,
+        "end": 222,
+        "startLoc": {
+          "line": 203,
+          "column": 9,
+          "position": 2316
+        },
+        "endLoc": {
+          "line": 222,
+          "column": 4,
+          "position": 2713
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 9,
+      "fragment": "]);\n\n  // Helper: group clock events by employee\n  const clockEventsByEmployee = employees.reduce((acc, emp) => {\n    acc[emp.id] = clockEvents.filter(ev => ev.employee_id === emp.id);\n    return acc;\n  }, {} as Record<string, ClockEvent[]>);\n\n  // Helper: get employee name by id",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/ClockEventsTab.tsx",
+        "start": 27,
+        "end": 35,
+        "startLoc": {
+          "line": 27,
+          "column": 12,
+          "position": 293
+        },
+        "endLoc": {
+          "line": 35,
+          "column": 35,
+          "position": 382
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/AdminDashboardScreen.tsx",
+        "start": 125,
+        "end": 133,
+        "startLoc": {
+          "line": 125,
+          "column": 20,
+          "position": 1606
+        },
+        "endLoc": {
+          "line": 133,
+          "column": 14,
+          "position": 1695
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 18,
+      "fragment": "}>{data.tasks_completed}</Text>\n          </View>\n\n          <View style={styles.metric}>\n            <FontAwesome5 name=\"star\" size={16} color=\"#FFD700\" />\n            <Text style={styles.metricLabel}>Rating</Text>\n            <Text style={styles.metricValue}>{data.average_rating.toFixed(1)}</Text>\n          </View>\n\n          <View style={styles.metric}>\n            <FontAwesome5 name=\"thumbs-up\" size={16} color=\"#4CAF50\" />\n            <Text style={styles.metricLabel}>Rated</Text>\n            <Text style={styles.metricValue}>{data.tasks_rated}</Text>\n          </View>\n        </View>\n\n        {data.average_rating > 0 && (\n          <View style={styles.ratingDisplay",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/PerformanceManagement.tsx",
+        "start": 120,
+        "end": 137,
+        "startLoc": {
+          "line": 120,
+          "column": 12,
+          "position": 1337
+        },
+        "endLoc": {
+          "line": 137,
+          "column": 14,
+          "position": 1549
+        }
+      },
+      "secondFile": {
+        "name": "components/PerformanceManagement.tsx",
+        "start": 116,
+        "end": 129,
+        "startLoc": {
+          "line": 116,
+          "column": 17,
+          "position": 1270
+        },
+        "endLoc": {
+          "line": 129,
+          "column": 7,
+          "position": 1449
+        }
+      }
+    }
+  ]
+}

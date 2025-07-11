@@ -1,0 +1,5822 @@
+{
+  "statistics": {
+    "detectionDate": "2025-07-11T07:40:37.908Z",
+    "formats": {
+      "css": {
+        "sources": {
+          "report/html/styles/prism.css": {
+            "lines": 7,
+            "tokens": 232,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/_layout.tsx": {
+            "lines": 26,
+            "tokens": 302,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 33,
+          "tokens": 534,
+          "sources": 2,
+          "clones": 0,
+          "duplicatedLines": 0,
+          "duplicatedTokens": 0,
+          "percentage": 0,
+          "percentageTokens": 0,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "javascript": {
+        "sources": {
+          "report/html/js/prism.js": {
+            "lines": 15,
+            "tokens": 4580,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/ui/IconSymbol.tsx": {
+            "lines": 0,
+            "tokens": 24,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/ui/IconSymbol.ios.tsx": {
+            "lines": 10,
+            "tokens": 44,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/TasksTab.tsx": {
+            "lines": 405,
+            "tokens": 5039,
+            "sources": 1,
+            "clones": 18,
+            "duplicatedLines": 204,
+            "duplicatedTokens": 2303,
+            "percentage": 50.37,
+            "percentageTokens": 45.7,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/SettingsModal.tsx": {
+            "lines": 108,
+            "tokens": 1242,
+            "sources": 1,
+            "clones": 7,
+            "duplicatedLines": 66,
+            "duplicatedTokens": 685,
+            "percentage": 61.11,
+            "percentageTokens": 55.15,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/PerformanceTab.tsx": {
+            "lines": 147,
+            "tokens": 1550,
+            "sources": 1,
+            "clones": 18,
+            "duplicatedLines": 138,
+            "duplicatedTokens": 1467,
+            "percentage": 93.88,
+            "percentageTokens": 94.65,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/MaterialsTab.tsx": {
+            "lines": 72,
+            "tokens": 1168,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 14,
+            "duplicatedTokens": 121,
+            "percentage": 19.44,
+            "percentageTokens": 10.36,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/HomeTab.tsx": {
+            "lines": 154,
+            "tokens": 2378,
+            "sources": 1,
+            "clones": 15,
+            "duplicatedLines": 95,
+            "duplicatedTokens": 1634,
+            "percentage": 61.69,
+            "percentageTokens": 68.71,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/ExportModal.tsx": {
+            "lines": 29,
+            "tokens": 427,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/EmployeesTab.tsx": {
+            "lines": 100,
+            "tokens": 1797,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 38,
+            "duplicatedTokens": 724,
+            "percentage": 38,
+            "percentageTokens": 40.29,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/ClockEventsTab.tsx": {
+            "lines": 23,
+            "tokens": 302,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 6,
+            "duplicatedTokens": 70,
+            "percentage": 26.09,
+            "percentageTokens": 23.18,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/AdminRow.tsx": {
+            "lines": 9,
+            "tokens": 138,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/AdminModal.tsx": {
+            "lines": 6,
+            "tokens": 103,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/screens/TestSupabaseScreen.tsx": {
+            "lines": 27,
+            "tokens": 416,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/screens/LoginScreen.tsx": {
+            "lines": 24,
+            "tokens": 325,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/screens/EmployeeDashboardScreen.tsx": {
+            "lines": 296,
+            "tokens": 4536,
+            "sources": 1,
+            "clones": 11,
+            "duplicatedLines": 112,
+            "duplicatedTokens": 1541,
+            "percentage": 37.84,
+            "percentageTokens": 33.97,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/screens/AdminDashboardScreen.tsx": {
+            "lines": 191,
+            "tokens": 1645,
+            "sources": 1,
+            "clones": 3,
+            "duplicatedLines": 21,
+            "duplicatedTokens": 163,
+            "percentage": 10.99,
+            "percentageTokens": 9.91,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/auth/callback.tsx": {
+            "lines": 32,
+            "tokens": 380,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/(tabs)/explore.tsx": {
+            "lines": 47,
+            "tokens": 613,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/(tabs)/_layout.tsx": {
+            "lines": 7,
+            "tokens": 85,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "services/cloud.js": {
+            "lines": 304,
+            "tokens": 2934,
+            "sources": 1,
+            "clones": 16,
+            "duplicatedLines": 100,
+            "duplicatedTokens": 978,
+            "percentage": 32.89,
+            "percentageTokens": 33.33,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "scripts/setup-users-table.js": {
+            "lines": 94,
+            "tokens": 649,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 14,
+            "duplicatedTokens": 86,
+            "percentage": 14.89,
+            "percentageTokens": 13.25,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "scripts/reset-project.js": {
+            "lines": 111,
+            "tokens": 798,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "scripts/register-test-users.js": {
+            "lines": 41,
+            "tokens": 346,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "scripts/add-test-users.js": {
+            "lines": 129,
+            "tokens": 950,
+            "sources": 1,
+            "clones": 8,
+            "duplicatedLines": 46,
+            "duplicatedTokens": 302,
+            "percentage": 35.66,
+            "percentageTokens": 31.79,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "public/service-worker.js": {
+            "lines": 31,
+            "tokens": 241,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/ThemedView.tsx": {
+            "lines": 0,
+            "tokens": 9,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/ThemedText.tsx": {
+            "lines": 8,
+            "tokens": 83,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/TaskRatingModal.tsx": {
+            "lines": 98,
+            "tokens": 915,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 6,
+            "duplicatedTokens": 60,
+            "percentage": 6.12,
+            "percentageTokens": 6.56,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/PerformanceManagement.tsx": {
+            "lines": 378,
+            "tokens": 3822,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 34,
+            "duplicatedTokens": 424,
+            "percentage": 8.99,
+            "percentageTokens": 11.09,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/ParallaxScrollView.tsx": {
+            "lines": 14,
+            "tokens": 99,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/HelloWave.tsx": {
+            "lines": 1,
+            "tokens": 16,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/Collapsible.tsx": {
+            "lines": 13,
+            "tokens": 156,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/index.tsx": {
+            "lines": 2,
+            "tokens": 66,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/employee-dashboard.tsx": {
+            "lines": 0,
+            "tokens": 24,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/admin-dashboard.tsx": {
+            "lines": 0,
+            "tokens": 18,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/_layout.tsx": {
+            "lines": 24,
+            "tokens": 291,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/+not-found.tsx": {
+            "lines": 3,
+            "tokens": 66,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "metro.config.js": {
+            "lines": 4,
+            "tokens": 37,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "eslint.config.js": {
+            "lines": 9,
+            "tokens": 63,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 2966,
+          "tokens": 38375,
+          "sources": 40,
+          "clones": 53,
+          "duplicatedLines": 447,
+          "duplicatedTokens": 5279,
+          "percentage": 15.07,
+          "percentageTokens": 13.76,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "typescript": {
+        "sources": {
+          "components/utility/utils.ts": {
+            "lines": 422,
+            "tokens": 4969,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/utility/types.ts": {
+            "lines": 416,
+            "tokens": 2509,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 14,
+            "duplicatedTokens": 70,
+            "percentage": 3.37,
+            "percentageTokens": 2.79,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/utility/styles.ts": {
+            "lines": 611,
+            "tokens": 3643,
+            "sources": 1,
+            "clones": 10,
+            "duplicatedLines": 62,
+            "duplicatedTokens": 398,
+            "percentage": 10.15,
+            "percentageTokens": 10.93,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "lib/supabase.ts": {
+            "lines": 6,
+            "tokens": 97,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "hooks/useThemeColor.ts": {
+            "lines": 20,
+            "tokens": 153,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "hooks/useColorScheme.web.ts": {
+            "lines": 20,
+            "tokens": 130,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "constants/Colors.ts": {
+            "lines": 25,
+            "tokens": 137,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 1520,
+          "tokens": 11638,
+          "sources": 7,
+          "clones": 6,
+          "duplicatedLines": 38,
+          "duplicatedTokens": 234,
+          "percentage": 2.5,
+          "percentageTokens": 2.01,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "tsx": {
+        "sources": {
+          "components/ui/TabBarBackground.tsx": {
+            "lines": 2,
+            "tokens": 18,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/ui/TabBarBackground.ios.tsx": {
+            "lines": 13,
+            "tokens": 83,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/ui/IconSymbol.tsx": {
+            "lines": 40,
+            "tokens": 272,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/ui/IconSymbol.ios.tsx": {
+            "lines": 31,
+            "tokens": 188,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/TasksTab.tsx": {
+            "lines": 528,
+            "tokens": 6214,
+            "sources": 1,
+            "clones": 21,
+            "duplicatedLines": 175,
+            "duplicatedTokens": 2218,
+            "percentage": 33.14,
+            "percentageTokens": 35.69,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/SettingsModal.tsx": {
+            "lines": 222,
+            "tokens": 2234,
+            "sources": 1,
+            "clones": 6,
+            "duplicatedLines": 35,
+            "duplicatedTokens": 480,
+            "percentage": 15.77,
+            "percentageTokens": 21.49,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/PerformanceTab.tsx": {
+            "lines": 227,
+            "tokens": 2205,
+            "sources": 1,
+            "clones": 4,
+            "duplicatedLines": 44,
+            "duplicatedTokens": 428,
+            "percentage": 19.38,
+            "percentageTokens": 19.41,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/MaterialsTab.tsx": {
+            "lines": 210,
+            "tokens": 2468,
+            "sources": 1,
+            "clones": 10,
+            "duplicatedLines": 86,
+            "duplicatedTokens": 784,
+            "percentage": 40.95,
+            "percentageTokens": 31.77,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/HomeTab.tsx": {
+            "lines": 215,
+            "tokens": 2976,
+            "sources": 1,
+            "clones": 5,
+            "duplicatedLines": 47,
+            "duplicatedTokens": 390,
+            "percentage": 21.86,
+            "percentageTokens": 13.1,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/ExportModal.tsx": {
+            "lines": 141,
+            "tokens": 1720,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 15,
+            "duplicatedTokens": 165,
+            "percentage": 10.64,
+            "percentageTokens": 9.59,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/EmployeesTab.tsx": {
+            "lines": 264,
+            "tokens": 3372,
+            "sources": 1,
+            "clones": 9,
+            "duplicatedLines": 85,
+            "duplicatedTokens": 1122,
+            "percentage": 32.2,
+            "percentageTokens": 33.27,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/ClockEventsTab.tsx": {
+            "lines": 69,
+            "tokens": 773,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 8,
+            "duplicatedTokens": 89,
+            "percentage": 11.59,
+            "percentageTokens": 11.51,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/AdminRow.tsx": {
+            "lines": 66,
+            "tokens": 582,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/admin/AdminModal.tsx": {
+            "lines": 63,
+            "tokens": 524,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/screens/TestSupabaseScreen.tsx": {
+            "lines": 78,
+            "tokens": 904,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/screens/LoginScreen.tsx": {
+            "lines": 126,
+            "tokens": 1270,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/screens/EmployeeDashboardScreen.tsx": {
+            "lines": 568,
+            "tokens": 8190,
+            "sources": 1,
+            "clones": 17,
+            "duplicatedLines": 125,
+            "duplicatedTokens": 1789,
+            "percentage": 22.01,
+            "percentageTokens": 21.84,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/screens/AdminDashboardScreen.tsx": {
+            "lines": 332,
+            "tokens": 3386,
+            "sources": 1,
+            "clones": 3,
+            "duplicatedLines": 19,
+            "duplicatedTokens": 207,
+            "percentage": 5.72,
+            "percentageTokens": 6.11,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/auth/callback.tsx": {
+            "lines": 106,
+            "tokens": 1102,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/(tabs)/explore.tsx": {
+            "lines": 109,
+            "tokens": 1230,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 5,
+            "duplicatedTokens": 42,
+            "percentage": 4.59,
+            "percentageTokens": 3.41,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/(tabs)/_layout.tsx": {
+            "lines": 44,
+            "tokens": 381,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/ThemedView.tsx": {
+            "lines": 13,
+            "tokens": 151,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/ThemedText.tsx": {
+            "lines": 59,
+            "tokens": 428,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/TaskRatingModal.tsx": {
+            "lines": 296,
+            "tokens": 2385,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 14,
+            "duplicatedTokens": 78,
+            "percentage": 4.73,
+            "percentageTokens": 3.27,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/PerformanceManagement.tsx": {
+            "lines": 489,
+            "tokens": 4953,
+            "sources": 1,
+            "clones": 6,
+            "duplicatedLines": 41,
+            "duplicatedTokens": 322,
+            "percentage": 8.38,
+            "percentageTokens": 6.5,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/ParallaxScrollView.tsx": {
+            "lines": 79,
+            "tokens": 584,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/HelloWave.tsx": {
+            "lines": 39,
+            "tokens": 312,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/HapticTab.tsx": {
+            "lines": 17,
+            "tokens": 140,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/ExternalLink.tsx": {
+            "lines": 23,
+            "tokens": 210,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "components/Collapsible.tsx": {
+            "lines": 44,
+            "tokens": 429,
+            "sources": 1,
+            "clones": 1,
+            "duplicatedLines": 5,
+            "duplicatedTokens": 42,
+            "percentage": 11.36,
+            "percentageTokens": 9.79,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/index.tsx": {
+            "lines": 65,
+            "tokens": 758,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/employee-dashboard.tsx": {
+            "lines": 9,
+            "tokens": 146,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/admin-dashboard.tsx": {
+            "lines": 8,
+            "tokens": 106,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/_layout.tsx": {
+            "lines": 148,
+            "tokens": 1299,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 16,
+            "duplicatedTokens": 218,
+            "percentage": 10.81,
+            "percentageTokens": 16.78,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app/+not-found.tsx": {
+            "lines": 31,
+            "tokens": 272,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 4774,
+          "tokens": 52265,
+          "sources": 35,
+          "clones": 45,
+          "duplicatedLines": 360,
+          "duplicatedTokens": 4187,
+          "percentage": 7.54,
+          "percentageTokens": 8.01,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "json": {
+        "sources": {
+          "public/manifest.json": {
+            "lines": 26,
+            "tokens": 147,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          ".vscode/tasks.json": {
+            "lines": 12,
+            "tokens": 74,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          ".vscode/settings.json": {
+            "lines": 6,
+            "tokens": 31,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "tsconfig.json": {
+            "lines": 16,
+            "tokens": 71,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "package.json": {
+            "lines": 56,
+            "tokens": 371,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "app.json": {
+            "lines": 56,
+            "tokens": 302,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 172,
+          "tokens": 996,
+          "sources": 6,
+          "clones": 0,
+          "duplicatedLines": 0,
+          "duplicatedTokens": 0,
+          "percentage": 0,
+          "percentageTokens": 0,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "sql": {
+        "sources": {
+          "run_database_setup.sql": {
+            "lines": 205,
+            "tokens": 1830,
+            "sources": 1,
+            "clones": 15,
+            "duplicatedLines": 236,
+            "duplicatedTokens": 2066,
+            "percentage": 115.12,
+            "percentageTokens": 112.9,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "database_schema.sql": {
+            "lines": 212,
+            "tokens": 1908,
+            "sources": 1,
+            "clones": 7,
+            "duplicatedLines": 184,
+            "duplicatedTokens": 1670,
+            "percentage": 86.79,
+            "percentageTokens": 87.53,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "database_fixes.sql": {
+            "lines": 466,
+            "tokens": 4325,
+            "sources": 1,
+            "clones": 20,
+            "duplicatedLines": 162,
+            "duplicatedTokens": 1418,
+            "percentage": 34.76,
+            "percentageTokens": 32.79,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "database_analysis.sql": {
+            "lines": 318,
+            "tokens": 1995,
+            "sources": 1,
+            "clones": 2,
+            "duplicatedLines": 10,
+            "duplicatedTokens": 96,
+            "percentage": 3.14,
+            "percentageTokens": 4.81,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 1201,
+          "tokens": 10058,
+          "sources": 4,
+          "clones": 22,
+          "duplicatedLines": 296,
+          "duplicatedTokens": 2625,
+          "percentage": 24.65,
+          "percentageTokens": 26.1,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      },
+      "markdown": {
+        "sources": {
+          "SUPABASE_SCHEMA_ANALYSIS_REPORT.md": {
+            "lines": 332,
+            "tokens": 2470,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          },
+          "README.md": {
+            "lines": 74,
+            "tokens": 567,
+            "sources": 1,
+            "clones": 0,
+            "duplicatedLines": 0,
+            "duplicatedTokens": 0,
+            "percentage": 0,
+            "percentageTokens": 0,
+            "newDuplicatedLines": 0,
+            "newClones": 0
+          }
+        },
+        "total": {
+          "lines": 406,
+          "tokens": 3037,
+          "sources": 2,
+          "clones": 0,
+          "duplicatedLines": 0,
+          "duplicatedTokens": 0,
+          "percentage": 0,
+          "percentageTokens": 0,
+          "newDuplicatedLines": 0,
+          "newClones": 0
+        }
+      }
+    },
+    "total": {
+      "lines": 11072,
+      "tokens": 116903,
+      "sources": 96,
+      "clones": 126,
+      "duplicatedLines": 1141,
+      "duplicatedTokens": 12325,
+      "percentage": 10.31,
+      "percentageTokens": 10.54,
+      "newDuplicatedLines": 0,
+      "newClones": 0
+    }
+  },
+  "duplicates": [
+    {
+      "format": "typescript",
+      "lines": 8,
+      "fragment": ": string;\n    tasks_completed: number;\n    average_rating: number;\n    tasks_rated: number;\n  }[];\n}\n\n// Form validation types",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/utility/types.ts",
+        "start": 185,
+        "end": 192,
+        "startLoc": {
+          "line": 185,
+          "column": 11,
+          "position": 1090
+        },
+        "endLoc": {
+          "line": 192,
+          "column": 25,
+          "position": 1125
+        }
+      },
+      "secondFile": {
+        "name": "components/utility/types.ts",
+        "start": 172,
+        "end": 179,
+        "startLoc": {
+          "line": 172,
+          "column": 14,
+          "position": 1011
+        },
+        "endLoc": {
+          "line": 179,
+          "column": 7,
+          "position": 1046
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 6,
+      "fragment": "borderRadius: 8,\n    paddingVertical: 12,\n    paddingHorizontal: 20,\n    alignItems: 'center',\n    justifyContent: 'center',\n    borderWidth",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/utility/styles.ts",
+        "start": 134,
+        "end": 139,
+        "startLoc": {
+          "line": 134,
+          "column": 5,
+          "position": 892
+        },
+        "endLoc": {
+          "line": 139,
+          "column": 12,
+          "position": 927
+        }
+      },
+      "secondFile": {
+        "name": "components/utility/styles.ts",
+        "start": 16,
+        "end": 21,
+        "startLoc": {
+          "line": 16,
+          "column": 3,
+          "position": 111
+        },
+        "endLoc": {
+          "line": 21,
+          "column": 2,
+          "position": 145
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 8,
+      "fragment": ",\n    borderRadius: 8,\n    paddingVertical: 12,\n    paddingHorizontal: 20,\n    alignItems: 'center',\n    justifyContent: 'center',\n    borderWidth: 1,\n    borderColor: '#555'",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/utility/styles.ts",
+        "start": 143,
+        "end": 150,
+        "startLoc": {
+          "line": 143,
+          "column": 10,
+          "position": 955
+        },
+        "endLoc": {
+          "line": 150,
+          "column": 7,
+          "position": 1003
+        }
+      },
+      "secondFile": {
+        "name": "components/utility/styles.ts",
+        "start": 133,
+        "end": 140,
+        "startLoc": {
+          "line": 133,
+          "column": 10,
+          "position": 889
+        },
+        "endLoc": {
+          "line": 140,
+          "column": 7,
+          "position": 937
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 7,
+      "fragment": ": {\n    fontSize: 14,\n    fontWeight: '600',\n    color: '#333',\n    marginBottom: 8,\n  },\n  darkFormLabel",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/utility/styles.ts",
+        "start": 311,
+        "end": 317,
+        "startLoc": {
+          "line": 311,
+          "column": 10,
+          "position": 1943
+        },
+        "endLoc": {
+          "line": 317,
+          "column": 14,
+          "position": 1980
+        }
+      },
+      "secondFile": {
+        "name": "components/utility/styles.ts",
+        "start": 197,
+        "end": 203,
+        "startLoc": {
+          "line": 197,
+          "column": 11,
+          "position": 1281
+        },
+        "endLoc": {
+          "line": 203,
+          "column": 15,
+          "position": 1318
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 7,
+      "fragment": ": {\n    fontSize: 14,\n    fontWeight: '600',\n    color: '#e0e0e0',\n    marginBottom: 8,\n  },\n  formError",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/utility/styles.ts",
+        "start": 317,
+        "end": 323,
+        "startLoc": {
+          "line": 317,
+          "column": 14,
+          "position": 1981
+        },
+        "endLoc": {
+          "line": 323,
+          "column": 10,
+          "position": 2018
+        }
+      },
+      "secondFile": {
+        "name": "components/utility/styles.ts",
+        "start": 203,
+        "end": 210,
+        "startLoc": {
+          "line": 203,
+          "column": 15,
+          "position": 1319
+        },
+        "endLoc": {
+          "line": 210,
+          "column": 15,
+          "position": 1357
+        }
+      }
+    },
+    {
+      "format": "typescript",
+      "lines": 8,
+      "fragment": ",\n    borderRadius: 16,\n    paddingHorizontal: 12,\n    paddingVertical: 6,\n    marginRight: 8,\n    marginBottom: 8,\n  },\n  filterChipText",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/utility/styles.ts",
+        "start": 446,
+        "end": 453,
+        "startLoc": {
+          "line": 446,
+          "column": 10,
+          "position": 2730
+        },
+        "endLoc": {
+          "line": 453,
+          "column": 15,
+          "position": 2772
+        }
+      },
+      "secondFile": {
+        "name": "components/utility/styles.ts",
+        "start": 438,
+        "end": 445,
+        "startLoc": {
+          "line": 438,
+          "column": 10,
+          "position": 2678
+        },
+        "endLoc": {
+          "line": 445,
+          "column": 15,
+          "position": 2720
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 7,
+      "fragment": ": 6 }]}>\n          <Text style={adminStyles.dropdownLabel}>Deadline</Text>\n          <TouchableOpacity\n            style={[adminStyles.dropdown, { width: '100%' }]}\n            onPress={() => {\n              const times = ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'];\n              const idx = times.indexOf(newTaskDeadline",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 147,
+        "end": 153,
+        "startLoc": {
+          "line": 147,
+          "column": 12,
+          "position": 1668
+        },
+        "endLoc": {
+          "line": 153,
+          "column": 16,
+          "position": 1770
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 134,
+        "end": 140,
+        "startLoc": {
+          "line": 134,
+          "column": 13,
+          "position": 1485
+        },
+        "endLoc": {
+          "line": 140,
+          "column": 13,
+          "position": 1587
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 10,
+      "fragment": "(times[(idx + 1) % times.length]);\n            }}\n          >\n            <Text style={adminStyles.dropdownText}>{newTaskDeadline || 'Select'}</Text>\n          </TouchableOpacity>\n        </View>\n      </View>\n      \n      {/* Material selection UI */}\n      <View style={{",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 154,
+        "end": 163,
+        "startLoc": {
+          "line": 154,
+          "column": 19,
+          "position": 1775
+        },
+        "endLoc": {
+          "line": 163,
+          "column": 2,
+          "position": 1850
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 141,
+        "end": 147,
+        "startLoc": {
+          "line": 141,
+          "column": 16,
+          "position": 1592
+        },
+        "endLoc": {
+          "line": 147,
+          "column": 2,
+          "position": 1655
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 14,
+      "fragment": " }}>{mat.name}</Text>\n                </TouchableOpacity>\n              ))}\n            </ScrollView>\n          </View>\n        </View>\n        {selectedMaterialForTask && (\n          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>\n            <Text style={{ marginRight: 6 }}>Type:</Text>\n            <View style={{ flex: 1 }}>\n              <ScrollView horizontal showsHorizontalScrollIndicator={false}>\n                {(materialTypes[selectedMaterialForTask] || []).map(type => (\n                  <TouchableOpacity\n                    key={type",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 183,
+        "end": 196,
+        "startLoc": {
+          "line": 183,
+          "column": 10,
+          "position": 2107
+        },
+        "endLoc": {
+          "line": 196,
+          "column": 5,
+          "position": 2261
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 164,
+        "end": 171,
+        "startLoc": {
+          "line": 164,
+          "column": 2,
+          "position": 1902
+        },
+        "endLoc": {
+          "line": 171,
+          "column": 4,
+          "position": 2013
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 11,
+      "fragment": ".id ? '#fff' : '#1976d2' }}>{type.label}</Text>\n                  </TouchableOpacity>\n                ))}\n              </ScrollView>\n            </View>\n          </View>\n        )}\n        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>\n          <Text style={{ marginRight: 6 }}>Quantity:</Text>\n          <TextInput\n            style={[",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 205,
+        "end": 215,
+        "startLoc": {
+          "line": 205,
+          "column": 5,
+          "position": 2337
+        },
+        "endLoc": {
+          "line": 215,
+          "column": 2,
+          "position": 2444
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 183,
+        "end": 167,
+        "startLoc": {
+          "line": 183,
+          "column": 5,
+          "position": 2098
+        },
+        "endLoc": {
+          "line": 167,
+          "column": 2,
+          "position": 1971
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 11,
+      "fragment": "(item.id)}>\n              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Delete</Text>\n            </TouchableOpacity>\n          </View>\n        </View>\n      );\n    } else {\n      // Employee\n      return (\n        <TouchableOpacity style={{\n          backgroundColor",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 320,
+        "end": 330,
+        "startLoc": {
+          "line": 320,
+          "column": 17,
+          "position": 3990
+        },
+        "endLoc": {
+          "line": 330,
+          "column": 26,
+          "position": 4066
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 316,
+        "end": 320,
+        "startLoc": {
+          "line": 316,
+          "column": 19,
+          "position": 3910
+        },
+        "endLoc": {
+          "line": 320,
+          "column": 17,
+          "position": 3963
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 13,
+      "fragment": "} />\n            {/* Materials selection (reuse existing logic) */}\n            <View style={{ marginTop: 12, marginBottom: 12, backgroundColor: '#f5faff', borderRadius: 10, padding: 10 }}>\n              <Text style={{ fontWeight: 'bold', color: '#1976d2', marginBottom: 4 }}>Add Materials Used</Text>\n              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>\n                <Text style={{ marginRight: 6 }}>Material:</Text>\n                <View style={{ flex: 1 }}>\n                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>\n                    {materials.map(mat => (\n                      <TouchableOpacity\n                        key={mat.id}\n                        style={{\n                          backgroundColor",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 413,
+        "end": 425,
+        "startLoc": {
+          "line": 413,
+          "column": 19,
+          "position": 4907
+        },
+        "endLoc": {
+          "line": 425,
+          "column": 42,
+          "position": 5095
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 157,
+        "end": 173,
+        "startLoc": {
+          "line": 157,
+          "column": 13,
+          "position": 1808
+        },
+        "endLoc": {
+          "line": 173,
+          "column": 36,
+          "position": 2022
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 18,
+      "fragment": "}}\n                      >\n                        <Text style={{ color: selectedMaterialForTask === mat.id ? '#fff' : '#1976d2' }}>{mat.name}</Text>\n                      </TouchableOpacity>\n                    ))}\n                  </ScrollView>\n                </View>\n              </View>\n              {selectedMaterialForTask && (\n                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>\n                  <Text style={{ marginRight: 6 }}>Type:</Text>\n                  <View style={{ flex: 1 }}>\n                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>\n                      {(materialTypes[selectedMaterialForTask] || []).map(type => (\n                        <TouchableOpacity\n                          key={type.id}\n                          style={{\n                            backgroundColor",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 433,
+        "end": 450,
+        "startLoc": {
+          "line": 433,
+          "column": 25,
+          "position": 5153
+        },
+        "endLoc": {
+          "line": 450,
+          "column": 44,
+          "position": 5343
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 181,
+        "end": 198,
+        "startLoc": {
+          "line": 181,
+          "column": 19,
+          "position": 2080
+        },
+        "endLoc": {
+          "line": 198,
+          "column": 38,
+          "position": 2270
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 20,
+      "fragment": "}}\n                          onPress={() => setSelectedMaterialTypeForTask(type.id)}\n                        >\n                          <Text style={{ color: selectedMaterialTypeForTask === type.id ? '#fff' : '#1976d2' }}>{type.label}</Text>\n                        </TouchableOpacity>\n                      ))}\n                    </ScrollView>\n                  </View>\n                </View>\n              )}\n              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>\n                <Text style={{ marginRight: 6 }}>Quantity:</Text>\n                <TextInput\n                  style={[adminStyles.input, { flex: 1 }]}\n                  placeholder=\"Quantity\"\n                  value={materialQuantityForTask}\n                  onChangeText={setMaterialQuantityForTask}\n                  keyboardType=\"numeric\"\n                />\n                <TouchableOpacity style={adminStyles",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 454,
+        "end": 473,
+        "startLoc": {
+          "line": 454,
+          "column": 27,
+          "position": 5375
+        },
+        "endLoc": {
+          "line": 473,
+          "column": 12,
+          "position": 5566
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 202,
+        "end": 221,
+        "startLoc": {
+          "line": 202,
+          "column": 21,
+          "position": 2302
+        },
+        "endLoc": {
+          "line": 221,
+          "column": 2,
+          "position": 2493
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 11,
+      "fragment": ") => {\n                const mat = materials.find(m => m.id === mu.materialId);\n                const type = mu.materialTypeId && materialTypes[mu.materialId]?.find(t => t.id === mu.materialTypeId);\n                return (\n                  <Text key={idx2} style={{ fontSize: 14 }}>{mat?.name}{type ? ` (${type.label})` : ''}: {mu.quantity} {mat?.unit}</Text>\n                );\n              })}\n            </View>\n          )}\n          \n          {",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 278,
+        "end": 288,
+        "startLoc": {
+          "line": 278,
+          "column": 5,
+          "position": 3421
+        },
+        "endLoc": {
+          "line": 288,
+          "column": 2,
+          "position": 3582
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 228,
+        "end": 237,
+        "startLoc": {
+          "line": 228,
+          "column": 4,
+          "position": 2612
+        },
+        "endLoc": {
+          "line": 237,
+          "column": 3,
+          "position": 2771
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 10,
+      "fragment": "}\n            <View style={{ marginTop: 12, marginBottom: 12, backgroundColor: '#f5faff', borderRadius: 10, padding: 10 }}>\n              <Text style={{ fontWeight: 'bold', color: '#1976d2', marginBottom: 4 }}>Add Materials Used</Text>\n              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>\n                <Text style={{ marginRight: 6 }}>Material:</Text>\n                <View style={{ flex: 1 }}>\n                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>\n                    {materials.map(mat => (\n                      <TouchableOpacity\n                        ",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 414,
+        "end": 423,
+        "startLoc": {
+          "line": 414,
+          "column": 49,
+          "position": 4914
+        },
+        "endLoc": {
+          "line": 423,
+          "column": 25,
+          "position": 5082
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 162,
+        "end": 171,
+        "startLoc": {
+          "line": 162,
+          "column": 28,
+          "position": 1841
+        },
+        "endLoc": {
+          "line": 171,
+          "column": 19,
+          "position": 2009
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 15,
+      "fragment": ">\n                        <Text style={{ color: selectedMaterialForTask === mat.id ? '#fff' : '#1976d2' }}>{mat.name}</Text>\n                      </TouchableOpacity>\n                    ))}\n                  </ScrollView>\n                </View>\n              </View>\n              {selectedMaterialForTask && (\n                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>\n                  <Text style={{ marginRight: 6 }}>Type:</Text>\n                  <View style={{ flex: 1 }}>\n                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>\n                      {(materialTypes[selectedMaterialForTask] || []).map(type => (\n                        <TouchableOpacity\n                          ",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 434,
+        "end": 448,
+        "startLoc": {
+          "line": 434,
+          "column": 23,
+          "position": 5156
+        },
+        "endLoc": {
+          "line": 448,
+          "column": 27,
+          "position": 5330
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 182,
+        "end": 196,
+        "startLoc": {
+          "line": 182,
+          "column": 17,
+          "position": 2083
+        },
+        "endLoc": {
+          "line": 196,
+          "column": 21,
+          "position": 2257
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 12,
+      "fragment": ">\n                          <Text style={{ color: selectedMaterialTypeForTask === type.id ? '#fff' : '#1976d2' }}>{type.label}</Text>\n                        </TouchableOpacity>\n                      ))}\n                    </ScrollView>\n                  </View>\n                </View>\n              )}\n              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>\n                <Text style={{ marginRight: 6 }}>Quantity:</Text>\n                <TextInput\n                  ",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 456,
+        "end": 467,
+        "startLoc": {
+          "line": 456,
+          "column": 25,
+          "position": 5394
+        },
+        "endLoc": {
+          "line": 467,
+          "column": 19,
+          "position": 5513
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 204,
+        "end": 215,
+        "startLoc": {
+          "line": 204,
+          "column": 19,
+          "position": 2321
+        },
+        "endLoc": {
+          "line": 215,
+          "column": 13,
+          "position": 2440
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 6,
+      "fragment": "/>\n                <TouchableOpacity style={adminStyles.addBtn} onPress={handleAddMaterialToTask}>\n                  <Text style={adminStyles.addBtnText}>Add</Text>\n                </TouchableOpacity>\n              </View>\n              {/* List added materials for this task */",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 472,
+        "end": 477,
+        "startLoc": {
+          "line": 472,
+          "column": 17,
+          "position": 5557
+        },
+        "endLoc": {
+          "line": 477,
+          "column": 41,
+          "position": 5607
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 220,
+        "end": 225,
+        "startLoc": {
+          "line": 220,
+          "column": 11,
+          "position": 2484
+        },
+        "endLoc": {
+          "line": 225,
+          "column": 20,
+          "position": 2545
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 12,
+      "fragment": ":</Text>\n                  {materialsForNewTask.map((mu, idx) => {\n                    const mat = materials.find(m => m.id === mu.materialId);\n                    const type = mu.materialTypeId && materialTypes[mu.materialId]?.find(t => t.id === mu.materialTypeId);\n                    return (\n                      <Text key={idx} style={{ fontSize: 14 }}>{mat?.name}{type ? ` (${type.label})` : ''}: {mu.quantity} {mat?.unit}</Text>\n                    );\n                  })}\n                </View>\n              )}\n            </View>\n            <View",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 480,
+        "end": 491,
+        "startLoc": {
+          "line": 480,
+          "column": 5,
+          "position": 5667
+        },
+        "endLoc": {
+          "line": 491,
+          "column": 5,
+          "position": 5848
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 227,
+        "end": 238,
+        "startLoc": {
+          "line": 227,
+          "column": 6,
+          "position": 2596
+        },
+        "endLoc": {
+          "line": 238,
+          "column": 17,
+          "position": 2777
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 6,
+      "fragment": ") return;\n                const { data, error } = await supabase\n                  .from('tasks')\n                  .insert({\n                    name: newTaskName,\n                    assignedTo: addTaskEmployee",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 493,
+        "end": 498,
+        "startLoc": {
+          "line": 493,
+          "column": 16,
+          "position": 5918
+        },
+        "endLoc": {
+          "line": 498,
+          "column": 16,
+          "position": 5965
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 53,
+        "end": 59,
+        "startLoc": {
+          "line": 53,
+          "column": 21,
+          "position": 613
+        },
+        "endLoc": {
+          "line": 59,
+          "column": 21,
+          "position": 662
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 11,
+      "fragment": ".id,\n                    business_id: user.business_id,\n                    start: newTaskStart,\n                    deadline: newTaskDeadline,\n                    completed: false,\n                    completedAt: null,\n                    materialsUsed: materialsForNewTask,\n                  })\n                  .select('*')\n                  .single();\n                if (!error && data) setTasks",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 498,
+        "end": 508,
+        "startLoc": {
+          "line": 498,
+          "column": 16,
+          "position": 5966
+        },
+        "endLoc": {
+          "line": 508,
+          "column": 9,
+          "position": 6044
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 59,
+        "end": 70,
+        "startLoc": {
+          "line": 59,
+          "column": 21,
+          "position": 663
+        },
+        "endLoc": {
+          "line": 70,
+          "column": 2,
+          "position": 743
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 6,
+      "fragment": "setTasks([...tasks, data]);\n                setNewTaskName('');\n                setNewTaskStart('');\n                setNewTaskDeadline('');\n                setMaterialsForNewTask([]);\n                setAddTaskEmployee",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 508,
+        "end": 513,
+        "startLoc": {
+          "line": 508,
+          "column": 2,
+          "position": 6044
+        },
+        "endLoc": {
+          "line": 513,
+          "column": 19,
+          "position": 6086
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 71,
+        "end": 76,
+        "startLoc": {
+          "line": 71,
+          "column": 7,
+          "position": 746
+        },
+        "endLoc": {
+          "line": 76,
+          "column": 2,
+          "position": 788
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 10,
+      "fragment": "}\n                  placeholder=\"17:00\"\n                />\n              </View>\n              \n              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>\n                <Text style={adminStyles.timeLabel}>Lunch Start:</Text>\n                <TextInput\n                  style={adminStyles.timeInput}\n                  value={newLunchStart",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/SettingsModal.tsx",
+        "start": 150,
+        "end": 159,
+        "startLoc": {
+          "line": 150,
+          "column": 14,
+          "position": 1478
+        },
+        "endLoc": {
+          "line": 159,
+          "column": 14,
+          "position": 1557
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/SettingsModal.tsx",
+        "start": 136,
+        "end": 142,
+        "startLoc": {
+          "line": 136,
+          "column": 14,
+          "position": 1350
+        },
+        "endLoc": {
+          "line": 142,
+          "column": 13,
+          "position": 1421
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 12,
+      "fragment": "}>\n                <Text style={adminStyles.addBtnText}>Save Hours</Text>\n              </TouchableOpacity>\n            </View>\n\n            {/* Business Code Management (Admin Only) */}\n            {user?.role === 'admin' && (\n              <View style={adminStyles.settingsCard}>\n                <Text style={adminStyles.settingsTitle}>Business Code</Text>\n                \n                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>\n                  <TouchableOpacity style={[",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/SettingsModal.tsx",
+        "start": 172,
+        "end": 183,
+        "startLoc": {
+          "line": 172,
+          "column": 20,
+          "position": 1649
+        },
+        "endLoc": {
+          "line": 183,
+          "column": 2,
+          "position": 1770
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/SettingsModal.tsx",
+        "start": 127,
+        "end": 139,
+        "startLoc": {
+          "line": 127,
+          "column": 24,
+          "position": 1281
+        },
+        "endLoc": {
+          "line": 139,
+          "column": 12,
+          "position": 1395
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 12,
+      "fragment": " }}>\n                Enable Task Rating System\n              </Text>\n            </TouchableOpacity>\n          </View>\n          \n          <View style={{ marginBottom: 12 }}>\n            <TouchableOpacity\n              style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}\n              onPress={() => updatePerformanceSettings({\n                ...performanceSettings,\n                autoRateCompletedTasks",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 100,
+        "end": 111,
+        "startLoc": {
+          "line": 100,
+          "column": 7,
+          "position": 932
+        },
+        "endLoc": {
+          "line": 111,
+          "column": 39,
+          "position": 1021
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 82,
+        "end": 91,
+        "startLoc": {
+          "line": 82,
+          "column": 2,
+          "position": 773
+        },
+        "endLoc": {
+          "line": 91,
+          "column": 36,
+          "position": 848
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 11,
+      "fragment": "? '#4CAF50' : '#ccc'}\n                style={{ marginRight: 12 }}\n              />\n              <Text style={{ fontSize: 14, color: '#333' }}>\n                Auto-rate Completed Tasks\n              </Text>\n            </TouchableOpacity>\n          </View>\n          \n          <View style={{ marginBottom: 12 }}>\n            <Text style={{ fontSize",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 117,
+        "end": 127,
+        "startLoc": {
+          "line": 117,
+          "column": 24,
+          "position": 1065
+        },
+        "endLoc": {
+          "line": 127,
+          "column": 10,
+          "position": 1161
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 97,
+        "end": 108,
+        "startLoc": {
+          "line": 97,
+          "column": 21,
+          "position": 892
+        },
+        "endLoc": {
+          "line": 108,
+          "column": 15,
+          "position": 988
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 14,
+      "fragment": "}>\n                Auto-rate Completed Tasks\n              </Text>\n            </TouchableOpacity>\n          </View>\n          \n          <View style={{ marginBottom: 12 }}>\n            <Text style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>\n              Default Rating for Auto-rated Tasks:\n            </Text>\n            <View style={{ flexDirection: 'row', alignItems: 'center' }}>\n              {[1, 2, 3, 4, 5].map((rating) => (\n                <TouchableOpacity\n                  key={rating",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 120,
+        "end": 133,
+        "startLoc": {
+          "line": 120,
+          "column": 2,
+          "position": 1107
+        },
+        "endLoc": {
+          "line": 133,
+          "column": 7,
+          "position": 1256
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/SettingsModal.tsx",
+        "start": 113,
+        "end": 121,
+        "startLoc": {
+          "line": 113,
+          "column": 14,
+          "position": 1108
+        },
+        "endLoc": {
+          "line": 121,
+          "column": 2,
+          "position": 1207
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 6,
+      "fragment": ",\n              borderRadius: 8,\n              paddingVertical: 12,\n              paddingHorizontal: 20,\n              flex: 1,\n              marginLeft",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 176,
+        "end": 181,
+        "startLoc": {
+          "line": 176,
+          "column": 10,
+          "position": 1585
+        },
+        "endLoc": {
+          "line": 181,
+          "column": 25,
+          "position": 1606
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 158,
+        "end": 163,
+        "startLoc": {
+          "line": 158,
+          "column": 10,
+          "position": 1449
+        },
+        "endLoc": {
+          "line": 163,
+          "column": 26,
+          "position": 1470
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 10,
+      "fragment": "}\n          >\n            <FontAwesome5 name=\"sync-alt\" size={16} color=\"#fff\" style={{ marginRight: 8 }} />\n            <Text style={{ color: '#fff', fontWeight: '600' }}>Recalculate</Text>\n          </TouchableOpacity>\n        </View>\n      </View>\n\n      {/* Quick Stats */}\n      <View style={{ backgroundColor",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 184,
+        "end": 193,
+        "startLoc": {
+          "line": 184,
+          "column": 28,
+          "position": 1623
+        },
+        "endLoc": {
+          "line": 193,
+          "column": 17,
+          "position": 1718
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 168,
+        "end": 176,
+        "startLoc": {
+          "line": 168,
+          "column": 2,
+          "position": 1499
+        },
+        "endLoc": {
+          "line": 176,
+          "column": 30,
+          "position": 1581
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 7,
+      "fragment": " }}>Recalculate</Text>\n          </TouchableOpacity>\n        </View>\n      </View>\n\n      {/* Quick Stats */}\n      <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20 ",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 187,
+        "end": 193,
+        "startLoc": {
+          "line": 187,
+          "column": 6,
+          "position": 1680
+        },
+        "endLoc": {
+          "line": 193,
+          "column": 2,
+          "position": 1732
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 73,
+        "end": 75,
+        "startLoc": {
+          "line": 73,
+          "column": 3,
+          "position": 638
+        },
+        "endLoc": {
+          "line": 75,
+          "column": 2,
+          "position": 670
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 6,
+      "fragment": " }}>\n        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 16 }}>\n          Quick Stats\n        </Text>\n        \n        <View style={{ flexDirection",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 193,
+        "end": 198,
+        "startLoc": {
+          "line": 193,
+          "column": 3,
+          "position": 1732
+        },
+        "endLoc": {
+          "line": 198,
+          "column": 15,
+          "position": 1789
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 75,
+        "end": 81,
+        "startLoc": {
+          "line": 75,
+          "column": 3,
+          "position": 675
+        },
+        "endLoc": {
+          "line": 81,
+          "column": 14,
+          "position": 737
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 6,
+      "fragment": " }}>Completed</Text>\n          </View>\n          \n          <View style={{ alignItems: 'center' }}>\n            <FontAwesome5 name=\"star\" size={24} color=\"#FFD700\" />\n            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#FFD700'",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 204,
+        "end": 209,
+        "startLoc": {
+          "line": 204,
+          "column": 7,
+          "position": 1916
+        },
+        "endLoc": {
+          "line": 209,
+          "column": 10,
+          "position": 1994
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 198,
+        "end": 201,
+        "startLoc": {
+          "line": 198,
+          "column": 15,
+          "position": 1798
+        },
+        "endLoc": {
+          "line": 201,
+          "column": 10,
+          "position": 1865
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 9,
+      "fragment": ", marginTop: 4 }}>\n              {tasks.filter(t => t.completed).length}\n            </Text>\n            <Text style={{ fontSize: 12, color: '#666' }}>Rated</Text>\n          </View>\n          \n          <View style={{ alignItems: 'center' }}>\n            <FontAwesome5 name=\"users\" size={24} color=\"#4CAF50\" />\n            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#4CAF50'",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 209,
+        "end": 217,
+        "startLoc": {
+          "line": 209,
+          "column": 10,
+          "position": 1995
+        },
+        "endLoc": {
+          "line": 217,
+          "column": 10,
+          "position": 2123
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 201,
+        "end": 201,
+        "startLoc": {
+          "line": 201,
+          "column": 10,
+          "position": 1866
+        },
+        "endLoc": {
+          "line": 201,
+          "column": 10,
+          "position": 1865
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 18,
+      "fragment": ">\n          \n          <View style={{ marginBottom: 12 }}>\n            <TouchableOpacity\n              style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}\n              onPress={() => updatePerformanceSettings({\n                ...performanceSettings,\n                autoRateCompletedTasks: !performanceSettings.autoRateCompletedTasks\n              })}\n            >\n              <FontAwesome5\n                name={performanceSettings.autoRateCompletedTasks ? 'toggle-on' : 'toggle-off'}\n                size={20}\n                color={performanceSettings.autoRateCompletedTasks ? '#4CAF50' : '#ccc'}\n                style={{ marginRight: 12 }}\n              />\n              <Text style={{ fontSize: 14, color: '#333' }}>\n                Auto",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 104,
+        "end": 121,
+        "startLoc": {
+          "line": 104,
+          "column": 5,
+          "position": 959
+        },
+        "endLoc": {
+          "line": 121,
+          "column": 5,
+          "position": 1111
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 84,
+        "end": 101,
+        "startLoc": {
+          "line": 84,
+          "column": 5,
+          "position": 786
+        },
+        "endLoc": {
+          "line": 101,
+          "column": 7,
+          "position": 938
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 8,
+      "fragment": " }}>{type.label}</Text>\n                    </View>\n                  ))}\n                </View>\n              )}\n            </View>\n            <View style={{ flexDirection: 'row', alignItems: 'center' }}>\n              <TouchableOpacity onPress={(",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/MaterialsTab.tsx",
+        "start": 159,
+        "end": 166,
+        "startLoc": {
+          "line": 159,
+          "column": 10,
+          "position": 1698
+        },
+        "endLoc": {
+          "line": 166,
+          "column": 2,
+          "position": 1764
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/SettingsModal.tsx",
+        "start": 116,
+        "end": 121,
+        "startLoc": {
+          "line": 116,
+          "column": 2,
+          "position": 1158
+        },
+        "endLoc": {
+          "line": 121,
+          "column": 2,
+          "position": 1207
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 7,
+      "fragment": "if (!newMaterialName || !newMaterialUnit) {\n      Alert.alert('Missing Fields', 'Please enter both name and unit.');\n      return;\n    }\n    const { data, error } = await supabase\n      .from('materials')\n      .update",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/MaterialsTab.tsx",
+        "start": 67,
+        "end": 73,
+        "startLoc": {
+          "line": 67,
+          "column": 5,
+          "position": 656
+        },
+        "endLoc": {
+          "line": 73,
+          "column": 7,
+          "position": 716
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/MaterialsTab.tsx",
+        "start": 34,
+        "end": 40,
+        "startLoc": {
+          "line": 34,
+          "column": 5,
+          "position": 361
+        },
+        "endLoc": {
+          "line": 40,
+          "column": 7,
+          "position": 421
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 14,
+      "fragment": ");\n      return;\n    }\n    // Refetch materials from Supabase\n    try {\n      const { data: allMaterials, error: fetchError } = await supabase\n        .from('materials')\n        .select('*')\n        .eq('business_id', user.business_id);\n      if (!fetchError && allMaterials) setMaterials(allMaterials);\n    } catch (fetchErr) {\n      console.error('Refetch materials error:', fetchErr);\n    }\n    setEditMaterial",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/MaterialsTab.tsx",
+        "start": 81,
+        "end": 94,
+        "startLoc": {
+          "line": 81,
+          "column": 27,
+          "position": 794
+        },
+        "endLoc": {
+          "line": 94,
+          "column": 16,
+          "position": 908
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/MaterialsTab.tsx",
+        "start": 48,
+        "end": 61,
+        "startLoc": {
+          "line": 48,
+          "column": 26,
+          "position": 496
+        },
+        "endLoc": {
+          "line": 61,
+          "column": 19,
+          "position": 610
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 14,
+      "fragment": ");\n      return;\n    }\n    // Refetch materials from Supabase\n    try {\n      const { data: allMaterials, error: fetchError } = await supabase\n        .from('materials')\n        .select('*')\n        .eq('business_id', user.business_id);\n      if (!fetchError && allMaterials) setMaterials(allMaterials);\n    } catch (fetchErr) {\n      console.error('Refetch materials error:', fetchErr);\n    }\n  }",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/MaterialsTab.tsx",
+        "start": 105,
+        "end": 118,
+        "startLoc": {
+          "line": 105,
+          "column": 29,
+          "position": 1017
+        },
+        "endLoc": {
+          "line": 118,
+          "column": 2,
+          "position": 1131
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/MaterialsTab.tsx",
+        "start": 48,
+        "end": 61,
+        "startLoc": {
+          "line": 48,
+          "column": 26,
+          "position": 496
+        },
+        "endLoc": {
+          "line": 61,
+          "column": 19,
+          "position": 610
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 6,
+      "fragment": "/>\n        <TouchableOpacity style={adminStyles.addBtn} onPress={handleAddMaterial}>\n          <Text style={adminStyles.addBtnText}>Add</Text>\n        </TouchableOpacity>\n      </View>\n      {editMaterial",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/MaterialsTab.tsx",
+        "start": 185,
+        "end": 190,
+        "startLoc": {
+          "line": 185,
+          "column": 2,
+          "position": 2099
+        },
+        "endLoc": {
+          "line": 190,
+          "column": 13,
+          "position": 2149
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 220,
+        "end": 225,
+        "startLoc": {
+          "line": 220,
+          "column": 11,
+          "position": 2484
+        },
+        "endLoc": {
+          "line": 225,
+          "column": 20,
+          "position": 2545
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 6,
+      "fragment": "/>\n          <TouchableOpacity style={adminStyles.saveBtn} onPress={handleEditMaterial}>\n            <Text style={adminStyles.saveBtnText}>Save</Text>\n          </TouchableOpacity>\n        </View>\n      )",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/MaterialsTab.tsx",
+        "start": 193,
+        "end": 198,
+        "startLoc": {
+          "line": 193,
+          "column": 2,
+          "position": 2271
+        },
+        "endLoc": {
+          "line": 198,
+          "column": 2,
+          "position": 2320
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/SettingsModal.tsx",
+        "start": 126,
+        "end": 131,
+        "startLoc": {
+          "line": 126,
+          "column": 19,
+          "position": 1247
+        },
+        "endLoc": {
+          "line": 131,
+          "column": 3,
+          "position": 1312
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 6,
+      "fragment": "(true)}\n        style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}\n      >\n        <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', marginBottom: 6 }}>Materials Used</Text>\n        {limitLines(materialsUsed, 10).map((mat, idx) => (\n          <Text key={mat",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 113,
+        "end": 118,
+        "startLoc": {
+          "line": 113,
+          "column": 25,
+          "position": 1422
+        },
+        "endLoc": {
+          "line": 118,
+          "column": 4,
+          "position": 1544
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 79,
+        "end": 84,
+        "startLoc": {
+          "line": 79,
+          "column": 21,
+          "position": 822
+        },
+        "endLoc": {
+          "line": 84,
+          "column": 2,
+          "position": 942
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 11,
+      "fragment": ": '#263238', fontSize: 15 }} numberOfLines={1} ellipsizeMode=\"tail\">\n            {idx + 1}. {mat}\n          </Text>\n        ))}\n        {materialsUsed.length > 10 && (\n          <Text style={{ color: '#1976d2', fontWeight: 'bold', marginTop: 4 }}>+{materialsUsed.length - 10} more...</Text>\n        )}\n      </TouchableOpacity>\n\n      {/* Best Performers Card */}\n      <View style={{",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 118,
+        "end": 128,
+        "startLoc": {
+          "line": 118,
+          "column": 7,
+          "position": 1552
+        },
+        "endLoc": {
+          "line": 128,
+          "column": 2,
+          "position": 1680
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 84,
+        "end": 95,
+        "startLoc": {
+          "line": 84,
+          "column": 2,
+          "position": 960
+        },
+        "endLoc": {
+          "line": 95,
+          "column": 10,
+          "position": 1104
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 9,
+      "fragment": "}>+{materialsUsed.length - 10} more...</Text>\n        )}\n      </TouchableOpacity>\n\n      {/* Best Performers Card */}\n      <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}>\n        <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', marginBottom: 6 }}>Best Performers</Text>\n        {bestPerformers.slice(0, 5).map((emp, idx) => (\n          <Text key={emp",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 123,
+        "end": 131,
+        "startLoc": {
+          "line": 123,
+          "column": 2,
+          "position": 1639
+        },
+        "endLoc": {
+          "line": 131,
+          "column": 4,
+          "position": 1795
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 79,
+        "end": 84,
+        "startLoc": {
+          "line": 79,
+          "column": 2,
+          "position": 825
+        },
+        "endLoc": {
+          "line": 84,
+          "column": 2,
+          "position": 942
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 6,
+      "fragment": "} style={{ color: '#263238', fontSize: 15 }} numberOfLines={1} ellipsizeMode=\"tail\">\n            {idx + 1}. {emp.name} ({emp.performanceScore} tasks)\n          </Text>\n        ))}\n        {bestPerformers.length === 0 && (\n          <Text style={{ color: '#888'",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 131,
+        "end": 136,
+        "startLoc": {
+          "line": 131,
+          "column": 3,
+          "position": 1798
+        },
+        "endLoc": {
+          "line": 136,
+          "column": 7,
+          "position": 1891
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 118,
+        "end": 89,
+        "startLoc": {
+          "line": 118,
+          "column": 4,
+          "position": 1545
+        },
+        "endLoc": {
+          "line": 89,
+          "column": 10,
+          "position": 1050
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 8,
+      "fragment": "}\n      >\n        <FontAwesome5 name=\"download\" size={16} color=\"#fff\" style={{ marginRight: 8 }} />\n        <Text style={{ color: '#fff', fontWeight: '600' }}>Export Data</Text>\n      </TouchableOpacity>\n\n      {/* All Tasks Modal */}\n      <Modal visible={showAllTasksModal",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 150,
+        "end": 157,
+        "startLoc": {
+          "line": 150,
+          "column": 9,
+          "position": 1973
+        },
+        "endLoc": {
+          "line": 157,
+          "column": 18,
+          "position": 2059
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 168,
+        "end": 175,
+        "startLoc": {
+          "line": 168,
+          "column": 2,
+          "position": 1499
+        },
+        "endLoc": {
+          "line": 175,
+          "column": 2,
+          "position": 1580
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 6,
+      "fragment": ", fontSize: 15, marginBottom: 4 }}>\n                  {idx + 1}. {name}\n                </Text>\n              ))}\n            </ScrollView>\n            <TouchableOpacity style={styles.closeBtn} onPress={() => setShowAllLateEmpsModal",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 182,
+        "end": 187,
+        "startLoc": {
+          "line": 182,
+          "column": 10,
+          "position": 2554
+        },
+        "endLoc": {
+          "line": 187,
+          "column": 24,
+          "position": 2618
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 163,
+        "end": 168,
+        "startLoc": {
+          "line": 163,
+          "column": 10,
+          "position": 2242
+        },
+        "endLoc": {
+          "line": 168,
+          "column": 21,
+          "position": 2322
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 7,
+      "fragment": "(false)}>\n        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>\n          <View style={{ backgroundColor: '#fff', borderRadius: 14, padding: 24, width: '90%', maxHeight: '80%' }}>\n            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1976d2', marginBottom: 12 }}>All Materials Used</Text>\n            <ScrollView>\n              {materialsUsed.map((mat, idx) => (\n                <Text key={mat",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 195,
+        "end": 201,
+        "startLoc": {
+          "line": 195,
+          "column": 25,
+          "position": 2695
+        },
+        "endLoc": {
+          "line": 201,
+          "column": 4,
+          "position": 2839
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 157,
+        "end": 163,
+        "startLoc": {
+          "line": 157,
+          "column": 21,
+          "position": 2079
+        },
+        "endLoc": {
+          "line": 163,
+          "column": 5,
+          "position": 2221
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 6,
+      "fragment": ": '#263238', fontSize: 15, marginBottom: 4 }}>\n                  {idx + 1}. {mat}\n                </Text>\n              ))}\n            </ScrollView>\n            <TouchableOpacity style={styles.closeBtn} onPress={() => setShowAllMaterialsModal",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 201,
+        "end": 206,
+        "startLoc": {
+          "line": 201,
+          "column": 7,
+          "position": 2847
+        },
+        "endLoc": {
+          "line": 206,
+          "column": 25,
+          "position": 2914
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 163,
+        "end": 168,
+        "startLoc": {
+          "line": 163,
+          "column": 2,
+          "position": 2239
+        },
+        "endLoc": {
+          "line": 168,
+          "column": 21,
+          "position": 2322
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 6,
+      "fragment": ">\n            <TouchableOpacity style={styles.closeBtn} onPress={() => setShowAllTasksModal(false)}>\n              <Text style={styles.closeBtnText}>Close</Text>\n            </TouchableOpacity>\n          </View>\n        </View",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 167,
+        "end": 172,
+        "startLoc": {
+          "line": 167,
+          "column": 11,
+          "position": 2300
+        },
+        "endLoc": {
+          "line": 172,
+          "column": 5,
+          "position": 2358
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/SettingsModal.tsx",
+        "start": 211,
+        "end": 216,
+        "startLoc": {
+          "line": 211,
+          "column": 17,
+          "position": 2153
+        },
+        "endLoc": {
+          "line": 216,
+          "column": 11,
+          "position": 2203
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 12,
+      "fragment": "}\n                </Text>\n              ))}\n            </ScrollView>\n            <TouchableOpacity style={styles.closeBtn} onPress={() => setShowAllLateEmpsModal(false)}>\n              <Text style={styles.closeBtnText}>Close</Text>\n            </TouchableOpacity>\n          </View>\n        </View>\n      </Modal>\n\n      {/* All Materials Modal */",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 183,
+        "end": 194,
+        "startLoc": {
+          "line": 183,
+          "column": 5,
+          "position": 2581
+        },
+        "endLoc": {
+          "line": 194,
+          "column": 26,
+          "position": 2665
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 164,
+        "end": 175,
+        "startLoc": {
+          "line": 164,
+          "column": 3,
+          "position": 2285
+        },
+        "endLoc": {
+          "line": 175,
+          "column": 31,
+          "position": 2369
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 11,
+      "fragment": "}\n                </Text>\n              ))}\n            </ScrollView>\n            <TouchableOpacity style={styles.closeBtn} onPress={() => setShowAllMaterialsModal(false)}>\n              <Text style={styles.closeBtnText}>Close</Text>\n            </TouchableOpacity>\n          </View>\n        </View>\n      </Modal>\n    </",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 202,
+        "end": 212,
+        "startLoc": {
+          "line": 202,
+          "column": 4,
+          "position": 2877
+        },
+        "endLoc": {
+          "line": 212,
+          "column": 3,
+          "position": 2959
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/HomeTab.tsx",
+        "start": 164,
+        "end": 175,
+        "startLoc": {
+          "line": 164,
+          "column": 3,
+          "position": 2285
+        },
+        "endLoc": {
+          "line": 175,
+          "column": 2,
+          "position": 2368
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 7,
+      "fragment": "};\n\n  return (\n    <Modal visible={visible} animationType=\"slide\" transparent onRequestClose={onClose}>\n      <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>\n        <View style={{ backgroundColor: '#fff', borderRadius: 14, padding: 24, width: '90%' }}>\n          <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16, color: '#1976d2' }}>Export",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/ExportModal.tsx",
+        "start": 101,
+        "end": 107,
+        "startLoc": {
+          "line": 101,
+          "column": 3,
+          "position": 1234
+        },
+        "endLoc": {
+          "line": 107,
+          "column": 7,
+          "position": 1363
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/SettingsModal.tsx",
+        "start": 102,
+        "end": 108,
+        "startLoc": {
+          "line": 102,
+          "column": 3,
+          "position": 928
+        },
+        "endLoc": {
+          "line": 108,
+          "column": 9,
+          "position": 1062
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 20,
+      "fragment": "} />\n        </View>\n        <View style={adminStyles.addEmployeeInputsRow}>\n          <TextInput style={adminStyles.input} placeholder=\"Lunch Start\" value={newEmployeeLunchStart} onChangeText={setNewEmployeeLunchStart} />\n          <TextInput style={adminStyles.input} placeholder=\"Lunch End\" value={newEmployeeLunchEnd} onChangeText={setNewEmployeeLunchEnd} />\n        </View>\n        <View style={adminStyles.addEmployeeInputsRow}>\n          <TextInput style={adminStyles.input} placeholder=\"Department\" value={newEmployeeDepartment} onChangeText={setNewEmployeeDepartment} />\n        </View>\n        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }} onPress={pickEmployeePhoto}>\n          {newEmployeePhotoUri ? (\n            <Image source={{ uri: newEmployeePhotoUri }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 8 }} />\n          ) : (\n            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#e3f2fd', marginRight: 8, alignItems: 'center', justifyContent: 'center' }}>\n              <FontAwesome5 name=\"camera\" size={20} color=\"#1976d2\" />\n            </View>\n          )}\n          <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>{newEmployeePhotoUri ? 'Change Photo' : 'Add Photo'}</Text>\n        </TouchableOpacity>\n        <TouchableOpacity style={adminStyles.saveBtn",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/EmployeesTab.tsx",
+        "start": 238,
+        "end": 257,
+        "startLoc": {
+          "line": 238,
+          "column": 19,
+          "position": 2955
+        },
+        "endLoc": {
+          "line": 257,
+          "column": 8,
+          "position": 3317
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/EmployeesTab.tsx",
+        "start": 199,
+        "end": 221,
+        "startLoc": {
+          "line": 199,
+          "column": 2,
+          "position": 2284
+        },
+        "endLoc": {
+          "line": 221,
+          "column": 7,
+          "position": 2673
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 7,
+      "fragment": ",\n        business_id: user.business_id,\n      })\n      .select('*')\n      .single();\n    if (error || !data) {\n      console",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/EmployeesTab.tsx",
+        "start": 58,
+        "end": 64,
+        "startLoc": {
+          "line": 58,
+          "column": 22,
+          "position": 610
+        },
+        "endLoc": {
+          "line": 64,
+          "column": 8,
+          "position": 654
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/MaterialsTab.tsx",
+        "start": 42,
+        "end": 48,
+        "startLoc": {
+          "line": 42,
+          "column": 16,
+          "position": 437
+        },
+        "endLoc": {
+          "line": 48,
+          "column": 6,
+          "position": 481
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 8,
+      "fragment": "({\n        name: newEmployeeName,\n        code: newEmployeeCode,\n        lunchStart: newEmployeeLunchStart,\n        lunchEnd: newEmployeeLunchEnd,\n        photo_uri: newEmployeePhotoUri,\n        department: newEmployeeDepartment,\n      }",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/EmployeesTab.tsx",
+        "start": 90,
+        "end": 97,
+        "startLoc": {
+          "line": 90,
+          "column": 7,
+          "position": 899
+        },
+        "endLoc": {
+          "line": 97,
+          "column": 2,
+          "position": 945
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/EmployeesTab.tsx",
+        "start": 52,
+        "end": 59,
+        "startLoc": {
+          "line": 52,
+          "column": 7,
+          "position": 567
+        },
+        "endLoc": {
+          "line": 59,
+          "column": 12,
+          "position": 613
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 9,
+      "fragment": "setNewEmployeeName('');\n    setNewEmployeeCode('');\n    setNewEmployeeLunchStart('12:00');\n    setNewEmployeeLunchEnd('12:30');\n    setNewEmployeePhotoUri(undefined);\n    setNewEmployeeDepartment('');\n  };\n\n  const handleDeleteEmployee",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/EmployeesTab.tsx",
+        "start": 103,
+        "end": 111,
+        "startLoc": {
+          "line": 103,
+          "column": 5,
+          "position": 1025
+        },
+        "endLoc": {
+          "line": 111,
+          "column": 21,
+          "position": 1074
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/EmployeesTab.tsx",
+        "start": 78,
+        "end": 86,
+        "startLoc": {
+          "line": 78,
+          "column": 5,
+          "position": 798
+        },
+        "endLoc": {
+          "line": 86,
+          "column": 19,
+          "position": 847
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 6,
+      "fragment": "<TouchableOpacity style={adminStyles.addBtn} onPress={() => { handleAddEmployee(); setShowAddEmployeeModal(false); }}>\n          <Text style={adminStyles.addBtnText}>Add</Text>\n        </TouchableOpacity>\n      </AdminModal>\n\n      {",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/EmployeesTab.tsx",
+        "start": 221,
+        "end": 226,
+        "startLoc": {
+          "line": 221,
+          "column": 9,
+          "position": 2665
+        },
+        "endLoc": {
+          "line": 226,
+          "column": 2,
+          "position": 2730
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 221,
+        "end": 207,
+        "startLoc": {
+          "line": 221,
+          "column": 11,
+          "position": 2487
+        },
+        "endLoc": {
+          "line": 207,
+          "column": 3,
+          "position": 2451
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 7,
+      "fragment": "\" value={newDepartment} onChangeText={setNewDepartment} />\n        <TouchableOpacity style={adminStyles.addBtn} onPress={handleAddDepartment}>\n          <Text style={adminStyles.addBtnText}>Add</Text>\n        </TouchableOpacity>\n      </AdminModal>\n\n      {/* Edit Employee Modal */",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/EmployeesTab.tsx",
+        "start": 228,
+        "end": 234,
+        "startLoc": {
+          "line": 228,
+          "column": 16,
+          "position": 2781
+        },
+        "endLoc": {
+          "line": 234,
+          "column": 26,
+          "position": 2846
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/MaterialsTab.tsx",
+        "start": 185,
+        "end": 226,
+        "startLoc": {
+          "line": 185,
+          "column": 5,
+          "position": 2085
+        },
+        "endLoc": {
+          "line": 226,
+          "column": 27,
+          "position": 2731
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 20,
+      "fragment": "</View>\n        <View style={adminStyles.addEmployeeInputsRow}>\n          <TextInput style={adminStyles.input} placeholder=\"Lunch Start\" value={newEmployeeLunchStart} onChangeText={setNewEmployeeLunchStart} />\n          <TextInput style={adminStyles.input} placeholder=\"Lunch End\" value={newEmployeeLunchEnd} onChangeText={setNewEmployeeLunchEnd} />\n        </View>\n        <View style={adminStyles.addEmployeeInputsRow}>\n          <TextInput style={adminStyles.input} placeholder=\"Department\" value={newEmployeeDepartment} onChangeText={setNewEmployeeDepartment} />\n        </View>\n        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }} onPress={pickEmployeePhoto}>\n          {newEmployeePhotoUri ? (\n            <Image source={{ uri: newEmployeePhotoUri }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 8 }} />\n          ) : (\n            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#e3f2fd', marginRight: 8, alignItems: 'center', justifyContent: 'center' }}>\n              <FontAwesome5 name=\"camera\" size={20} color=\"#1976d2\" />\n            </View>\n          )}\n          <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>{newEmployeePhotoUri ? 'Change Photo' : 'Add Photo'}</Text>\n        </TouchableOpacity>\n        <TouchableOpacity style={adminStyles.saveBtn} onPress={handleSaveEmployee}>\n          <Text style={adminStyles.saveBtnText}>Save",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/EmployeesTab.tsx",
+        "start": 239,
+        "end": 258,
+        "startLoc": {
+          "line": 239,
+          "column": 9,
+          "position": 2960
+        },
+        "endLoc": {
+          "line": 258,
+          "column": 5,
+          "position": 3339
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/EmployeesTab.tsx",
+        "start": 203,
+        "end": 222,
+        "startLoc": {
+          "line": 203,
+          "column": 9,
+          "position": 2316
+        },
+        "endLoc": {
+          "line": 222,
+          "column": 4,
+          "position": 2713
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 7,
+      "fragment": " }}>\n        <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2', marginBottom: 16 }}>\n          Clock Events\n        </Text>\n        \n        {clockEvents.length === 0 ? (\n          <Text style={{",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/admin/ClockEventsTab.tsx",
+        "start": 37,
+        "end": 43,
+        "startLoc": {
+          "line": 37,
+          "column": 3,
+          "position": 446
+        },
+        "endLoc": {
+          "line": 43,
+          "column": 2,
+          "position": 516
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/SettingsModal.tsx",
+        "start": 107,
+        "end": 110,
+        "startLoc": {
+          "line": 107,
+          "column": 6,
+          "position": 1026
+        },
+        "endLoc": {
+          "line": 110,
+          "column": 6,
+          "position": 1076
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 8,
+      "fragment": "}>{task.name}</Text>\n            <Text style={styles.taskTime}>Start: {task.start} | Due: {task.deadline}</Text>\n            <Text style={styles.taskStatus}>{task.completed ? 'Completed' : 'In Progress'}</Text>\n            {task.completed && task.completedAt && (\n              <Text style={{ color: '#888', fontSize: 13, marginBottom: 4 }}>Completed at: {new Date(task.completedAt).toLocaleString()}</Text>\n            )}\n            {!task.completed && (\n              <View style={{ marginTop: 10",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 283,
+        "end": 290,
+        "startLoc": {
+          "line": 283,
+          "column": 11,
+          "position": 3219
+        },
+        "endLoc": {
+          "line": 290,
+          "column": 3,
+          "position": 3385
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 245,
+        "end": 252,
+        "startLoc": {
+          "line": 245,
+          "column": 9,
+          "position": 2691
+        },
+        "endLoc": {
+          "line": 252,
+          "column": 2,
+          "position": 2874
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 7,
+      "fragment": "(task.id)}>\n                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Mark Complete</Text>\n                </TouchableOpacity>\n              </View>\n            )}\n            {task.completed && task.materialsUsed && task.materialsUsed.length > 0 && (\n              <View style={{",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 316,
+        "end": 322,
+        "startLoc": {
+          "line": 316,
+          "column": 19,
+          "position": 3867
+        },
+        "endLoc": {
+          "line": 322,
+          "column": 2,
+          "position": 3957
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 313,
+        "end": 316,
+        "startLoc": {
+          "line": 313,
+          "column": 20,
+          "position": 3779
+        },
+        "endLoc": {
+          "line": 316,
+          "column": 2,
+          "position": 3832
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 17,
+      "fragment": " }}>Mark Complete</Text>\n                </TouchableOpacity>\n              </View>\n            )}\n            {task.completed && task.materialsUsed && task.materialsUsed.length > 0 && (\n              <View style={{ marginTop: 8 }}>\n                <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Materials Used:</Text>\n                {task.materialsUsed.map(mu => {\n                  const mat = materials.find(m => m.id === mu.materialId);\n                  if (!mat) return null;\n                  return (\n                    <Text key={mat.id} style={{ fontSize: 14 }}>{mat.name}: {mu.quantity} {mat.unit}</Text>\n                  );\n                })}\n              </View>\n            )}\n            <TouchableOpacity style={[",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 317,
+        "end": 333,
+        "startLoc": {
+          "line": 317,
+          "column": 3,
+          "position": 3897
+        },
+        "endLoc": {
+          "line": 333,
+          "column": 2,
+          "position": 4126
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 249,
+        "end": 276,
+        "startLoc": {
+          "line": 249,
+          "column": 2,
+          "position": 2804
+        },
+        "endLoc": {
+          "line": 276,
+          "column": 2,
+          "position": 3138
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 8,
+      "fragment": ": '#1976d2' }}\n              />\n            </View>\n            {biometricSupported && (\n              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>\n                <Text style={{ fontSize: 17, color: isDark ? '#b3c0e0' : '#263238', flex: 1 }}>Fingerprint Login</Text>\n                <Switch\n                  value={biometricEnabled",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 380,
+        "end": 387,
+        "startLoc": {
+          "line": 380,
+          "column": 5,
+          "position": 4788
+        },
+        "endLoc": {
+          "line": 387,
+          "column": 17,
+          "position": 4883
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 183,
+        "end": 377,
+        "startLoc": {
+          "line": 183,
+          "column": 2,
+          "position": 2104
+        },
+        "endLoc": {
+          "line": 377,
+          "column": 9,
+          "position": 4754
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 19,
+      "fragment": "}>\n              <Text style={{ color: '#fff', fontWeight: 'bold', textAlign: 'center' }}>Close</Text>\n            </TouchableOpacity>\n          </View>\n        </View>\n      </Modal>\n      {/* Welcome Animation */}\n      {showWelcome && (\n        <Animated.View style={{\n          position: 'absolute',\n          top: '30%',\n          left: 0,\n          right: 0,\n          alignItems: 'center',\n          opacity: welcomeAnim,\n          transform: [{ scale: welcomeAnim.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }) }],\n          zIndex: 100,\n        }}>\n          <View style={{ backgroundColor: '#fff'",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 417,
+        "end": 435,
+        "startLoc": {
+          "line": 417,
+          "column": 2,
+          "position": 5526
+        },
+        "endLoc": {
+          "line": 435,
+          "column": 7,
+          "position": 5713
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 395,
+        "end": 400,
+        "startLoc": {
+          "line": 395,
+          "column": 21,
+          "position": 4983
+        },
+        "endLoc": {
+          "line": 400,
+          "column": 10,
+          "position": 5053
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 6,
+      "fragment": "}>All Employees</Text>\n            <FlatList\n              data={employees}\n              keyExtractor={item => item.id}\n              renderItem={({ item }) => (\n                <",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 502,
+        "end": 507,
+        "startLoc": {
+          "line": 502,
+          "column": 11,
+          "position": 6699
+        },
+        "endLoc": {
+          "line": 507,
+          "column": 2,
+          "position": 6741
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 390,
+        "end": 397,
+        "startLoc": {
+          "line": 390,
+          "column": 2,
+          "position": 4624
+        },
+        "endLoc": {
+          "line": 397,
+          "column": 2,
+          "position": 4673
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 7,
+      "fragment": ",\n                materialsUsed: (taskMaterials[taskId] || [])\n                  .filter(m => m.quantity && !isNaN(Number(m.quantity)))\n                  .map(m => ({ materialId: m.materialId, quantity: Number(m.quantity) })),\n              };\n            }));\n            Alert.alert('Task Completed'",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 221,
+        "end": 227,
+        "startLoc": {
+          "line": 221,
+          "column": 2,
+          "position": 2410
+        },
+        "endLoc": {
+          "line": 227,
+          "column": 17,
+          "position": 2503
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 200,
+        "end": 206,
+        "startLoc": {
+          "line": 200,
+          "column": 2,
+          "position": 2163
+        },
+        "endLoc": {
+          "line": 206,
+          "column": 8,
+          "position": 2256
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 8,
+      "fragment": "> \n            <Text style={styles.modalTitle}>{task.name}</Text>\n            <Text style={styles.taskTime}>Start: {task.start} | Due: {task.deadline}</Text>\n            <Text style={styles.taskStatus}>{task.completed ? 'Completed' : 'In Progress'}</Text>\n            {task.completed && task.completedAt && (\n              <Text style={{ color: '#888', fontSize: 13, marginBottom: 4 }}>Completed at: {new Date(task.completedAt).toLocaleString()}</Text>\n            )}\n            {!",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 282,
+        "end": 289,
+        "startLoc": {
+          "line": 282,
+          "column": 2,
+          "position": 3206
+        },
+        "endLoc": {
+          "line": 289,
+          "column": 2,
+          "position": 3365
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 244,
+        "end": 251,
+        "startLoc": {
+          "line": 244,
+          "column": 13,
+          "position": 2679
+        },
+        "endLoc": {
+          "line": 251,
+          "column": 5,
+          "position": 2837
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 15,
+      "fragment": ">\n            )}\n            {task.completed && task.materialsUsed && task.materialsUsed.length > 0 && (\n              <View style={{ marginTop: 8 }}>\n                <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Materials Used:</Text>\n                {task.materialsUsed.map(mu => {\n                  const mat = materials.find(m => m.id === mu.materialId);\n                  if (!mat) return null;\n                  return (\n                    <Text key={mat.id} style={{ fontSize: 14 }}>{mat.name}: {mu.quantity} {mat.unit}</Text>\n                  );\n                })}\n              </View>\n            )}\n            <",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 319,
+        "end": 333,
+        "startLoc": {
+          "line": 319,
+          "column": 5,
+          "position": 3916
+        },
+        "endLoc": {
+          "line": 333,
+          "column": 2,
+          "position": 4120
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 249,
+        "end": 263,
+        "startLoc": {
+          "line": 249,
+          "column": 5,
+          "position": 2829
+        },
+        "endLoc": {
+          "line": 263,
+          "column": 3,
+          "position": 3033
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 7,
+      "fragment": "<TouchableOpacity style={[styles.closeBtn, { marginTop: 18 }]} onPress={() => setSelectedTask(null)}>\n              <Text style={styles.closeBtnText}>Close</Text>\n            </TouchableOpacity>\n          </View>\n        </View>\n      </Modal>\n    )",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 333,
+        "end": 339,
+        "startLoc": {
+          "line": 333,
+          "column": 13,
+          "position": 4120
+        },
+        "endLoc": {
+          "line": 339,
+          "column": 2,
+          "position": 4195
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/SettingsModal.tsx",
+        "start": 212,
+        "end": 175,
+        "startLoc": {
+          "line": 212,
+          "column": 15,
+          "position": 2156
+        },
+        "endLoc": {
+          "line": 175,
+          "column": 2,
+          "position": 2368
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 9,
+      "fragment": "<Modal\n        visible={settingsVisible}\n        animationType=\"slide\"\n        transparent={true}\n        onRequestClose={() => setSettingsVisible(false)}\n      >\n        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>\n          <View style={{ backgroundColor: isDark ? '#23263a' : '#fff', borderRadius: 16, padding: 28, width: '90%' }}>\n            <Text style={{ fontSize: 22, fontWeight: 'bold', color: isDark ? '#b3c0e0' : '#1976d2', marginBottom: 18 }}>Settings",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 365,
+        "end": 373,
+        "startLoc": {
+          "line": 365,
+          "column": 7,
+          "position": 4532
+        },
+        "endLoc": {
+          "line": 373,
+          "column": 9,
+          "position": 4676
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 275,
+        "end": 283,
+        "startLoc": {
+          "line": 275,
+          "column": 7,
+          "position": 3132
+        },
+        "endLoc": {
+          "line": 283,
+          "column": 2,
+          "position": 3221
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 8,
+      "fragment": ">\n            <TouchableOpacity style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 14, marginTop: 10 }} onPress={() => setSettingsVisible(false)}>\n              <Text style={{ color: '#fff', fontWeight: 'bold', textAlign: 'center' }}>Close</Text>\n            </TouchableOpacity>\n          </View>\n        </View>\n      </Modal>\n      {/* Welcome Animation */",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 416,
+        "end": 423,
+        "startLoc": {
+          "line": 416,
+          "column": 5,
+          "position": 5481
+        },
+        "endLoc": {
+          "line": 423,
+          "column": 24,
+          "position": 5582
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/SettingsModal.tsx",
+        "start": 211,
+        "end": 175,
+        "startLoc": {
+          "line": 211,
+          "column": 17,
+          "position": 2153
+        },
+        "endLoc": {
+          "line": 175,
+          "column": 31,
+          "position": 2369
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 7,
+      "fragment": "\"\n        transparent={true}\n        onRequestClose={() => setCodePromptVisible(false)}\n      >\n        <View style={styles.modalOverlay}>\n          <View style={styles.codeModalContent}>\n            <Text style={styles.modalTitle}>Enter",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 461,
+        "end": 467,
+        "startLoc": {
+          "line": 461,
+          "column": 5,
+          "position": 6164
+        },
+        "endLoc": {
+          "line": 467,
+          "column": 6,
+          "position": 6226
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 277,
+        "end": 283,
+        "startLoc": {
+          "line": 277,
+          "column": 6,
+          "position": 3147
+        },
+        "endLoc": {
+          "line": 283,
+          "column": 2,
+          "position": 3221
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 7,
+      "fragment": "<TouchableOpacity style={styles.closeBtn} onPress={userAction(() => setModalVisible(false))}>\n              <Text style={styles.closeBtnText}>Close</Text>\n            </TouchableOpacity>\n          </View>\n        </View>\n      </Modal>\n      {/* Full page for selected employee's tasks */",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 512,
+        "end": 518,
+        "startLoc": {
+          "line": 512,
+          "column": 13,
+          "position": 6799
+        },
+        "endLoc": {
+          "line": 518,
+          "column": 46,
+          "position": 6867
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/SettingsModal.tsx",
+        "start": 212,
+        "end": 175,
+        "startLoc": {
+          "line": 212,
+          "column": 15,
+          "position": 2156
+        },
+        "endLoc": {
+          "line": 175,
+          "column": 31,
+          "position": 2369
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 6,
+      "fragment": ">\n            <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.primary }]} onPress={userAction(closeEmployeeTasks)}>\n              <Text style={styles.closeBtnText}>Back</Text>\n            </TouchableOpacity>\n          </View>\n          {",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 523,
+        "end": 528,
+        "startLoc": {
+          "line": 523,
+          "column": 11,
+          "position": 7005
+        },
+        "endLoc": {
+          "line": 528,
+          "column": 2,
+          "position": 7068
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/TasksTab.tsx",
+        "start": 517,
+        "end": 522,
+        "startLoc": {
+          "line": 517,
+          "column": 17,
+          "position": 6126
+        },
+        "endLoc": {
+          "line": 522,
+          "column": 2,
+          "position": 6183
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 8,
+      "fragment": ", color: darkMode ? '#b3c0e0' : '#1976d2', fontSize: 16 }}>Loading...</Text>\n      </SafeAreaView>\n    );\n  }\n\n  // Main dashboard render\n  return (\n    <SafeAreaView style={{ flex",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/AdminDashboardScreen.tsx",
+        "start": 179,
+        "end": 186,
+        "startLoc": {
+          "line": 179,
+          "column": 3,
+          "position": 2301
+        },
+        "endLoc": {
+          "line": 186,
+          "column": 6,
+          "position": 2356
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/MaterialsTab.tsx",
+        "start": 152,
+        "end": 152,
+        "startLoc": {
+          "line": 152,
+          "column": 7,
+          "position": 1462
+        },
+        "endLoc": {
+          "line": 152,
+          "column": 7,
+          "position": 1495
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 8,
+      "fragment": " }}>Loading...</Text>\n      </SafeAreaView>\n    );\n  }\n\n  // Main dashboard render\n  return (\n    <SafeAreaView style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff' ",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/AdminDashboardScreen.tsx",
+        "start": 179,
+        "end": 186,
+        "startLoc": {
+          "line": 179,
+          "column": 3,
+          "position": 2317
+        },
+        "endLoc": {
+          "line": 186,
+          "column": 2,
+          "position": 2371
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/AdminDashboardScreen.tsx",
+        "start": 164,
+        "end": 175,
+        "startLoc": {
+          "line": 164,
+          "column": 3,
+          "position": 2104
+        },
+        "endLoc": {
+          "line": 175,
+          "column": 2,
+          "position": 2181
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 6,
+      "fragment": "] = useState(false);\n\n  // Check for biometric support on mount\n  useEffect(() => {\n    (async () => {\n      const hasHardware",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/AdminDashboardScreen.tsx",
+        "start": 26,
+        "end": 31,
+        "startLoc": {
+          "line": 26,
+          "column": 18,
+          "position": 278
+        },
+        "endLoc": {
+          "line": 31,
+          "column": 12,
+          "position": 316
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 60,
+        "end": 65,
+        "startLoc": {
+          "line": 60,
+          "column": 21,
+          "position": 716
+        },
+        "endLoc": {
+          "line": 65,
+          "column": 11,
+          "position": 754
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 9,
+      "fragment": "]);\n\n  // Helper: group clock events by employee\n  const clockEventsByEmployee = employees.reduce((acc, emp) => {\n    acc[emp.id] = clockEvents.filter(ev => ev.employee_id === emp.id);\n    return acc;\n  }, {} as Record<string, ClockEvent[]>);\n\n  // Tab bar UI",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/AdminDashboardScreen.tsx",
+        "start": 125,
+        "end": 133,
+        "startLoc": {
+          "line": 125,
+          "column": 20,
+          "position": 1606
+        },
+        "endLoc": {
+          "line": 133,
+          "column": 14,
+          "position": 1695
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/ClockEventsTab.tsx",
+        "start": 27,
+        "end": 35,
+        "startLoc": {
+          "line": 27,
+          "column": 12,
+          "position": 293
+        },
+        "endLoc": {
+          "line": 35,
+          "column": 7,
+          "position": 382
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 7,
+      "fragment": "Dashboard</Text>\n        <TouchableOpacity onPress={() => setSettingsModalVisible(true)} style={{ padding: 8 }}>\n          <FontAwesome5 name=\"cog\" size={24} color={darkMode ? '#b3c0e0' : '#1976d2'} />\n        </TouchableOpacity>\n      </View>\n\n      {/* Tab Bar */",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/screens/AdminDashboardScreen.tsx",
+        "start": 189,
+        "end": 195,
+        "startLoc": {
+          "line": 189,
+          "column": 2,
+          "position": 2463
+        },
+        "endLoc": {
+          "line": 195,
+          "column": 14,
+          "position": 2543
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 359,
+        "end": 364,
+        "startLoc": {
+          "line": 359,
+          "column": 2,
+          "position": 4439
+        },
+        "endLoc": {
+          "line": 364,
+          "column": 21,
+          "position": 4528
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 6,
+      "fragment": "}`;\n  if (cache.has(cacheKey)) return cache.get(cacheKey);\n  \n  return debouncedFetch(cacheKey, async () => {\n    const { data, error } = await supabase\n      .from('businesses'",
+      "tokens": 0,
+      "firstFile": {
+        "name": "services/cloud.js",
+        "start": 82,
+        "end": 87,
+        "startLoc": {
+          "line": 82,
+          "column": 11,
+          "position": 753
+        },
+        "endLoc": {
+          "line": 87,
+          "column": 13,
+          "position": 820
+        }
+      },
+      "secondFile": {
+        "name": "services/cloud.js",
+        "start": 63,
+        "end": 68,
+        "startLoc": {
+          "line": 63,
+          "column": 7,
+          "position": 584
+        },
+        "endLoc": {
+          "line": 68,
+          "column": 8,
+          "position": 651
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 6,
+      "fragment": "${businessId}_${cursor || 'start'}_${limit}`;\n  if (cache.has(cacheKey)) return cache.get(cacheKey);\n  return debouncedFetch(cacheKey, async () => {\n    return retryFetch(async () => {\n      let query = supabase\n        .from('tasks'",
+      "tokens": 0,
+      "firstFile": {
+        "name": "services/cloud.js",
+        "start": 122,
+        "end": 127,
+        "startLoc": {
+          "line": 122,
+          "column": 8,
+          "position": 1202
+        },
+        "endLoc": {
+          "line": 127,
+          "column": 8,
+          "position": 1285
+        }
+      },
+      "secondFile": {
+        "name": "services/cloud.js",
+        "start": 102,
+        "end": 107,
+        "startLoc": {
+          "line": 102,
+          "column": 12,
+          "position": 945
+        },
+        "endLoc": {
+          "line": 107,
+          "column": 12,
+          "position": 1028
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 11,
+      "fragment": "})\n        .limit(limit);\n      if (cursor) query = query.gt('id', cursor);\n      const { data, error } = await query;\n      if (error) throw error;\n      return data || [];\n    });\n  });\n};\n\n// Fetch employee task summary view",
+      "tokens": 0,
+      "firstFile": {
+        "name": "services/cloud.js",
+        "start": 130,
+        "end": 140,
+        "startLoc": {
+          "line": 130,
+          "column": 2,
+          "position": 1319
+        },
+        "endLoc": {
+          "line": 140,
+          "column": 36,
+          "position": 1408
+        }
+      },
+      "secondFile": {
+        "name": "services/cloud.js",
+        "start": 110,
+        "end": 120,
+        "startLoc": {
+          "line": 110,
+          "column": 2,
+          "position": 1062
+        },
+        "endLoc": {
+          "line": 120,
+          "column": 37,
+          "position": 1151
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 8,
+      "fragment": ";\n      if (error) throw error;\n      return data || [];\n    });\n  });\n};\n\nexport",
+      "tokens": 0,
+      "firstFile": {
+        "name": "services/cloud.js",
+        "start": 149,
+        "end": 156,
+        "startLoc": {
+          "line": 149,
+          "column": 2,
+          "position": 1536
+        },
+        "endLoc": {
+          "line": 156,
+          "column": 7,
+          "position": 1575
+        }
+      },
+      "secondFile": {
+        "name": "services/cloud.js",
+        "start": 113,
+        "end": 120,
+        "startLoc": {
+          "line": 113,
+          "column": 6,
+          "position": 1112
+        },
+        "endLoc": {
+          "line": 120,
+          "column": 37,
+          "position": 1151
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 6,
+      "fragment": "${businessId}`;\n  if (cache.has(cacheKey)) return cache.get(cacheKey);\n  \n  return debouncedFetch(cacheKey, async () => {\n    const { data, error } = await supabase\n      .from('materials'",
+      "tokens": 0,
+      "firstFile": {
+        "name": "services/cloud.js",
+        "start": 157,
+        "end": 162,
+        "startLoc": {
+          "line": 157,
+          "column": 12,
+          "position": 1601
+        },
+        "endLoc": {
+          "line": 162,
+          "column": 12,
+          "position": 1670
+        }
+      },
+      "secondFile": {
+        "name": "services/cloud.js",
+        "start": 82,
+        "end": 68,
+        "startLoc": {
+          "line": 82,
+          "column": 11,
+          "position": 751
+        },
+        "endLoc": {
+          "line": 68,
+          "column": 8,
+          "position": 651
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 6,
+      "fragment": "${businessId}`;\n  if (cache.has(cacheKey)) return cache.get(cacheKey);\n  \n  return debouncedFetch(cacheKey, async () => {\n    const { data, error } = await supabase\n      .from('performance_settings'",
+      "tokens": 0,
+      "firstFile": {
+        "name": "services/cloud.js",
+        "start": 175,
+        "end": 180,
+        "startLoc": {
+          "line": 175,
+          "column": 14,
+          "position": 1770
+        },
+        "endLoc": {
+          "line": 180,
+          "column": 23,
+          "position": 1839
+        }
+      },
+      "secondFile": {
+        "name": "services/cloud.js",
+        "start": 82,
+        "end": 68,
+        "startLoc": {
+          "line": 82,
+          "column": 11,
+          "position": 751
+        },
+        "endLoc": {
+          "line": 68,
+          "column": 8,
+          "position": 651
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 8,
+      "fragment": ", error);\n      return [];\n    }\n    return data || [];\n  });\n};\n\n// Clear cache when needed (e.g., after logout)",
+      "tokens": 0,
+      "firstFile": {
+        "name": "services/cloud.js",
+        "start": 219,
+        "end": 226,
+        "startLoc": {
+          "line": 219,
+          "column": 28,
+          "position": 2191
+        },
+        "endLoc": {
+          "line": 226,
+          "column": 48,
+          "position": 2227
+        }
+      },
+      "secondFile": {
+        "name": "services/cloud.js",
+        "start": 167,
+        "end": 174,
+        "startLoc": {
+          "line": 167,
+          "column": 25,
+          "position": 1708
+        },
+        "endLoc": {
+          "line": 174,
+          "column": 7,
+          "position": 1744
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 7,
+      "fragment": ")\n    .single();\n  if (error || !data) return null;\n  return data.code;\n}\n\n// Batch insert/update utility",
+      "tokens": 0,
+      "firstFile": {
+        "name": "services/cloud.js",
+        "start": 288,
+        "end": 294,
+        "startLoc": {
+          "line": 288,
+          "column": 12,
+          "position": 2780
+        },
+        "endLoc": {
+          "line": 294,
+          "column": 31,
+          "position": 2817
+        }
+      },
+      "secondFile": {
+        "name": "services/cloud.js",
+        "start": 255,
+        "end": 261,
+        "startLoc": {
+          "line": 255,
+          "column": 12,
+          "position": 2477
+        },
+        "endLoc": {
+          "line": 261,
+          "column": 39,
+          "position": 2514
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 9,
+      "fragment": "const { createClient } = require('@supabase/supabase-js');\n\n// Your Supabase credentials (same as in app.json)\nconst supabaseUrl = 'https://qdfhklikmkyeqsiuapjg.supabase.co';\nconst supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkZmhrbGlrbWt5ZXFzaXVhcGpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE4MTgxNTQsImV4cCI6MjA2NzM5NDE1NH0.peZxjF2MbN9kBg4VVpQoSGjQblSTa24z4s0iiWqHfxA';\n\nconst supabase = createClient(supabaseUrl, supabaseAnonKey);\n\n// Test users data",
+      "tokens": 0,
+      "firstFile": {
+        "name": "scripts/add-test-users.js",
+        "start": 8,
+        "end": 16,
+        "startLoc": {
+          "line": 8,
+          "column": 1,
+          "position": 15
+        },
+        "endLoc": {
+          "line": 16,
+          "column": 19,
+          "position": 69
+        }
+      },
+      "secondFile": {
+        "name": "scripts/setup-users-table.js",
+        "start": 8,
+        "end": 16,
+        "startLoc": {
+          "line": 8,
+          "column": 1,
+          "position": 15
+        },
+        "endLoc": {
+          "line": 16,
+          "column": 6,
+          "position": 69
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 6,
+      "fragment": ",\n    role: 'admin',\n    created_at: new Date().toISOString()\n  },\n  {\n    id: '550e8400-e29b-41d4-a716-446655440003'",
+      "tokens": 0,
+      "firstFile": {
+        "name": "scripts/add-test-users.js",
+        "start": 30,
+        "end": 35,
+        "startLoc": {
+          "line": 30,
+          "column": 14,
+          "position": 164
+        },
+        "endLoc": {
+          "line": 35,
+          "column": 39,
+          "position": 198
+        }
+      },
+      "secondFile": {
+        "name": "scripts/add-test-users.js",
+        "start": 22,
+        "end": 27,
+        "startLoc": {
+          "line": 22,
+          "column": 10,
+          "position": 108
+        },
+        "endLoc": {
+          "line": 27,
+          "column": 39,
+          "position": 142
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 7,
+      "fragment": ",\n    password: 'password123',\n    role: 'employee',\n    created_at: new Date().toISOString()\n  },\n  {\n    id: '550e8400-e29b-41d4-a716-446655440005'",
+      "tokens": 0,
+      "firstFile": {
+        "name": "scripts/add-test-users.js",
+        "start": 45,
+        "end": 51,
+        "startLoc": {
+          "line": 45,
+          "column": 27,
+          "position": 269
+        },
+        "endLoc": {
+          "line": 51,
+          "column": 39,
+          "position": 310
+        }
+      },
+      "secondFile": {
+        "name": "scripts/add-test-users.js",
+        "start": 37,
+        "end": 43,
+        "startLoc": {
+          "line": 37,
+          "column": 25,
+          "position": 213
+        },
+        "endLoc": {
+          "line": 43,
+          "column": 39,
+          "position": 254
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 6,
+      "fragment": ",\n    password: 'password123',\n    role: 'employee',\n    created_at: new Date().toISOString()\n  }\n]",
+      "tokens": 0,
+      "firstFile": {
+        "name": "scripts/add-test-users.js",
+        "start": 53,
+        "end": 58,
+        "startLoc": {
+          "line": 53,
+          "column": 27,
+          "position": 325
+        },
+        "endLoc": {
+          "line": 58,
+          "column": 2,
+          "position": 358
+        }
+      },
+      "secondFile": {
+        "name": "scripts/add-test-users.js",
+        "start": 37,
+        "end": 41,
+        "startLoc": {
+          "line": 37,
+          "column": 25,
+          "position": 213
+        },
+        "endLoc": {
+          "line": 41,
+          "column": 2,
+          "position": 245
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 7,
+      "fragment": "} catch (error) {\n    console.error('❌ Unexpected error:', error.message);\n  }\n}\n\n// Run the script\naddTestUsers",
+      "tokens": 0,
+      "firstFile": {
+        "name": "scripts/add-test-users.js",
+        "start": 124,
+        "end": 130,
+        "startLoc": {
+          "line": 124,
+          "column": 3,
+          "position": 915
+        },
+        "endLoc": {
+          "line": 130,
+          "column": 13,
+          "position": 947
+        }
+      },
+      "secondFile": {
+        "name": "scripts/setup-users-table.js",
+        "start": 89,
+        "end": 95,
+        "startLoc": {
+          "line": 89,
+          "column": 3,
+          "position": 614
+        },
+        "endLoc": {
+          "line": 95,
+          "column": 16,
+          "position": 646
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 7,
+      "fragment": "}\n    >\n      <View style={styles.modalOverlay}>\n        <View style={styles.modalContent}>\n          <Text style={styles.modalTitle}>Rate Completed Task</Text>\n          \n          <View style={styles",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/TaskRatingModal.tsx",
+        "start": 96,
+        "end": 102,
+        "startLoc": {
+          "line": 96,
+          "column": 8,
+          "position": 860
+        },
+        "endLoc": {
+          "line": 102,
+          "column": 7,
+          "position": 920
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 498,
+        "end": 504,
+        "startLoc": {
+          "line": 498,
+          "column": 5,
+          "position": 6659
+        },
+        "endLoc": {
+          "line": 504,
+          "column": 10,
+          "position": 6715
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 10,
+      "fragment": "</Text>\n            </TouchableOpacity>\n          </View>\n        </View>\n      </View>\n    </Modal>\n  );\n}\n\nconst",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/TaskRatingModal.tsx",
+        "start": 173,
+        "end": 182,
+        "startLoc": {
+          "line": 173,
+          "column": 15,
+          "position": 1625
+        },
+        "endLoc": {
+          "line": 182,
+          "column": 6,
+          "position": 1661
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/ExportModal.tsx",
+        "start": 133,
+        "end": 140,
+        "startLoc": {
+          "line": 133,
+          "column": 7,
+          "position": 1678
+        },
+        "endLoc": {
+          "line": 140,
+          "column": 2,
+          "position": 1712
+        }
+      }
+    },
+    {
+      "format": "javascript",
+      "lines": 18,
+      "fragment": "}>{data.tasks_completed}</Text>\n          </View>\n\n          <View style={styles.metric}>\n            <FontAwesome5 name=\"star\" size={16} color=\"#FFD700\" />\n            <Text style={styles.metricLabel}>Rating</Text>\n            <Text style={styles.metricValue}>{data.average_rating.toFixed(1)}</Text>\n          </View>\n\n          <View style={styles.metric}>\n            <FontAwesome5 name=\"thumbs-up\" size={16} color=\"#4CAF50\" />\n            <Text style={styles.metricLabel}>Rated</Text>\n            <Text style={styles.metricValue}>{data.tasks_rated}</Text>\n          </View>\n        </View>\n\n        {data.average_rating > 0 && (\n          <View style={styles.ratingDisplay",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/PerformanceManagement.tsx",
+        "start": 120,
+        "end": 137,
+        "startLoc": {
+          "line": 120,
+          "column": 12,
+          "position": 1337
+        },
+        "endLoc": {
+          "line": 137,
+          "column": 14,
+          "position": 1549
+        }
+      },
+      "secondFile": {
+        "name": "components/PerformanceManagement.tsx",
+        "start": 116,
+        "end": 123,
+        "startLoc": {
+          "line": 116,
+          "column": 17,
+          "position": 1270
+        },
+        "endLoc": {
+          "line": 123,
+          "column": 7,
+          "position": 1363
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 6,
+      "fragment": ">\n\n        <View style={styles.metricsContainer}>\n          <View style={styles.metric}>\n            <FontAwesome5 name=\"tasks\" size={16} color=\"#1976d2\" />\n            <Text style={styles.metricLabel}>Tasks",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/PerformanceManagement.tsx",
+        "start": 114,
+        "end": 119,
+        "startLoc": {
+          "line": 114,
+          "column": 5,
+          "position": 1257
+        },
+        "endLoc": {
+          "line": 119,
+          "column": 6,
+          "position": 1322
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 196,
+        "end": 202,
+        "startLoc": {
+          "line": 196,
+          "column": 5,
+          "position": 1777
+        },
+        "endLoc": {
+          "line": 202,
+          "column": 2,
+          "position": 1877
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 6,
+      "fragment": "</Text>\n          </View>\n\n          <View style={styles.metric}>\n            <FontAwesome5 name=\"star\" size={16} color=\"#FFD700\" />\n            <Text style={styles.metricLabel}>Rating",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/PerformanceManagement.tsx",
+        "start": 120,
+        "end": 125,
+        "startLoc": {
+          "line": 120,
+          "column": 2,
+          "position": 1344
+        },
+        "endLoc": {
+          "line": 125,
+          "column": 7,
+          "position": 1403
+        }
+      },
+      "secondFile": {
+        "name": "components/admin/PerformanceTab.tsx",
+        "start": 204,
+        "end": 210,
+        "startLoc": {
+          "line": 204,
+          "column": 10,
+          "position": 1921
+        },
+        "endLoc": {
+          "line": 210,
+          "column": 2,
+          "position": 2006
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 6,
+      "fragment": "p.charAt(0).toUpperCase() + p.slice(1)}\n          </Text>\n        </TouchableOpacity>\n      ))}\n    </View>\n  )",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/PerformanceManagement.tsx",
+        "start": 165,
+        "end": 170,
+        "startLoc": {
+          "line": 165,
+          "column": 2,
+          "position": 1848
+        },
+        "endLoc": {
+          "line": 170,
+          "column": 2,
+          "position": 1890
+        }
+      },
+      "secondFile": {
+        "name": "components/TaskRatingModal.tsx",
+        "start": 126,
+        "end": 132,
+        "startLoc": {
+          "line": 126,
+          "column": 2,
+          "position": 1209
+        },
+        "endLoc": {
+          "line": 132,
+          "column": 2,
+          "position": 1252
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 9,
+      "fragment": ">\n    </View>\n  );\n}\n\nconst styles = StyleSheet.create({\n  container: {\n    flex: 1,\n    backgroundColor",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/PerformanceManagement.tsx",
+        "start": 222,
+        "end": 230,
+        "startLoc": {
+          "line": 222,
+          "column": 5,
+          "position": 2441
+        },
+        "endLoc": {
+          "line": 230,
+          "column": 16,
+          "position": 2481
+        }
+      },
+      "secondFile": {
+        "name": "app/screens/EmployeeDashboardScreen.tsx",
+        "start": 534,
+        "end": 540,
+        "startLoc": {
+          "line": 534,
+          "column": 17,
+          "position": 7127
+        },
+        "endLoc": {
+          "line": 540,
+          "column": 8,
+          "position": 7165
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 10,
+      "fragment": ": {\n    flexDirection: 'row',\n    justifyContent: 'space-between',\n    alignItems: 'center',\n    padding: 20,\n    backgroundColor: '#fff',\n    borderBottomWidth: 1,\n    borderBottomColor: '#e0e0e0',\n  },\n  statsTitle",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/PerformanceManagement.tsx",
+        "start": 274,
+        "end": 283,
+        "startLoc": {
+          "line": 274,
+          "column": 12,
+          "position": 2755
+        },
+        "endLoc": {
+          "line": 283,
+          "column": 11,
+          "position": 2813
+        }
+      },
+      "secondFile": {
+        "name": "components/PerformanceManagement.tsx",
+        "start": 232,
+        "end": 241,
+        "startLoc": {
+          "line": 232,
+          "column": 7,
+          "position": 2493
+        },
+        "endLoc": {
+          "line": 241,
+          "column": 6,
+          "position": 2551
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 6,
+      "fragment": ";\n\nimport { ThemedText } from '@/components/ThemedText';\nimport { ThemedView } from '@/components/ThemedView';\nimport { IconSymbol } from '@/components/ui/IconSymbol';\nimport",
+      "tokens": 0,
+      "firstFile": {
+        "name": "components/Collapsible.tsx",
+        "start": 2,
+        "end": 7,
+        "startLoc": {
+          "line": 2,
+          "column": 15,
+          "position": 30
+        },
+        "endLoc": {
+          "line": 7,
+          "column": 7,
+          "position": 72
+        }
+      },
+      "secondFile": {
+        "name": "app/(tabs)/explore.tsx",
+        "start": 6,
+        "end": 11,
+        "startLoc": {
+          "line": 6,
+          "column": 34,
+          "position": 63
+        },
+        "endLoc": {
+          "line": 11,
+          "column": 7,
+          "position": 105
+        }
+      }
+    },
+    {
+      "format": "tsx",
+      "lines": 9,
+      "fragment": "return (\n    <>\n      <Head>\n        <title>ShopFlow - Cloud Business Dashboard</title>\n        <meta name=\"description\" content=\"ShopFlow: Cloud-based business management for teams. Fast, modern, and mobile-friendly.\" />\n        <meta name=\"theme-color\" content=\"#1976d2\" />\n        <link rel=\"manifest\" href=\"/manifest.json\" />\n        <link rel=\"apple-touch-icon\" href=\"/icon.png\" />\n        <meta name=\"mobile-web-app-capable",
+      "tokens": 0,
+      "firstFile": {
+        "name": "app/_layout.tsx",
+        "start": 127,
+        "end": 135,
+        "startLoc": {
+          "line": 127,
+          "column": 3,
+          "position": 1018
+        },
+        "endLoc": {
+          "line": 135,
+          "column": 23,
+          "position": 1127
+        }
+      },
+      "secondFile": {
+        "name": "app/_layout.tsx",
+        "start": 107,
+        "end": 115,
+        "startLoc": {
+          "line": 107,
+          "column": 5,
+          "position": 814
+        },
+        "endLoc": {
+          "line": 115,
+          "column": 29,
+          "position": 923
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 8,
+      "fragment": "(\n        business_id IN (\n            SELECT business_id FROM users \n            WHERE id = auth.uid() AND role = 'admin'\n        )\n    );\n\nCREATE POLICY \"Users can view performance settings for their business\"",
+      "tokens": 0,
+      "firstFile": {
+        "name": "run_database_setup.sql",
+        "start": 66,
+        "end": 73,
+        "startLoc": {
+          "line": 66,
+          "column": 2,
+          "position": 678
+        },
+        "endLoc": {
+          "line": 73,
+          "column": 57,
+          "position": 730
+        }
+      },
+      "secondFile": {
+        "name": "run_database_setup.sql",
+        "start": 58,
+        "end": 65,
+        "startLoc": {
+          "line": 58,
+          "column": 2,
+          "position": 613
+        },
+        "endLoc": {
+          "line": 65,
+          "column": 47,
+          "position": 665
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 7,
+      "fragment": "FOR SELECT USING (\n        business_id IN (\n            SELECT business_id FROM users WHERE id = auth.uid()\n        )\n    );\n\nCREATE POLICY \"Admins can manage performance settings for their business\"",
+      "tokens": 0,
+      "firstFile": {
+        "name": "run_database_setup.sql",
+        "start": 74,
+        "end": 80,
+        "startLoc": {
+          "line": 74,
+          "column": 5,
+          "position": 737
+        },
+        "endLoc": {
+          "line": 80,
+          "column": 60,
+          "position": 785
+        }
+      },
+      "secondFile": {
+        "name": "run_database_setup.sql",
+        "start": 51,
+        "end": 57,
+        "startLoc": {
+          "line": 51,
+          "column": 5,
+          "position": 550
+        },
+        "endLoc": {
+          "line": 57,
+          "column": 47,
+          "position": 598
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 8,
+      "fragment": "USING (\n        business_id IN (\n            SELECT business_id FROM users \n            WHERE id = auth.uid() AND role = 'admin'\n        )\n    );\n\nCREATE POLICY \"Users can view performance metrics for their business\"",
+      "tokens": 0,
+      "firstFile": {
+        "name": "run_database_setup.sql",
+        "start": 81,
+        "end": 88,
+        "startLoc": {
+          "line": 81,
+          "column": 2,
+          "position": 796
+        },
+        "endLoc": {
+          "line": 88,
+          "column": 56,
+          "position": 850
+        }
+      },
+      "secondFile": {
+        "name": "run_database_setup.sql",
+        "start": 66,
+        "end": 65,
+        "startLoc": {
+          "line": 66,
+          "column": 2,
+          "position": 676
+        },
+        "endLoc": {
+          "line": 65,
+          "column": 47,
+          "position": 665
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 7,
+      "fragment": "FOR SELECT USING (\n        business_id IN (\n            SELECT business_id FROM users WHERE id = auth.uid()\n        )\n    );\n\n-- 6. Insert default performance settings for existing businesses",
+      "tokens": 0,
+      "firstFile": {
+        "name": "run_database_setup.sql",
+        "start": 89,
+        "end": 95,
+        "startLoc": {
+          "line": 89,
+          "column": 5,
+          "position": 857
+        },
+        "endLoc": {
+          "line": 95,
+          "column": 66,
+          "position": 901
+        }
+      },
+      "secondFile": {
+        "name": "run_database_setup.sql",
+        "start": 51,
+        "end": 57,
+        "startLoc": {
+          "line": 51,
+          "column": 5,
+          "position": 550
+        },
+        "endLoc": {
+          "line": 57,
+          "column": 7,
+          "position": 594
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 24,
+      "fragment": "-- 1. Task Ratings Table\nCREATE TABLE IF NOT EXISTS task_ratings (\n    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,\n    task_id UUID REFERENCES tasks(id) ON DELETE CASCADE,\n    employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,\n    admin_id UUID REFERENCES users(id) ON DELETE CASCADE,\n    rating INTEGER CHECK (rating >= 1 AND rating <= 5),\n    feedback TEXT,\n    rated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    business_id UUID REFERENCES businesses(id) ON DELETE CASCADE\n);\n\n-- 2. Performance Settings Table\nCREATE TABLE IF NOT EXISTS performance_settings (\n    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,\n    business_id UUID REFERENCES businesses(id) ON DELETE CASCADE UNIQUE,\n    rating_system_enabled BOOLEAN DEFAULT true,\n    auto_rate_completed_tasks BOOLEAN DEFAULT false,\n    default_rating INTEGER DEFAULT 3,\n    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()\n);\n\n-- 3. Performance Metrics Table (for caching calculated metrics)",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_schema.sql",
+        "start": 3,
+        "end": 26,
+        "startLoc": {
+          "line": 3,
+          "column": 1,
+          "position": 3
+        },
+        "endLoc": {
+          "line": 26,
+          "column": 65,
+          "position": 284
+        }
+      },
+      "secondFile": {
+        "name": "run_database_setup.sql",
+        "start": 4,
+        "end": 27,
+        "startLoc": {
+          "line": 4,
+          "column": 1,
+          "position": 5
+        },
+        "endLoc": {
+          "line": 27,
+          "column": 32,
+          "position": 286
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 17,
+      "fragment": "CREATE TABLE IF NOT EXISTS performance_metrics (\n    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,\n    employee_id UUID REFERENCES employees(id) ON DELETE CASCADE,\n    business_id UUID REFERENCES businesses(id) ON DELETE CASCADE,\n    period_type TEXT CHECK (period_type IN ('day', 'week', 'month')),\n    period_start DATE,\n    period_end DATE,\n    tasks_completed INTEGER DEFAULT 0,\n    average_rating DECIMAL(3,2) DEFAULT 0,\n    total_rating INTEGER DEFAULT 0,\n    tasks_rated INTEGER DEFAULT 0,\n    performance_score DECIMAL(5,2) DEFAULT 0,\n    last_calculated TIMESTAMP WITH TIME ZONE DEFAULT NOW(),\n    UNIQUE(employee_id, business_id, period_type, period_start)\n);\n\n-- Departments table for business-linked departments",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_schema.sql",
+        "start": 27,
+        "end": 43,
+        "startLoc": {
+          "line": 27,
+          "column": 1,
+          "position": 286
+        },
+        "endLoc": {
+          "line": 43,
+          "column": 53,
+          "position": 487
+        }
+      },
+      "secondFile": {
+        "name": "run_database_setup.sql",
+        "start": 28,
+        "end": 44,
+        "startLoc": {
+          "line": 28,
+          "column": 1,
+          "position": 288
+        },
+        "endLoc": {
+          "line": 44,
+          "column": 31,
+          "position": 489
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 24,
+      "fragment": "CREATE POLICY \"Users can view ratings for their business\" ON task_ratings\n    FOR SELECT USING (\n        business_id IN (\n            SELECT business_id FROM users WHERE id = auth.uid()\n        )\n    );\n\nCREATE POLICY \"Admins can insert ratings for their business\" ON task_ratings\n    FOR INSERT WITH CHECK (\n        business_id IN (\n            SELECT business_id FROM users \n            WHERE id = auth.uid() AND role = 'admin'\n        )\n    );\n\nCREATE POLICY \"Admins can update ratings for their business\" ON task_ratings\n    FOR UPDATE USING (\n        business_id IN (\n            SELECT business_id FROM users \n            WHERE id = auth.uid() AND role = 'admin'\n        )\n    );\n\n-- 5. RLS Policies for Performance Settings",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_schema.sql",
+        "start": 55,
+        "end": 78,
+        "startLoc": {
+          "line": 55,
+          "column": 1,
+          "position": 608
+        },
+        "endLoc": {
+          "line": 78,
+          "column": 44,
+          "position": 795
+        }
+      },
+      "secondFile": {
+        "name": "run_database_setup.sql",
+        "start": 50,
+        "end": 65,
+        "startLoc": {
+          "line": 50,
+          "column": 1,
+          "position": 539
+        },
+        "endLoc": {
+          "line": 65,
+          "column": 7,
+          "position": 661
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 18,
+      "fragment": ";\n\nCREATE POLICY \"Users can view performance settings for their business\" ON performance_settings\n    FOR SELECT USING (\n        business_id IN (\n            SELECT business_id FROM users WHERE id = auth.uid()\n        )\n    );\n\nCREATE POLICY \"Admins can manage performance settings for their business\" ON performance_settings\n    FOR ALL USING (\n        business_id IN (\n            SELECT business_id FROM users \n            WHERE id = auth.uid() AND role = 'admin'\n        )\n    );\n\n-- 6. RLS Policies for Performance Metrics",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_schema.sql",
+        "start": 79,
+        "end": 96,
+        "startLoc": {
+          "line": 79,
+          "column": 9,
+          "position": 810
+        },
+        "endLoc": {
+          "line": 96,
+          "column": 43,
+          "position": 933
+        }
+      },
+      "secondFile": {
+        "name": "run_database_setup.sql",
+        "start": 71,
+        "end": 65,
+        "startLoc": {
+          "line": 71,
+          "column": 2,
+          "position": 723
+        },
+        "endLoc": {
+          "line": 65,
+          "column": 7,
+          "position": 661
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 10,
+      "fragment": ";\n\nCREATE POLICY \"Users can view performance metrics for their business\" ON performance_metrics\n    FOR SELECT USING (\n        business_id IN (\n            SELECT business_id FROM users WHERE id = auth.uid()\n        )\n    );\n\n-- 7. Function to calculate performance metrics",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_schema.sql",
+        "start": 97,
+        "end": 106,
+        "startLoc": {
+          "line": 97,
+          "column": 9,
+          "position": 948
+        },
+        "endLoc": {
+          "line": 106,
+          "column": 48,
+          "position": 1006
+        }
+      },
+      "secondFile": {
+        "name": "run_database_setup.sql",
+        "start": 86,
+        "end": 57,
+        "startLoc": {
+          "line": 86,
+          "column": 2,
+          "position": 843
+        },
+        "endLoc": {
+          "line": 57,
+          "column": 7,
+          "position": 594
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 57,
+      "fragment": "CREATE OR REPLACE FUNCTION calculate_performance_metrics(\n    p_employee_id UUID,\n    p_business_id UUID,\n    p_period_type TEXT,\n    p_start_date DATE,\n    p_end_date DATE\n) RETURNS VOID AS $$\nDECLARE\n    v_tasks_completed INTEGER;\n    v_average_rating DECIMAL(3,2);\n    v_total_rating INTEGER;\n    v_tasks_rated INTEGER;\n    v_performance_score DECIMAL(5,2);\nBEGIN\n    -- Count completed tasks in period\n    SELECT COUNT(*)\n    INTO v_tasks_completed\n    FROM tasks t\n    WHERE t.assigned_to = (SELECT name FROM employees WHERE id = p_employee_id)\n    AND t.completed = true\n    AND t.completed_at::date BETWEEN p_start_date AND p_end_date\n    AND t.business_id = p_business_id;\n\n    -- Calculate average rating\n    SELECT \n        COALESCE(AVG(tr.rating), 0),\n        COALESCE(SUM(tr.rating), 0),\n        COUNT(tr.rating)\n    INTO v_average_rating, v_total_rating, v_tasks_rated\n    FROM task_ratings tr\n    WHERE tr.employee_id = p_employee_id\n    AND tr.business_id = p_business_id\n    AND tr.rated_at::date BETWEEN p_start_date AND p_end_date;\n\n    -- Calculate performance score (weighted: 70% tasks completed, 30% average rating)\n    v_performance_score = (v_tasks_completed * 0.7) + (v_average_rating * 0.3);\n\n    -- Insert or update performance metrics\n    INSERT INTO performance_metrics (\n        employee_id, business_id, period_type, period_start, period_end,\n        tasks_completed, average_rating, total_rating, tasks_rated, performance_score, last_calculated\n    ) VALUES (\n        p_employee_id, p_business_id, p_period_type, p_start_date, p_end_date,\n        v_tasks_completed, v_average_rating, v_total_rating, v_tasks_rated, v_performance_score, NOW()\n    )\n    ON CONFLICT (employee_id, business_id, period_type, period_start)\n    DO UPDATE SET\n        tasks_completed = EXCLUDED.tasks_completed,\n        average_rating = EXCLUDED.average_rating,\n        total_rating = EXCLUDED.total_rating,\n        tasks_rated = EXCLUDED.tasks_rated,\n        performance_score = EXCLUDED.performance_score,\n        last_calculated = NOW();\nEND;\n$$ LANGUAGE plpgsql SECURITY DEFINER;\n\n-- 8. Trigger to auto-rate completed tasks (if enabled)",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_schema.sql",
+        "start": 107,
+        "end": 163,
+        "startLoc": {
+          "line": 107,
+          "column": 1,
+          "position": 1008
+        },
+        "endLoc": {
+          "line": 163,
+          "column": 56,
+          "position": 1515
+        }
+      },
+      "secondFile": {
+        "name": "run_database_setup.sql",
+        "start": 102,
+        "end": 158,
+        "startLoc": {
+          "line": 102,
+          "column": 1,
+          "position": 955
+        },
+        "endLoc": {
+          "line": 158,
+          "column": 33,
+          "position": 1462
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 41,
+      "fragment": "CREATE OR REPLACE FUNCTION auto_rate_completed_task()\nRETURNS TRIGGER AS $$\nDECLARE\n    v_business_id UUID;\n    v_default_rating INTEGER;\n    v_auto_rate_enabled BOOLEAN;\nBEGIN\n    -- Only trigger on task completion\n    IF NEW.completed = true AND OLD.completed = false THEN\n        -- Get business ID and settings\n        SELECT t.business_id, ps.auto_rate_completed_tasks, ps.default_rating\n        INTO v_business_id, v_auto_rate_enabled, v_default_rating\n        FROM tasks t\n        LEFT JOIN performance_settings ps ON ps.business_id = t.business_id\n        WHERE t.id = NEW.id;\n\n        -- Auto-rate if enabled\n        IF v_auto_rate_enabled = true THEN\n            INSERT INTO task_ratings (task_id, employee_id, admin_id, rating, business_id)\n            SELECT \n                NEW.id,\n                e.id,\n                u.id,\n                v_default_rating,\n                v_business_id\n            FROM employees e\n            CROSS JOIN users u\n            WHERE e.name = NEW.assigned_to\n            AND e.business_id = v_business_id\n            AND u.business_id = v_business_id\n            AND u.role = 'admin'\n            LIMIT 1;\n        END IF;\n    END IF;\n    \n    RETURN NEW;\nEND;\n$$ LANGUAGE plpgsql SECURITY DEFINER;\n\n-- Create trigger\nCREATE",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_schema.sql",
+        "start": 164,
+        "end": 204,
+        "startLoc": {
+          "line": 164,
+          "column": 1,
+          "position": 1517
+        },
+        "endLoc": {
+          "line": 204,
+          "column": 7,
+          "position": 1830
+        }
+      },
+      "secondFile": {
+        "name": "run_database_setup.sql",
+        "start": 159,
+        "end": 199,
+        "startLoc": {
+          "line": 159,
+          "column": 1,
+          "position": 1464
+        },
+        "endLoc": {
+          "line": 199,
+          "column": 5,
+          "position": 1777
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 6,
+      "fragment": ") \n                FROM task_ratings tr \n                WHERE tr.employee_id = v_employee.id \n                AND tr.business_id = business_id_param\n            ), 0)\n        )",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_fixes.sql",
+        "start": 37,
+        "end": 42,
+        "startLoc": {
+          "line": 37,
+          "column": 2,
+          "position": 271
+        },
+        "endLoc": {
+          "line": 42,
+          "column": 2,
+          "position": 315
+        }
+      },
+      "secondFile": {
+        "name": "database_fixes.sql",
+        "start": 31,
+        "end": 35,
+        "startLoc": {
+          "line": 31,
+          "column": 7,
+          "position": 213
+        },
+        "endLoc": {
+          "line": 35,
+          "column": 2,
+          "position": 255
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 7,
+      "fragment": ",\n            'tasks_completed', COALESCE((\n                SELECT COUNT(*) \n                FROM tasks t \n                WHERE t.assigned_to = v_employee.name \n                AND t.completed = true \n                AND t.completed_at::",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_fixes.sql",
+        "start": 91,
+        "end": 97,
+        "startLoc": {
+          "line": 91,
+          "column": 11,
+          "position": 661
+        },
+        "endLoc": {
+          "line": 97,
+          "column": 15,
+          "position": 719
+        }
+      },
+      "secondFile": {
+        "name": "database_fixes.sql",
+        "start": 22,
+        "end": 28,
+        "startLoc": {
+          "line": 22,
+          "column": 5,
+          "position": 125
+        },
+        "endLoc": {
+          "line": 28,
+          "column": 12,
+          "position": 183
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 7,
+      "fragment": "AND t.business_id = business_id_param\n            ), 0),\n            'average_rating', COALESCE((\n                SELECT AVG(tr.rating) \n                FROM task_ratings tr \n                WHERE tr.employee_id = v_employee.id \n                AND tr.rated_at::",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_fixes.sql",
+        "start": 98,
+        "end": 104,
+        "startLoc": {
+          "line": 98,
+          "column": 17,
+          "position": 731
+        },
+        "endLoc": {
+          "line": 104,
+          "column": 11,
+          "position": 795
+        }
+      },
+      "secondFile": {
+        "name": "database_fixes.sql",
+        "start": 28,
+        "end": 34,
+        "startLoc": {
+          "line": 28,
+          "column": 17,
+          "position": 179
+        },
+        "endLoc": {
+          "line": 34,
+          "column": 12,
+          "position": 243
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 7,
+      "fragment": "AND tr.business_id = business_id_param\n            ), 0),\n            'tasks_rated', COALESCE((\n                SELECT COUNT(*) \n                FROM task_ratings tr \n                WHERE tr.employee_id = v_employee.id \n                AND tr.rated_at::",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_fixes.sql",
+        "start": 105,
+        "end": 111,
+        "startLoc": {
+          "line": 105,
+          "column": 17,
+          "position": 807
+        },
+        "endLoc": {
+          "line": 111,
+          "column": 11,
+          "position": 869
+        }
+      },
+      "secondFile": {
+        "name": "database_fixes.sql",
+        "start": 34,
+        "end": 40,
+        "startLoc": {
+          "line": 34,
+          "column": 17,
+          "position": 239
+        },
+        "endLoc": {
+          "line": 40,
+          "column": 12,
+          "position": 301
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 7,
+      "fragment": ") \n                FROM task_ratings tr \n                WHERE tr.employee_id = v_employee.id \n                AND tr.rated_at::date BETWEEN v_start_date AND v_end_date\n                AND tr.business_id = business_id_param\n            ), 0)\n        )",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_fixes.sql",
+        "start": 108,
+        "end": 114,
+        "startLoc": {
+          "line": 108,
+          "column": 2,
+          "position": 839
+        },
+        "endLoc": {
+          "line": 114,
+          "column": 2,
+          "position": 899
+        }
+      },
+      "secondFile": {
+        "name": "database_fixes.sql",
+        "start": 101,
+        "end": 106,
+        "startLoc": {
+          "line": 101,
+          "column": 7,
+          "position": 765
+        },
+        "endLoc": {
+          "line": 106,
+          "column": 2,
+          "position": 823
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 12,
+      "fragment": "AND tr.business_id = business_id_param\n            ), 0)\n        ) INTO v_result;\n        \n        v_metrics := array_append(v_metrics, v_result);\n    END LOOP;\n    \n    RETURN json_build_object('employees', v_metrics);\nEND;\n$$ LANGUAGE plpgsql SECURITY DEFINER;\n\n-- Fix 3: Add missing RPC function for getting employee performance summary",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_fixes.sql",
+        "start": 112,
+        "end": 123,
+        "startLoc": {
+          "line": 112,
+          "column": 17,
+          "position": 881
+        },
+        "endLoc": {
+          "line": 123,
+          "column": 76,
+          "position": 958
+        }
+      },
+      "secondFile": {
+        "name": "database_fixes.sql",
+        "start": 40,
+        "end": 51,
+        "startLoc": {
+          "line": 40,
+          "column": 17,
+          "position": 297
+        },
+        "endLoc": {
+          "line": 51,
+          "column": 68,
+          "position": 374
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 10,
+      "fragment": "FROM employees e\n    LEFT JOIN (\n        SELECT \n            assigned_to,\n            COUNT(*) as total_tasks,\n            COUNT(*) FILTER (WHERE completed = true) as completed_tasks\n        FROM tasks \n        WHERE business_id = business_id_param\n        GROUP BY assigned_to\n    ) task_stats",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_fixes.sql",
+        "start": 342,
+        "end": 351,
+        "startLoc": {
+          "line": 342,
+          "column": 5,
+          "position": 2998
+        },
+        "endLoc": {
+          "line": 351,
+          "column": 11,
+          "position": 3077
+        }
+      },
+      "secondFile": {
+        "name": "database_fixes.sql",
+        "start": 146,
+        "end": 155,
+        "startLoc": {
+          "line": 146,
+          "column": 5,
+          "position": 1152
+        },
+        "endLoc": {
+          "line": 155,
+          "column": 12,
+          "position": 1231
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 11,
+      "fragment": ".assigned_to = e.name\n    LEFT JOIN (\n        SELECT \n            employee_id,\n            AVG(rating) as average_rating\n        FROM task_ratings \n        WHERE business_id = business_id_param\n        GROUP BY employee_id\n    ) rating_stats ON rating_stats.employee_id = e.id\n    WHERE e.business_id = business_id_param\n    GROUP",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_fixes.sql",
+        "start": 351,
+        "end": 361,
+        "startLoc": {
+          "line": 351,
+          "column": 11,
+          "position": 3082
+        },
+        "endLoc": {
+          "line": 361,
+          "column": 6,
+          "position": 3167
+        }
+      },
+      "secondFile": {
+        "name": "database_fixes.sql",
+        "start": 155,
+        "end": 165,
+        "startLoc": {
+          "line": 155,
+          "column": 12,
+          "position": 1236
+        },
+        "endLoc": {
+          "line": 165,
+          "column": 6,
+          "position": 1321
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 15,
+      "fragment": "WHEN 'day' THEN\n            v_start_date := CURRENT_DATE;\n            v_end_date := CURRENT_DATE;\n        WHEN 'week' THEN\n            v_start_date := CURRENT_DATE - INTERVAL '6 days';\n            v_end_date := CURRENT_DATE;\n        WHEN 'month' THEN\n            v_start_date := DATE_TRUNC('month', CURRENT_DATE);\n            v_end_date := CURRENT_DATE;\n        ELSE\n            v_start_date := CURRENT_DATE;\n            v_end_date := CURRENT_DATE;\n    END CASE;\n    \n    SELECT",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_fixes.sql",
+        "start": 378,
+        "end": 392,
+        "startLoc": {
+          "line": 378,
+          "column": 9,
+          "position": 3284
+        },
+        "endLoc": {
+          "line": 392,
+          "column": 7,
+          "position": 3400
+        }
+      },
+      "secondFile": {
+        "name": "database_fixes.sql",
+        "start": 65,
+        "end": 79,
+        "startLoc": {
+          "line": 65,
+          "column": 9,
+          "position": 462
+        },
+        "endLoc": {
+          "line": 79,
+          "column": 46,
+          "position": 578
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 9,
+      "fragment": "GROUP BY assigned_to\n            ) task_counts ON task_counts.assigned_to = e.name\n            LEFT JOIN (\n                SELECT \n                    employee_id,\n                    AVG(rating) as average_rating\n                FROM task_ratings \n                WHERE business_id = business_id_param\n                AND",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_fixes.sql",
+        "start": 421,
+        "end": 429,
+        "startLoc": {
+          "line": 421,
+          "column": 17,
+          "position": 3811
+        },
+        "endLoc": {
+          "line": 429,
+          "column": 4,
+          "position": 3875
+        }
+      },
+      "secondFile": {
+        "name": "database_fixes.sql",
+        "start": 154,
+        "end": 162,
+        "startLoc": {
+          "line": 154,
+          "column": 9,
+          "position": 1222
+        },
+        "endLoc": {
+          "line": 162,
+          "column": 6,
+          "position": 1286
+        }
+      }
+    },
+    {
+      "format": "sql",
+      "lines": 6,
+      "fragment": ",\n    pg_get_functiondef(p.oid) as function_definition\nFROM pg_proc p\nJOIN pg_namespace n ON p.pronamespace = n.oid\nWHERE n.nspname = 'public'\nORDER",
+      "tokens": 0,
+      "firstFile": {
+        "name": "database_analysis.sql",
+        "start": 118,
+        "end": 123,
+        "startLoc": {
+          "line": 118,
+          "column": 17,
+          "position": 654
+        },
+        "endLoc": {
+          "line": 123,
+          "column": 6,
+          "position": 702
+        }
+      },
+      "secondFile": {
+        "name": "database_analysis.sql",
+        "start": 57,
+        "end": 62,
+        "startLoc": {
+          "line": 57,
+          "column": 14,
+          "position": 349
+        },
+        "endLoc": {
+          "line": 62,
+          "column": 4,
+          "position": 398
+        }
+      }
+    }
+  ],
+  "filename": "/Users/mekaylinodayan/.npm/_npx/652ead47bf63fe99/node_modules/@jscpd/html-reporter/dist/templates/main.pug"
+}

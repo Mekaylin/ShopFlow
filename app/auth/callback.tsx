@@ -28,18 +28,18 @@ export default function AuthCallback() {
             error.message.includes('invalid')
           ) {
             Alert.alert('Link expired', 'Please request a new confirmation email.');
-            router.replace('/login');
+            router.replace('/admin-dashboard');
           } else {
             setError(error.message);
-            router.replace('/login');
+            router.replace('/admin-dashboard');
           }
         } else {
-          router.replace('/');
+          router.replace('/admin-dashboard');
         }
       } catch (e: unknown) {
         const err = e as any;
         setError(err.message || JSON.stringify(err) || 'Unknown error');
-        router.replace('/login');
+        router.replace('/admin-dashboard');
       } finally {
         setLoading(false);
       }
@@ -56,7 +56,7 @@ export default function AuthCallback() {
       if (error) {
         setError(error.message);
       } else {
-        router.replace('/dashboard');
+        router.replace('/employee-dashboard');
       }
     } catch (err: any) {
       setError(err.message || 'Unknown error');

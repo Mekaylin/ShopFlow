@@ -62,5 +62,8 @@ export default function Index() {
   if (checking) return null;
   if (error) return <View style={{flex:1,justifyContent:'center',alignItems:'center'}}><Text>{error}</Text></View>;
 
-  return <LoginScreen onLogin={async () => { await router.replace('/'); }} setSession={setSession} />;
+  return <LoginScreen onLogin={(role) => {
+    if (role === 'admin') router.replace('/admin-dashboard');
+    else if (role === 'employee') router.replace('/employee-dashboard');
+  }} />;
 }

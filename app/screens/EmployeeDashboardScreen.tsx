@@ -1,15 +1,8 @@
 import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, FlatList, Modal, Platform, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { Alert, Animated, FlatList, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getEmployeeCode, supabase } from '../../services/cloud.js';
-
-// Work hours constants
-const workStart = '08:00';
-const workEnd = '17:00';
-const lunchStart = '12:00';
-const lunchEnd = '13:00';
 
 // Demo employees (no login code needed)
 interface Employee {
@@ -28,11 +21,11 @@ interface Material {
   unit: string;
 }
 // Demo materials (managed by admin)
-// const initialMaterials: Material[] = [
-//   { id: 'm1', name: 'Steel', unit: 'kg' },
-//   { id: 'm2', name: 'Paint', unit: 'liters' },
-//   { id: 'm3', name: 'Oil', unit: 'liters' },
-// ];
+const initialMaterials: Material[] = [
+  { id: 'm1', name: 'Steel', unit: 'kg' },
+  { id: 'm2', name: 'Paint', unit: 'liters' },
+  { id: 'm3', name: 'Oil', unit: 'liters' },
+];
 
 interface Task {
   id: string;
@@ -44,19 +37,20 @@ interface Task {
   assignedTo: string;
   materialsUsed?: { materialId: string; quantity: number }[];
 }
-// const initialTasks: Task[] = [
-//   { id: '1', name: 'Replace windshield', start: '8:00', deadline: '10:00', completed: false, assignedTo: 'Alex Johnson', materialsUsed: [] },
-//   { id: '2', name: 'Paint bumper', start: '10:15', deadline: '12:00', completed: false, assignedTo: 'Maria Lopez', materialsUsed: [] },
-//   { id: '3', name: 'Oil change', start: '13:00', deadline: '14:00', completed: false, assignedTo: 'Sam Patel', materialsUsed: [] },
-// ];
+const initialTasks: Task[] = [
+  { id: '1', name: 'Replace windshield', start: '8:00', deadline: '10:00', completed: false, assignedTo: 'Alex Johnson', materialsUsed: [] },
+  { id: '2', name: 'Paint bumper', start: '10:15', deadline: '12:00', completed: false, assignedTo: 'Maria Lopez', materialsUsed: [] },
+  { id: '3', name: 'Oil change', start: '13:00', deadline: '14:00', completed: false, assignedTo: 'Sam Patel', materialsUsed: [] },
+];
+
+// Removed auto-logout for all-day running app
+// const AUTO_LOGOUT_MS = 2 * 60 * 1000; // 2 minutes
 
 interface EmployeeDashboardScreenProps {
   onLogout: () => void;
-  employee: any;
-  business: any;
 }
 
-export default function EmployeeDashboardScreen({ onLogout, employee, business }: EmployeeDashboardScreenProps) {
+export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
   const colorScheme = useColorScheme();
   const [darkMode, setDarkMode] = useState(colorScheme === 'dark');
   const isDark = darkMode;
@@ -64,22 +58,6 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
   const [biometricSupported, setBiometricSupported] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [biometricLoggedIn, setBiometricLoggedIn] = useState(false);
-  const [clockEvents, setClockEvents] = useState<any[]>([]);
-  const [clockedIn, setClockedIn] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [codePromptVisible, setCodePromptVisible] = useState(false);
-  const [enteredCode, setEnteredCode] = useState('');
-  const [showEmployeeTasksPage, setShowEmployeeTasksPage] = useState(false);
-  const [employeeTasksName, setEmployeeTasksName] = useState<string | null>(null);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [materials] = useState<Material[]>([]); // get from admin
-  // taskMaterials: { [taskId]: { materialId, quantity }[] }
-  const [taskMaterials, setTaskMaterials] = useState<{ [taskId: string]: { materialId: string; quantity: string }[] }>({});
-  // Animation state
-  const [showWelcome, setShowWelcome] = useState(false);
-  const welcomeAnim = useRef(new Animated.Value(0)).current;
-  // For clock in/out, use the employee's code from Supabase
-  const [codeLoading, setCodeLoading] = useState(false);
 
   // Check for biometric support on mount
   useEffect(() => {
@@ -88,27 +66,6 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
       setBiometricSupported(compatible);
     })();
   }, []);
-
-  // Fetch clock events for this employee
-  useEffect(() => {
-    async function fetchClockEvents() {
-      // Defensive: Always check employee and business, and their .id, before using
-      if (!employee || !employee.id || !business || !business.id) {
-        console.warn('EmployeeDashboard: employee or business or their id is missing', employee, business);
-        return;
-      }
-      const { data, error } = await supabase
-        .from('clock_events')
-        .select('*')
-        .eq('employee_id', employee.id)
-        .eq('business_id', business.id)
-        .order('clock_in', { ascending: false });
-      if (!error && data) setClockEvents(data);
-      // Set clockedIn state if there is an open event
-      setClockedIn(!!(data && data.length > 0 && !data[0].clock_out));
-    }
-    fetchClockEvents();
-  }, [employee?.id, business?.id]);
 
   // Biometric login handler
   const handleBiometricLogin = async () => {
@@ -127,7 +84,33 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
     Alert.alert('Logged out', 'Fingerprint session ended.');
   };
   const insets = useSafeAreaInsets();
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [clockedIn, setClockedIn] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [codePromptVisible, setCodePromptVisible] = useState(false);
+  const [enteredCode, setEnteredCode] = useState('');
+  const [currentEmployee] = useState<Employee | null>(null);
+  const [showEmployeeTasksPage, setShowEmployeeTasksPage] = useState(false);
+  const [employeeTasksName, setEmployeeTasksName] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [materials] = useState<Material[]>(initialMaterials); // get from admin
+  // taskMaterials: { [taskId]: { materialId, quantity }[] }
+  const [taskMaterials, setTaskMaterials] = useState<{ [taskId: string]: { materialId: string; quantity: string }[] }>({});
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Animation state
+  const [showWelcome, setShowWelcome] = useState(false);
+  const welcomeAnim = useRef(new Animated.Value(0)).current;
+
+  // Removed auto-logout logic for all-day running app
+  const userAction = (fn: () => void) => fn;
+
+  // Working hours and lunch times (should be fetched from admin, here as demo)
+  const [workStart] = useState('08:00');
+  const [workEnd] = useState('17:00');
+  const [lunchStart] = useState('12:00');
+  const [lunchEnd] = useState('12:30');
+  // Auto-detect clock action
+  const [lastAction] = useState<'in' | 'lunch' | 'lunchBack' | 'out' | null>(null);
   const [onLunch, setOnLunch] = useState(false);
 
   // Helper to get current time as HH:mm
@@ -146,27 +129,33 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
     return 'out';
   }
 
-
+  // Prompt for code or fingerprint on clock in/out
+  const handleClockInOutPress = userAction(() => {
+    setCodePromptVisible(true);
+    setEnteredCode('');
+  });
 
   // Handle clock action (in, lunch, lunchBack, out)
-  const handleClockAction = async () => {
+  const handleClockAction = () => {
     const action = getNextClockAction();
     if (action === 'in') {
-      await handleClockIn();
+      setClockedIn(true);
+      setOnLunch(false);
       setShowWelcome(true);
       Animated.timing(welcomeAnim, {
         toValue: 1,
         duration: 700,
-        useNativeDriver: Platform.OS !== 'web',
+        useNativeDriver: true,
       }).start(() => {
         setTimeout(() => {
           Animated.timing(welcomeAnim, {
             toValue: 0,
             duration: 500,
-            useNativeDriver: Platform.OS !== 'web',
+            useNativeDriver: true,
           }).start(() => setShowWelcome(false));
         }, 1800);
       });
+      Alert.alert('Clocked In', 'You are clocked in.');
     } else if (action === 'lunch') {
       setOnLunch(true);
       Alert.alert('Lunch Break', 'You are clocked out for lunch.');
@@ -174,30 +163,20 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
       setOnLunch(false);
       Alert.alert('Back from Lunch', 'You are clocked in from lunch.');
     } else if (action === 'out') {
-      await handleClockOut();
+      setClockedIn(false);
+      setOnLunch(false);
+      Alert.alert('Clocked Out', 'You have clocked out for the day.');
     }
     setCodePromptVisible(false);
   };
 
-  // For clock in/out, use the employee's code from Supabase
-  const handleCodeSubmit = async () => {
-    setCodeLoading(true);
-    try {
-      const code = await getEmployeeCode(employee?.id);
-      setCodeLoading(false);
-      if (!code) {
-        Alert.alert('Error', 'Could not fetch your clock-in code. Please contact your admin.');
-        return;
-      }
-      if (enteredCode.trim() !== code) {
-        Alert.alert('Invalid Code', 'Please enter the correct code to clock in/out.');
-        return;
-      }
-      handleClockAction();
-    } catch (err) {
-      setCodeLoading(false);
-      Alert.alert('Error', 'Failed to validate code. Please try again.');
+  // For clock in/out, use a shared code (e.g., 'emp123')
+  const handleCodeSubmit = () => {
+    if (enteredCode.trim() !== 'emp123') {
+      Alert.alert('Invalid Code', 'Please enter the correct code to clock in/out.');
+      return;
     }
+    handleClockAction();
   };
 
   // Remove selectedEmployee modal and use full page view instead
@@ -373,59 +352,11 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
     shadow: isDark ? '#000' : '#b0b8c1',
   };
 
-  // Handle clock in
-  const handleClockIn = async () => {
-    // Defensive: Always check employee and business, and their .id, before using
-    if (!employee || !employee.id || !business || !business.id) {
-      console.warn('EmployeeDashboard: employee or business or their id is missing', employee, business);
-      return;
-    }
-    const { data, error } = await supabase
-      .from('clock_events')
-      .insert({
-        employee_id: employee.id,
-        business_id: business.id,
-        clock_in: new Date().toISOString(),
-        clock_out: null,
-      })
-      .select('*')
-      .single();
-    if (!error && data) {
-      setClockEvents([data, ...clockEvents]);
-      setClockedIn(true);
-    }
-  };
-
-  // Handle clock out
-  const handleClockOut = async () => {
-    // Defensive: Always check employee and business, and their .id, before using
-    if (!employee || !employee.id || !business || !business.id) {
-      console.warn('EmployeeDashboard: employee or business or their id is missing', employee, business);
-      return;
-    }
-    // Find latest open event
-    const openEvent = clockEvents.find(e => !e.clock_out);
-    if (!openEvent) return;
-    const { data, error } = await supabase
-      .from('clock_events')
-      .update({ clock_out: new Date().toISOString() })
-      .eq('id', openEvent.id)
-      .select('*')
-      .single();
-    if (!error && data) {
-      setClockEvents(clockEvents.map(e => e.id === openEvent.id ? data : e));
-      setClockedIn(false);
-    }
-  };
-
   return (
     <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 16 }]}> 
       {/* Top bar with title and settings icon */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
         <Text style={[styles.title, { color: theme.text, flex: 1 }]}>Employee Dashboard</Text>
-        {employee?.name && (
-          <Text style={[styles.subtitle, { color: theme.subtext, marginTop: 4 }]}>Welcome, {employee.name}</Text>
-        )}
         <TouchableOpacity onPress={() => setSettingsVisible(true)} style={{ position: 'absolute', right: 0, padding: 8 }}>
           <FontAwesome5 name="cog" size={28} color={isDark ? '#b3c0e0' : '#1976d2'} />
         </TouchableOpacity>
@@ -503,7 +434,7 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
         }}>
           <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 32, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 16, elevation: 8, alignItems: 'center' }}>
             <FontAwesome5 name="smile-beam" size={60} color="#388e3c" style={{ marginBottom: 16 }} />
-            <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#1976d2', marginBottom: 8 }}>Welcome{employee?.name ? `, ${employee.name}` : ''}!</Text>
+            <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#1976d2', marginBottom: 8 }}>Welcome{currentEmployee?.name ? `, ${currentEmployee.name}` : ''}!</Text>
             <Text style={{ fontSize: 18, color: '#333' }}>Have a great shift!</Text>
           </View>
         </Animated.View>
@@ -511,14 +442,14 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
       <View style={styles.buttonCol}>
         <TouchableOpacity
           style={[styles.actionBtn, { backgroundColor: clockedIn ? theme.error : theme.accent, shadowColor: theme.shadow }]}
-          onPress={clockedIn ? handleClockOut : handleClockIn}
+          onPress={handleClockInOutPress}
         >
           <MaterialIcons name={clockedIn ? 'logout' : 'login'} size={40} color="#fff" style={{ marginBottom: 10 }} />
           <Text style={styles.actionBtnText}>{clockedIn ? 'Clock Out' : 'Clock In'}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionBtn, { backgroundColor: theme.primary, marginTop: 28, shadowColor: theme.shadow }]}
-          onPress={() => setModalVisible(true)}
+          onPress={userAction(() => setModalVisible(true))}
         >
           <FontAwesome5 name="tasks" size={36} color="#fff" style={{ marginBottom: 10 }} />
           <Text style={styles.actionBtnText}>View Tasks &gt;</Text>
@@ -542,29 +473,20 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
               secureTextEntry
               autoFocus
             />
-            {codeLoading && (
-              <View style={{ marginTop: 16, alignItems: 'center' }}>
-                <Text style={{ color: '#888', fontSize: 16 }}>Loading code...</Text>
-              </View>
+            {biometricSupported && biometricEnabled && (
+              <TouchableOpacity style={{ marginTop: 16, backgroundColor: '#1976d2', borderRadius: 8, padding: 12, alignItems: 'center' }} onPress={async () => { const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Authenticate with fingerprint' }); if (result.success) { setBiometricLoggedIn(true); Alert.alert('Success', 'Fingerprint authentication successful!'); handleClockAction(); } else { setBiometricLoggedIn(false); Alert.alert('Failed', 'Fingerprint authentication failed.'); } }}>
+                <FontAwesome5 name="fingerprint" size={28} color="#fff" style={{ marginBottom: 4 }} />
+                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Login with Fingerprint</Text>
+              </TouchableOpacity>
             )}
-            {!codeLoading && (
-              <>
-                {biometricSupported && biometricEnabled && (
-                  <TouchableOpacity style={{ marginTop: 16, backgroundColor: '#1976d2', borderRadius: 8, padding: 12, alignItems: 'center' }} onPress={async () => { const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Authenticate with fingerprint' }); if (result.success) { setBiometricLoggedIn(true); Alert.alert('Success', 'Fingerprint authentication successful!'); handleClockAction(); } else { setBiometricLoggedIn(false); Alert.alert('Failed', 'Fingerprint authentication failed.'); } }}>
-                    <FontAwesome5 name="fingerprint" size={28} color="#fff" style={{ marginBottom: 4 }} />
-                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Login with Fingerprint</Text>
-                  </TouchableOpacity>
-                )}
-                <View style={styles.codeBtnRow}>
-                  <TouchableOpacity style={styles.codeBtn} onPress={() => setCodePromptVisible(false)}>
-                    <Text style={styles.closeBtnText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.codeBtn} onPress={handleCodeSubmit}>
-                    <Text style={styles.closeBtnText}>Submit</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
+            <View style={styles.codeBtnRow}>
+              <TouchableOpacity style={styles.codeBtn} onPress={() => setCodePromptVisible(false)}>
+                <Text style={styles.closeBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.codeBtn} onPress={handleCodeSubmit}>
+                <Text style={styles.closeBtnText}>Submit</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -587,7 +509,7 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
                 </TouchableOpacity>
               )}
             />
-            <TouchableOpacity style={styles.closeBtn} onPress={() => setModalVisible(false)}>
+            <TouchableOpacity style={styles.closeBtn} onPress={userAction(() => setModalVisible(false))}>
               <Text style={styles.closeBtnText}>Close</Text>
             </TouchableOpacity>
           </View>
@@ -599,7 +521,7 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
           <View style={[styles.fullPageContent, { backgroundColor: theme.card, borderRadius: 18, shadowColor: theme.shadow, shadowOpacity: 0.18, shadowRadius: 12, elevation: 8 }]}> 
             <Text style={[styles.modalTitle, { color: theme.primary }]}>{employeeTasksName}&apos;s Tasks</Text>
             <ScrollView>{renderEmployeeTasks(employeeTasksName)}</ScrollView>
-            <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.primary }]} onPress={closeEmployeeTasks}>
+            <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.primary }]} onPress={userAction(closeEmployeeTasks)}>
               <Text style={styles.closeBtnText}>Back</Text>
             </TouchableOpacity>
           </View>
@@ -617,7 +539,6 @@ export default function EmployeeDashboardScreen({ onLogout, employee, business }
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
   title: { fontSize: 30, fontWeight: 'bold', marginBottom: 36, alignSelf: 'center', letterSpacing: 1 },
-  subtitle: { fontSize: 16, textAlign: 'center', marginBottom: 8 },
   buttonCol: { flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: 28 },
   actionBtn: { width: '92%', paddingVertical: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginHorizontal: 8, marginBottom: 0, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 6 },
   actionBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 24, letterSpacing: 0.5 },

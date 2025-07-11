@@ -5,18 +5,15 @@ import { Stack, useRouter } from 'expo-router';
 import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { Sentry, getSession, initSentry, supabase } from '../services/cloud.js';
+import { getSession, supabase } from '../services/cloud.js';
 
-export default Sentry.wrap(function RootLayout() {
+export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
   const [restoring, setRestoring] = useState(true);
   const router = useRouter();
-
-  // Initialize Sentry once on mount
-  useEffect(() => { initSentry(); }, []);
 
   // Add browser back button handler for web
   useEffect(() => {
@@ -37,33 +34,62 @@ export default Sentry.wrap(function RootLayout() {
 
   useEffect(() => {
     let didFetch = false;
+    let timeoutId;
     const restoreSession = async () => {
-      const stored = await getSession('supabase-session');
-      if (stored && !didFetch) {
-        didFetch = true;
-        const session = JSON.parse(stored);
-        await supabase.auth.setSession(session);
-        // Fetch user role and redirect
-        const { data: users, error: userError } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', session.user.id)
-          .limit(1);
-        if (userError) {
-          console.warn('User fetch error during session restore:', userError);
+      try {
+        const stored = await getSession('supabase-session');
+        if (stored && !didFetch) {
+          didFetch = true;
+          const session = JSON.parse(stored);
+          await supabase.auth.setSession(session);
+          
+          // Only fetch essential data: role and business_id
+          // const userData = await fetchUserData(session.user.id);
+          
+          // if (userData) {
+          //   const role = userData.role;
+          //   const businessId = userData.business_id;
+            
+          //   // Only check for critical issues, don't block startup
+          //   if (role === 'user' || !role) {
+          //     console.warn('User has default role, will prompt later');
+          //   }
+          //   if (!businessId) {
+          //     console.warn('User has no business_id, will prompt later');
+          //   }
+            
+          //   console.log('Session restore: user role =', role);
+            
+          //   // Redirect immediately based on role
+          //   if (role === 'admin') {
+          //     router.replace('/admin-dashboard');
+          //   } else if (role === 'employee') {
+          //     router.replace('/employee-dashboard');
+          //   } else {
+          //     // Default fallback
+          //     router.replace('/');
+          //   }
+          // } else {
+          //   console.warn('Session restore: user not found in users table.');
+          //   // Still redirect to main app, let individual screens handle missing data
+          //   router.replace('/');
+          // }
         }
-        if (users && users.length > 0) {
-          const role = users[0].role;
-          console.log('Session restore: user role =', role);
-          if (role === 'admin') router.replace('/admin-dashboard');
-          else if (role === 'employee') router.replace('/employee-dashboard');
-        } else {
-          console.warn('Session restore: user not found in users table.');
-        }
+      } catch (err) {
+        console.error('Error during session restore:', err);
+      } finally {
+        setRestoring(false);
       }
-      setRestoring(false);
     };
+    
+    // Timeout fallback: never get stuck on loading
+    timeoutId = setTimeout(() => {
+      console.warn('Session restore timeout: forcing app to load.');
+      setRestoring(false);
+    }, 5000); // Reduced from 8s to 5s
+    
     restoreSession();
+    return () => clearTimeout(timeoutId);
   }, [router]);
 
   // Register service worker for PWA (web only)
@@ -120,4 +146,4 @@ export default Sentry.wrap(function RootLayout() {
       </ThemeProvider>
     </>
   );
-});
+}
