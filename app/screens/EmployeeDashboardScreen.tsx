@@ -3,6 +3,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Animated, FlatList, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { logClockEvent } from '../../services/cloud';
 
 // Demo employees (no login code needed)
 interface Employee {
@@ -137,12 +138,15 @@ export default function EmployeeDashboardScreen({ onLogout, user }: EmployeeDash
   });
 
   // Handle clock action (in, lunch, lunchBack, out)
-  const handleClockAction = () => {
+  const handleClockAction = async () => {
     const action = getNextClockAction();
     if (action === 'in') {
       setClockedIn(true);
       setOnLunch(false);
       setShowWelcome(true);
+      // Log clock in event
+      const ok = await logClockEvent(user.business_id, user.id, 'in');
+      if (!ok) Alert.alert('Error', 'Failed to log clock in event.');
       Animated.timing(welcomeAnim, {
         toValue: 1,
         duration: 700,
@@ -166,6 +170,9 @@ export default function EmployeeDashboardScreen({ onLogout, user }: EmployeeDash
     } else if (action === 'out') {
       setClockedIn(false);
       setOnLunch(false);
+      // Log clock out event
+      const ok = await logClockEvent(user.business_id, user.id, 'out');
+      if (!ok) Alert.alert('Error', 'Failed to log clock out event.');
       Alert.alert('Clocked Out', 'You have clocked out for the day.');
     }
     setCodePromptVisible(false);

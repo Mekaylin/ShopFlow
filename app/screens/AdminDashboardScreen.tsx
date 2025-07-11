@@ -1,7 +1,7 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import React, { Suspense, useEffect, useState } from 'react';
-import { Alert, Animated, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import ClockEventsTab from '../../components/admin/ClockEventsTab';
 import EmployeesTab from '../../components/admin/EmployeesTab';
 import ExportModal from '../../components/admin/ExportModal';
@@ -172,12 +172,11 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
   // Loading spinner
   if (initialLoading) {
     return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff', justifyContent: 'center', alignItems: 'center' }}>
-        <Animated.View style={{ transform: [{ rotate: new Animated.Value(0).interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] }) }] }}>
-          <FontAwesome5 name="spinner" size={48} color="#1976d2" />
-        </Animated.View>
-        <Text style={{ marginTop: 16, color: darkMode ? '#b3c0e0' : '#1976d2', fontSize: 16 }}>Loading...</Text>
-      </SafeAreaView>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <FontAwesome5 name="tools" size={48} color="#1976d2" style={{ marginBottom: 18 }} />
+        <Text style={{ fontSize: 20, color: '#1976d2', marginBottom: 12 }}>Loading your dashboard...</Text>
+        <ActivityIndicator size="large" color="#1976d2" />
+      </View>
     );
   }
 

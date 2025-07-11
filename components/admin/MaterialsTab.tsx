@@ -31,17 +31,22 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
 
   // Material CRUD handlers
   const handleAddMaterial = async () => {
+    if (!user || !user.business_id || !user.id) {
+      Alert.alert('Auth Error', 'User session missing. Please log in again.');
+      return;
+    }
     if (!newMaterialName || !newMaterialUnit) {
       Alert.alert('Missing Fields', 'Please enter both name and unit.');
       return;
     }
+    const payload = {
+      name: newMaterialName,
+      unit: newMaterialUnit,
+      business_id: user.business_id,
+    };
     const { data, error } = await supabase
       .from('materials')
-      .insert({
-        name: newMaterialName,
-        unit: newMaterialUnit,
-        business_id: user.business_id,
-      })
+      .insert(payload)
       .select('*')
       .single();
     if (error || !data) {

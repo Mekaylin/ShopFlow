@@ -45,15 +45,22 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   const handleAddEmployee = async () => {
     console.log('handleAddEmployee called');
     console.log('User:', user);
-    console.log('Payload:', {
+    // Defensive: check for valid session/user
+    if (!user || !user.business_id || !user.id) {
+      Alert.alert('Auth Error', 'User session missing. Please log in again.');
+      return;
+    }
+    // Sanitize payload: do not send undefined, use null for optional fields
+    const payload = {
       name: newEmployeeName,
       code: newEmployeeCode,
-      lunchStart: newEmployeeLunchStart,
-      lunchEnd: newEmployeeLunchEnd,
-      photo_uri: newEmployeePhotoUri,
-      department: newEmployeeDepartment,
+      lunchStart: newEmployeeLunchStart || null,
+      lunchEnd: newEmployeeLunchEnd || null,
+      photo_uri: newEmployeePhotoUri || null,
+      department: newEmployeeDepartment || null,
       business_id: user.business_id,
-    });
+    };
+    console.log('Payload:', payload);
     if (!newEmployeeName || !newEmployeeCode) {
       Alert.alert('Missing Fields', 'Please enter both name and code.');
       return;
@@ -61,15 +68,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
     try {
       const { data, error } = await supabase
         .from('employees')
-        .insert({
-          name: newEmployeeName,
-          code: newEmployeeCode,
-          lunchStart: newEmployeeLunchStart,
-          lunchEnd: newEmployeeLunchEnd,
-          photo_uri: newEmployeePhotoUri,
-          department: newEmployeeDepartment,
-          business_id: user.business_id,
-        })
+        .insert(payload)
         .select('*')
         .single();
       console.log('Add employee response:', { data, error });
@@ -95,8 +94,10 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       setNewEmployeeLunchEnd('12:30');
       setNewEmployeePhotoUri(undefined);
       setNewEmployeeDepartment('');
+      setShowAddEmployeeModal(false);
     } catch (err) {
       console.error('handleAddEmployee exception:', err);
+      Alert.alert('Error', 'Unexpected error adding employee.');
     }
   };
 
@@ -175,10 +176,17 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   const handleAddDepartment = async () => {
     console.log('handleAddDepartment called');
     console.log('User:', user);
-    console.log('Payload:', {
+    // Defensive: check for valid session/user
+    if (!user || !user.business_id || !user.id) {
+      Alert.alert('Auth Error', 'User session missing. Please log in again.');
+      return;
+    }
+    // Sanitize payload
+    const payload = {
       name: newDepartment,
       business_id: user.business_id,
-    });
+    };
+    console.log('Payload:', payload);
     if (!newDepartment) {
       Alert.alert('Missing Field', 'Please enter a department name.');
       return;
@@ -190,7 +198,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
     try {
       const { error } = await supabase
         .from('departments')
-        .insert({ name: newDepartment, business_id: user.business_id });
+        .insert(payload);
       console.log('Add department response:', { error });
       if (error) {
         Alert.alert('Error', error.message || 'Failed to add department.');
@@ -201,6 +209,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       setShowAddDeptModal(false);
     } catch (err) {
       console.error('handleAddDepartment exception:', err);
+      Alert.alert('Error', 'Unexpected error adding department.');
     }
   };
 
