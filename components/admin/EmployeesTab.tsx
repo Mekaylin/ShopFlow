@@ -117,11 +117,29 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
         return false;
       }
 
-      const { data, error } = await supabase
-        .from('employees')
-        .insert(payload)
-        .select('*')
-        .single();
+      // Timeout helper
+      const timeout = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), ms));
+
+      let data: any = null, error: any = null;
+      try {
+        const result = await Promise.race([
+          supabase
+            .from('employees')
+            .insert(payload)
+            .select('*')
+            .single(),
+          timeout(8000), // 8 seconds
+        ]);
+        // If result is from supabase, it will have data/error; if from timeout, it will throw
+        if (result && typeof result === 'object' && ('data' in result || 'error' in result)) {
+          data = (result as any).data;
+          error = (result as any).error;
+        }
+      } catch (err) {
+        console.error('Add employee timeout or network error:', err);
+        Alert.alert('Error', 'Request timed out or network error. Check your connection and Supabase policies.');
+        return false;
+      }
 
       console.log('Add employee response:', { data, error });
 
