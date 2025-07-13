@@ -1,6 +1,7 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
 import { Employee, PerformanceMetrics, PerformanceSettings, Task } from '../utility/types';
@@ -25,6 +26,8 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
   setPerformanceSettings,
   darkMode,
 }) => {
+  const router = useRouter();
+  const params = useLocalSearchParams();
 
   const businessId = user?.business_id;
   const [metricsModalVisible, setMetricsModalVisible] = useState(false);

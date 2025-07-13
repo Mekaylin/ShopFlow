@@ -1,6 +1,7 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { FlatList, Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
 import { Employee, Material, MaterialType, Task } from '../utility/types';
@@ -46,8 +47,9 @@ const TasksTab: React.FC<TasksTabProps> = ({
   const [selectedMaterialTypeForTask, setSelectedMaterialTypeForTask] = useState<string>('');
   const [materialQuantityForTask, setMaterialQuantityForTask] = useState('');
   const [materialsForNewTask, setMaterialsForNewTask] = useState<{ materialId: string; materialTypeId?: string; quantity: number }[]>([]);
-  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
-  const [addTaskEmployee, setAddTaskEmployee] = useState<Employee | null>(null);
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const showAddTaskModal = params.addTask === '1';
 
   // Task CRUD handlers
   const handleAddTaskForEmployee = async () => {
@@ -381,15 +383,14 @@ const TasksTab: React.FC<TasksTabProps> = ({
           elevation: 4,
           zIndex: 100,
         }}
-        onPress={() => setShowAddTaskModal(true)}
+        onPress={() => router.push({ pathname: '/admin-dashboard', params: { ...params, addTask: '1' } })}
         accessibilityLabel="Add Task"
       >
         <FontAwesome5 name="plus" size={28} color="#fff" />
       </TouchableOpacity>
-
       {/* Add Task Modal */}
-      <AdminModal visible={showAddTaskModal} onClose={() => setShowAddTaskModal(false)} title={!addTaskEmployee ? 'Select Employee' : `Add Task for ${addTaskEmployee.name}`}>
-        {!addTaskEmployee ? (
+      <AdminModal visible={!!showAddTaskModal} onClose={() => router.back()} title={!selectedTaskEmployee ? 'Select Employee' : `Add Task for ${selectedTaskEmployee.name}`}> 
+        {!selectedTaskEmployee ? (
           <>
             <FlatList
               data={employees}
@@ -397,13 +398,13 @@ const TasksTab: React.FC<TasksTabProps> = ({
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' }}
-                  onPress={() => setAddTaskEmployee(item)}
+                  onPress={() => setSelectedTaskEmployee(item)}
                 >
                   <Text style={{ fontSize: 16 }}>{item.name}</Text>
                 </TouchableOpacity>
               )}
             />
-            <TouchableOpacity style={adminStyles.closeBtn} onPress={() => setShowAddTaskModal(false)}>
+            <TouchableOpacity style={adminStyles.closeBtn} onPress={() => router.back()}>
               <Text style={adminStyles.closeBtnText}>Cancel</Text>
             </TouchableOpacity>
           </>
@@ -491,12 +492,12 @@ const TasksTab: React.FC<TasksTabProps> = ({
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
               <TouchableOpacity style={adminStyles.addBtn} onPress={async () => {
-                if (!newTaskName || !newTaskStart || !newTaskDeadline || !addTaskEmployee) return;
+                if (!newTaskName || !newTaskStart || !newTaskDeadline || !selectedTaskEmployee) return;
                 const { data, error } = await supabase
                   .from('tasks')
                   .insert({
                     name: newTaskName,
-                    assignedTo: addTaskEmployee.id,
+                    assignedTo: selectedTaskEmployee.id,
                     business_id: user.business_id,
                     start: newTaskStart,
                     deadline: newTaskDeadline,
@@ -511,12 +512,12 @@ const TasksTab: React.FC<TasksTabProps> = ({
                 setNewTaskStart('');
                 setNewTaskDeadline('');
                 setMaterialsForNewTask([]);
-                setAddTaskEmployee(null);
-                setShowAddTaskModal(false);
+                setSelectedTaskEmployee(null);
+                router.back();
               }}>
                 <Text style={adminStyles.addBtnText}>Add Task</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={adminStyles.closeBtn} onPress={() => setAddTaskEmployee(null)}>
+              <TouchableOpacity style={adminStyles.closeBtn} onPress={() => setSelectedTaskEmployee(null)}>
                 <Text style={adminStyles.closeBtnText}>Back</Text>
               </TouchableOpacity>
             </View>
@@ -527,4 +528,4 @@ const TasksTab: React.FC<TasksTabProps> = ({
   );
 };
 
-export default TasksTab; 
+export default TasksTab;

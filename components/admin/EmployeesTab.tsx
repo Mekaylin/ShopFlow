@@ -2,6 +2,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
 import { Employee } from '../utility/types';
@@ -33,10 +34,6 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
 }) => {
   // State
   const [editEmployee, setEditEmployee] = useState<Employee | null>(null);
-  const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
-  const [showAddDeptModal, setShowAddDeptModal] = useState(false);
-  const [showAssignTaskModal, setShowAssignTaskModal] = useState(false);
-  const [assignTaskEmployee, setAssignTaskEmployee] = useState<Employee | null>(null);
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskStart, setNewTaskStart] = useState('');
   const [newTaskDeadline, setNewTaskDeadline] = useState('');
@@ -48,39 +45,48 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   const [newEmployeeDepartment, setNewEmployeeDepartment] = useState('');
   const [newDepartment, setNewDepartment] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  // Modal state from navigation
+  const showAddEmployeeModal = params.addEmployee === '1';
+  const showAddDeptModal = params.addDept === '1';
+  const showAssignTaskModal = params.assignTask === '1';
+
   // Assign Task Handler
   const handleAssignTask = async () => {
-    if (!assignTaskEmployee || !newTaskName || !newTaskStart || !newTaskDeadline) {
+    if (!newTaskName || !newTaskStart || !newTaskDeadline) {
       Alert.alert('Missing Fields', 'Please fill in all task fields.');
       return false;
     }
     setLoading(true);
     try {
+      // Use snake_case for all fields to match Supabase schema
+      const payload = {
+        name: newTaskName,
+        assigned_to: editEmployee?.id,
+        business_id: user.business_id,
+        start: newTaskStart,
+        deadline: newTaskDeadline,
+        completed: false,
+        completed_at: null,
+      };
       const { error } = await supabase
         .from('tasks')
-        .insert({
-          name: newTaskName,
-          assignedTo: assignTaskEmployee.id,
-          business_id: user.business_id,
-          start: newTaskStart,
-          deadline: newTaskDeadline,
-          completed: false,
-          completedAt: null,
-        });
+        .insert(payload);
       if (error) {
-        Alert.alert('Error', error.message || 'Failed to assign task.');
+        setError(error.message || 'Failed to assign task.');
         return false;
       } else {
         Alert.alert('Success', 'Task assigned!');
-        setShowAssignTaskModal(false);
-        setAssignTaskEmployee(null);
+        router.back();
         setNewTaskName('');
         setNewTaskStart('');
         setNewTaskDeadline('');
         return true;
       }
     } catch (err) {
-      Alert.alert('Error', 'Unexpected error assigning task.');
+      setError('Unexpected error assigning task.');
       return false;
     } finally {
       setLoading(false);
@@ -96,7 +102,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
 
       // Defensive: check for valid session/user
       if (!user || !user.business_id || !user.id) {
-        Alert.alert('Auth Error', 'User session missing. Please log in again.');
+        setError('User session missing. Please log in again.');
         return false;
       }
 
@@ -104,16 +110,16 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       const payload = {
         name: newEmployeeName,
         code: newEmployeeCode,
-        lunchStart: newEmployeeLunchStart || null,
-        lunchEnd: newEmployeeLunchEnd || null,
-        photo_uri: newEmployeePhotoUri || null,
+        lunch_start: newEmployeeLunchStart || null,
+        lunch_end: newEmployeeLunchEnd || null,
+        photo_url: newEmployeePhotoUri || null,
         department: newEmployeeDepartment || null,
         business_id: user.business_id,
       };
       console.log('Payload:', payload);
 
       if (!newEmployeeName || !newEmployeeCode) {
-        Alert.alert('Missing Fields', 'Please enter both name and code.');
+        setError('Please enter both name and code.');
         return false;
       }
 
@@ -137,7 +143,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
         }
       } catch (err) {
         console.error('Add employee timeout or network error:', err);
-        Alert.alert('Error', 'Request timed out or network error. Check your connection and Supabase policies.');
+        setError('Request timed out or network error. Check your connection and Supabase policies.');
         return false;
       }
 
@@ -145,7 +151,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
 
       if (error || !data) {
         console.error('Add employee error (full object):', error);
-        Alert.alert('Error', `Code: ${error?.code || 'N/A'}\nMessage: ${error?.message || 'Failed to add employee.'}\nHint: ${error?.hint || ''}`);
+        setError(`Code: ${error?.code || 'N/A'}\nMessage: ${error?.message || 'Failed to add employee.'}\nHint: ${error?.hint || ''}`);
         return false;
       }
 
@@ -172,7 +178,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       return true;
     } catch (err) {
       console.error('handleAddEmployee exception:', err);
-      Alert.alert('Error', 'Unexpected error adding employee.');
+      setError('Unexpected error adding employee.');
       return false;
     } finally {
       setLoading(false);
@@ -187,9 +193,9 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
     console.log('Payload:', {
       name: newEmployeeName,
       code: newEmployeeCode,
-      lunchStart: newEmployeeLunchStart,
-      lunchEnd: newEmployeeLunchEnd,
-      photo_uri: newEmployeePhotoUri,
+      lunch_start: newEmployeeLunchStart,
+      lunch_end: newEmployeeLunchEnd,
+      photo_url: newEmployeePhotoUri,
       department: newEmployeeDepartment,
     });
 
@@ -200,9 +206,9 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
         .update({
           name: newEmployeeName,
           code: newEmployeeCode,
-          lunchStart: newEmployeeLunchStart,
-          lunchEnd: newEmployeeLunchEnd,
-          photo_uri: newEmployeePhotoUri,
+          lunch_start: newEmployeeLunchStart,
+          lunch_end: newEmployeeLunchEnd,
+          photo_url: newEmployeePhotoUri,
           department: newEmployeeDepartment,
         })
         .eq('id', editEmployee.id)
@@ -210,16 +216,20 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
         .single();
 
       console.log('Save employee response:', { data, error });
-      if (!error && data) setEmployees(employees.map(e => e.id === editEmployee.id ? data : e));
-      setEditEmployee(null);
-      setNewEmployeeName('');
-      setNewEmployeeCode('');
-      setNewEmployeeLunchStart('12:00');
-      setNewEmployeeLunchEnd('12:30');
-      setNewEmployeePhotoUri(undefined);
-      setNewEmployeeDepartment('');
+      if (error) {
+        setError(error.message || 'Failed to save employee.');
+      } else if (data) {
+        setEmployees(employees.map(e => e.id === editEmployee.id ? data : e));
+        setEditEmployee(null);
+        setNewEmployeeName('');
+        setNewEmployeeCode('');
+        setNewEmployeeLunchStart('12:00');
+        setNewEmployeeLunchEnd('12:30');
+        setNewEmployeePhotoUri(undefined);
+        setNewEmployeeDepartment('');
+      }
     } catch (err) {
-      console.error('handleSaveEmployee exception:', err);
+      setError('Unexpected error saving employee.');
     } finally {
       setLoading(false);
     }
@@ -234,9 +244,13 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
         .delete()
         .eq('id', id);
       console.log('Delete employee response:', { error });
-      if (!error) setEmployees(employees.filter(e => e.id !== id));
+      if (error) {
+        setError(error.message || 'Failed to delete employee.');
+      } else {
+        setEmployees(employees.filter(e => e.id !== id));
+      }
     } catch (err) {
-      console.error('handleDeleteEmployee exception:', err);
+      setError('Unexpected error deleting employee.');
     } finally {
       setLoading(false);
     }
@@ -265,11 +279,11 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
 
     // Defensive: check for valid session/user
     if (!user || !user.business_id || !user.id) {
-      Alert.alert('Auth Error', 'User session missing. Please log in again.');
+      setError('User session missing. Please log in again.');
       return;
     }
 
-    // Sanitize payload
+    // Sanitize payload (snake_case)
     const payload = {
       name: newDepartment,
       business_id: user.business_id,
@@ -277,12 +291,12 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
     console.log('Payload:', payload);
 
     if (!newDepartment) {
-      Alert.alert('Missing Field', 'Please enter a department name.');
+      setError('Please enter a department name.');
       return;
     }
 
     if (departments.includes(newDepartment)) {
-      Alert.alert('Duplicate', 'This department already exists.');
+      setError('This department already exists.');
       return;
     }
 
@@ -294,17 +308,17 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
 
       if (error) {
         console.error('Add department error (full object):', error);
-        Alert.alert('Error', `Code: ${error?.code || 'N/A'}\nMessage: ${error?.message || 'Failed to add department.'}\nHint: ${error?.hint || ''}`);
+        setError(`Code: ${error?.code || 'N/A'}\nMessage: ${error?.message || 'Failed to add department.'}\nHint: ${error?.hint || ''}`);
         return;
       }
 
       console.log('Department added successfully:', payload);
       setDepartments([...departments, newDepartment]);
       setNewDepartment('');
-      setShowAddDeptModal(false);
+      router.back();
     } catch (err) {
       console.error('handleAddDepartment exception:', err);
-      Alert.alert('Error', 'Unexpected error adding department.');
+      setError('Unexpected error adding department.');
     }
   };
 
@@ -322,16 +336,13 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
         {employees.map(emp => (
           <AdminRow
             key={emp.id}
-            icon={emp.photoUri ? undefined : 'user'}
+            icon={((emp as any).photo_url || emp.photoUri) ? undefined : 'user'}
             title={emp.name}
             subtitle={emp.department || 'No Dept'}
             actions={
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <TouchableOpacity
-                  onPress={() => {
-                    setAssignTaskEmployee(emp);
-                    setShowAssignTaskModal(true);
-                  }}
+                  onPress={() => router.push({ pathname: '/admin-dashboard', params: { ...params, assignTask: '1' } })}
                   style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 6, marginRight: 6 }}
                 >
                   <Text style={{ color: '#fff', fontWeight: 'bold' }}>Assign Task</Text>
@@ -343,52 +354,10 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
             }
             style={{ backgroundColor: darkMode ? '#23263a' : '#fff' }}
           >
-            <Text style={{ color: '#888', fontSize: 13, marginBottom: 2 }}>{`Lunch: ${emp.lunchStart} - ${emp.lunchEnd}`}</Text>
+            <Text style={{ color: '#888', fontSize: 13, marginBottom: 2 }}>{`Lunch: ${((emp as any).lunch_start ?? emp.lunchStart) || ''} - ${((emp as any).lunch_end ?? emp.lunchEnd) || ''}`}</Text>
           </AdminRow>
         ))}
-      {/* Assign Task Modal */}
-      <AdminModal
-        visible={showAssignTaskModal}
-        onClose={() => {
-          setShowAssignTaskModal(false);
-          setAssignTaskEmployee(null);
-          setNewTaskName('');
-          setNewTaskStart('');
-          setNewTaskDeadline('');
-        }}
-        title={assignTaskEmployee ? `Assign Task to ${assignTaskEmployee.name}` : 'Assign Task'}
-      >
-        <TextInput
-          style={adminStyles.inputText}
-          placeholder="Task Name"
-          value={newTaskName}
-          onChangeText={setNewTaskName}
-        />
-        <TextInput
-          style={[adminStyles.inputText, { marginTop: 12 }]}
-          placeholder="Start Time (e.g., 09:00)"
-          value={newTaskStart}
-          onChangeText={setNewTaskStart}
-        />
-        <TextInput
-          style={[adminStyles.inputText, { marginTop: 12 }]}
-          placeholder="Deadline (e.g., 17:00)"
-          value={newTaskDeadline}
-          onChangeText={setNewTaskDeadline}
-        />
-        <TouchableOpacity
-          style={[adminStyles.addBtn, { marginTop: 16 }, (!newTaskName || !newTaskStart || !newTaskDeadline) && { opacity: 0.5 }]}
-          onPress={async () => {
-            const assigned = await handleAssignTask();
-            if (assigned) setShowAssignTaskModal(false);
-          }}
-          disabled={!newTaskName || !newTaskStart || !newTaskDeadline}
-        >
-          <Text style={adminStyles.addBtnText}>Assign Task</Text>
-        </TouchableOpacity>
-      </AdminModal>
       </ScrollView>
-
       {/* Fixed position buttons at bottom */}
       <View style={{ 
         position: 'absolute',
@@ -404,111 +373,157 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
           <TouchableOpacity 
             style={[adminStyles.addBtn, { flex: 1, marginRight: 8 }]} 
-            onPress={() => setShowAddEmployeeModal(true)}
+            onPress={() => router.push({ pathname: '/admin-dashboard', params: { ...params, addEmployee: '1' } })}
           >
             <Text style={adminStyles.addBtnText}>Add New Employee</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[adminStyles.addBtn, { flex: 1, backgroundColor: '#388e3c' }]} 
-            onPress={() => setShowAddDeptModal(true)}
+            onPress={() => router.push({ pathname: '/admin-dashboard', params: { ...params, addDept: '1' } })}
           >
             <Text style={[adminStyles.addBtnText, { color: '#fff' }]}>Add Department</Text>
           </TouchableOpacity>
         </View>
       </View>
-
       {/* Add Employee Modal */}
-      <AdminModal visible={showAddEmployeeModal} onClose={() => setShowAddEmployeeModal(false)} title="Add New Employee">
-        <View style={adminStyles.addEmployeeInputsRow}>
-          <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Name" value={newEmployeeName} onChangeText={setNewEmployeeName} />
-          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-            <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Code" value={newEmployeeCode} onChangeText={setNewEmployeeCode} />
-            {biometricEnabled && (
-              <TouchableOpacity
-                style={{ marginLeft: 8, backgroundColor: biometricLoggedIn ? '#388e3c' : '#1976d2', borderRadius: 8, padding: 8, alignItems: 'center', justifyContent: 'center' }}
-                onPress={async () => {}}
-                accessibilityLabel="Fingerprint login"
-              >
-                <FontAwesome5 name="fingerprint" size={20} color="#fff" />
-                <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold', marginTop: 2 }}>{biometricLoggedIn ? 'Clocked In' : 'Clock In'}</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        </View>
-        <View style={adminStyles.addEmployeeInputsRow}>
-          <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Lunch Start" value={newEmployeeLunchStart} onChangeText={setNewEmployeeLunchStart} />
-          <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Lunch End" value={newEmployeeLunchEnd} onChangeText={setNewEmployeeLunchEnd} />
-        </View>
-        <View style={adminStyles.addEmployeeInputsRow}>
-          <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Department" value={newEmployeeDepartment} onChangeText={setNewEmployeeDepartment} />
-        </View>
-        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }} onPress={pickEmployeePhoto}>
-          {newEmployeePhotoUri ? (
-            <Image source={{ uri: newEmployeePhotoUri }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 8 }} />
-          ) : (
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#e3f2fd', marginRight: 8, alignItems: 'center', justifyContent: 'center' }}>
-              <FontAwesome5 name="camera" size={20} color="#1976d2" />
+      <AdminModal visible={!!showAddEmployeeModal} onClose={() => router.back()} title="Add New Employee">
+        <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+          <View style={adminStyles.addEmployeeInputsRow}>
+            <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Name" value={newEmployeeName} onChangeText={setNewEmployeeName} />
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+              <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Code" value={newEmployeeCode} onChangeText={setNewEmployeeCode} />
+              {biometricEnabled && (
+                <TouchableOpacity
+                  style={{ marginLeft: 8, backgroundColor: biometricLoggedIn ? '#388e3c' : '#1976d2', borderRadius: 8, padding: 8, alignItems: 'center', justifyContent: 'center' }}
+                  onPress={async () => {}}
+                  accessibilityLabel="Fingerprint login"
+                >
+                  <FontAwesome5 name="fingerprint" size={20} color="#fff" />
+                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold', marginTop: 2 }}>{biometricLoggedIn ? 'Clocked In' : 'Clock In'}</Text>
+                </TouchableOpacity>
+              )}
             </View>
-          )}
-          <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>{newEmployeePhotoUri ? 'Change Photo' : 'Add Photo'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[adminStyles.addBtn, (!newEmployeeName || !newEmployeeCode) && { opacity: 0.5 }]}
-          onPress={async () => {
-            const added = await handleAddEmployee();
-            if (added) setShowAddEmployeeModal(false);
-          }}
-          disabled={!newEmployeeName || !newEmployeeCode}
-        >
-          <Text style={adminStyles.addBtnText}>Add</Text>
-        </TouchableOpacity>
+          </View>
+          <View style={adminStyles.addEmployeeInputsRow}>
+            <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Lunch Start" value={newEmployeeLunchStart} onChangeText={setNewEmployeeLunchStart} />
+            <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Lunch End" value={newEmployeeLunchEnd} onChangeText={setNewEmployeeLunchEnd} />
+          </View>
+          <View style={adminStyles.addEmployeeInputsRow}>
+            <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Department" value={newEmployeeDepartment} onChangeText={setNewEmployeeDepartment} />
+          </View>
+          <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }} onPress={pickEmployeePhoto}>
+            {newEmployeePhotoUri ? (
+              <Image source={{ uri: newEmployeePhotoUri }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 8 }} />
+            ) : (
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#e3f2fd', marginRight: 8, alignItems: 'center', justifyContent: 'center' }}>
+                <FontAwesome5 name="camera" size={20} color="#1976d2" />
+              </View>
+            )}
+            <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>{newEmployeePhotoUri ? 'Change Photo' : 'Add Photo'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[adminStyles.addBtn, (!newEmployeeName || !newEmployeeCode) && { opacity: 0.5 }]}
+            onPress={async () => {
+              const added = await handleAddEmployee();
+              if (added) router.back();
+            }}
+            disabled={!newEmployeeName || !newEmployeeCode}
+          >
+            <Text style={adminStyles.addBtnText}>Add</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </AdminModal>
 
       {/* Add Department Modal */}
-      <AdminModal visible={showAddDeptModal} onClose={() => setShowAddDeptModal(false)} title="Add Department">
-        <TextInput style={adminStyles.inputText} placeholder="Department Name" value={newDepartment} onChangeText={setNewDepartment} />
-        <TouchableOpacity
-          style={[adminStyles.addBtn, !newDepartment && { opacity: 0.5 }]}
-          onPress={handleAddDepartment}
-          disabled={!newDepartment}
-        >
-          <Text style={adminStyles.addBtnText}>Add</Text>
-        </TouchableOpacity>
+      <AdminModal visible={!!showAddDeptModal} onClose={() => router.back()} title="Add Department">
+        <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+          <TextInput style={adminStyles.inputText} placeholder="Department Name" value={newDepartment} onChangeText={setNewDepartment} />
+          <TouchableOpacity
+            style={[adminStyles.addBtn, !newDepartment && { opacity: 0.5 }]}
+            onPress={handleAddDepartment}
+            disabled={!newDepartment}
+          >
+            <Text style={adminStyles.addBtnText}>Add</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </AdminModal>
 
       {/* Edit Employee Modal */}
       <AdminModal visible={!!editEmployee} onClose={() => setEditEmployee(null)} title="Edit Employee">
-        <View style={adminStyles.addEmployeeInputsRow}>
-          <TextInput style={adminStyles.inputText} placeholder="Name" value={newEmployeeName} onChangeText={setNewEmployeeName} />
-          <TextInput style={adminStyles.inputText} placeholder="Code" value={newEmployeeCode} onChangeText={setNewEmployeeCode} />
-        </View>
-        <View style={adminStyles.addEmployeeInputsRow}>
-          <TextInput style={adminStyles.inputText} placeholder="Lunch Start" value={newEmployeeLunchStart} onChangeText={setNewEmployeeLunchStart} />
-          <TextInput style={adminStyles.inputText} placeholder="Lunch End" value={newEmployeeLunchEnd} onChangeText={setNewEmployeeLunchEnd} />
-        </View>
-        <View style={adminStyles.addEmployeeInputsRow}>
-          <TextInput style={adminStyles.inputText} placeholder="Department" value={newEmployeeDepartment} onChangeText={setNewEmployeeDepartment} />
-        </View>
-        <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }} onPress={pickEmployeePhoto}>
-          {newEmployeePhotoUri ? (
-            <Image source={{ uri: newEmployeePhotoUri }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 8 }} />
-          ) : (
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#e3f2fd', marginRight: 8, alignItems: 'center', justifyContent: 'center' }}>
-              <FontAwesome5 name="camera" size={20} color="#1976d2" />
-            </View>
-          )}
-          <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>{newEmployeePhotoUri ? 'Change Photo' : 'Add Photo'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={adminStyles.saveBtn} onPress={handleSaveEmployee}>
-          <Text style={adminStyles.saveBtnText}>Save</Text>
-        </TouchableOpacity>
+        <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+          <View style={adminStyles.addEmployeeInputsRow}>
+            <TextInput style={adminStyles.inputText} placeholder="Name" value={newEmployeeName} onChangeText={setNewEmployeeName} />
+            <TextInput style={adminStyles.inputText} placeholder="Code" value={newEmployeeCode} onChangeText={setNewEmployeeCode} />
+          </View>
+          <View style={adminStyles.addEmployeeInputsRow}>
+            <TextInput style={adminStyles.inputText} placeholder="Lunch Start" value={newEmployeeLunchStart} onChangeText={setNewEmployeeLunchStart} />
+            <TextInput style={adminStyles.inputText} placeholder="Lunch End" value={newEmployeeLunchEnd} onChangeText={setNewEmployeeLunchEnd} />
+          </View>
+          <View style={adminStyles.addEmployeeInputsRow}>
+            <TextInput style={adminStyles.inputText} placeholder="Department" value={newEmployeeDepartment} onChangeText={setNewEmployeeDepartment} />
+          </View>
+          <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }} onPress={pickEmployeePhoto}>
+            {newEmployeePhotoUri ? (
+              <Image source={{ uri: newEmployeePhotoUri }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 8 }} />
+            ) : (
+              <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: '#e3f2fd', marginRight: 8, alignItems: 'center', justifyContent: 'center' }}>
+                <FontAwesome5 name="camera" size={20} color="#1976d2" />
+              </View>
+            )}
+            <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>{newEmployeePhotoUri ? 'Change Photo' : 'Add Photo'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={adminStyles.saveBtn} onPress={handleSaveEmployee}>
+            <Text style={adminStyles.saveBtnText}>Save</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </AdminModal>
 
+      {/* Assign Task Modal */}
+      <AdminModal
+        visible={!!showAssignTaskModal}
+        onClose={() => router.back()}
+        title={editEmployee ? `Assign Task to ${editEmployee.name}` : 'Assign Task'}
+      >
+        <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
+          <TextInput
+            style={adminStyles.inputText}
+            placeholder="Task Name"
+            value={newTaskName}
+            onChangeText={setNewTaskName}
+          />
+          <TextInput
+            style={[adminStyles.inputText, { marginTop: 12 }]}
+            placeholder="Start Time (e.g., 09:00)"
+            value={newTaskStart}
+            onChangeText={setNewTaskStart}
+          />
+          <TextInput
+            style={[adminStyles.inputText, { marginTop: 12 }]}
+            placeholder="Deadline (e.g., 17:00)"
+            value={newTaskDeadline}
+            onChangeText={setNewTaskDeadline}
+          />
+          <TouchableOpacity
+            style={[adminStyles.addBtn, { marginTop: 16 }, (!newTaskName || !newTaskStart || !newTaskDeadline) && { opacity: 0.5 }]}
+            onPress={async () => {
+              const assigned = await handleAssignTask();
+              if (assigned) router.back();
+            }}
+            disabled={!newTaskName || !newTaskStart || !newTaskDeadline}
+          >
+            <Text style={adminStyles.addBtnText}>Assign Task</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </AdminModal>
+
+      {/* Loading Overlay (no duplicate overlays) */}
       {loading && (
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#0008', zIndex: 10, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#0008', zIndex: 100, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: '#fff', fontSize: 18 }}>Loading...</Text>
         </View>
       )}
+      {/* Error Alert (no duplicate UI) */}
+      {error && (() => { setTimeout(() => { Alert.alert('Error', error); setError(null); }, 100); return null; })()}
     </View>
   );
 };

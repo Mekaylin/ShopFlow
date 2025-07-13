@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { Alert, Text, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 import EmployeeDashboardScreen from './screens/EmployeeDashboardScreen';
 
@@ -7,17 +8,17 @@ export default function EmployeeDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
         // Get the authenticated user
         const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-        console.log('supabase.auth.getUser() result (employee):', { authUser, authError });
-        
         if (authError || !authUser) {
-          console.log('No authenticated user found, redirecting to login.');
+          setError(authError?.message || 'No authenticated user found.');
           router.replace('/');
+          setLoading(false);
           return;
         }
 
@@ -27,33 +28,47 @@ export default function EmployeeDashboard() {
           .select('*')
           .eq('id', authUser.id)
           .single();
-          
-        console.log('User record fetch from users table (employee):', { userRecord, userError });
-        
         if (userError || !userRecord) {
-          console.log('User not found in users table, redirecting to login.');
+          setError(userError?.message || 'User not found in users table.');
           router.replace('/');
+          setLoading(false);
           return;
         }
 
         // Ensure user has employee role
         if (userRecord.role !== 'employee') {
-          console.log('User is not an employee, redirecting to login.');
+          setError('User is not an employee.');
           router.replace('/');
+          setLoading(false);
           return;
         }
 
         setUser(userRecord);
         setLoading(false);
-        console.log('Final user object passed to employee dashboard:', userRecord);
-      } catch (error) {
-        console.error('Error fetching user:', error);
+      } catch (error: any) {
+        setError(error?.message || 'Error fetching user.');
         router.replace('/');
+        setLoading(false);
       }
     };
     fetchUser();
   }, [router]);
 
-  if (loading || !user) return null;
-  return <EmployeeDashboardScreen onLogout={() => router.replace('/')} user={user} />;
-} 
+  // Loading overlay
+  if (loading) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
+        <Text style={{ fontSize: 18 }}>Loading...</Text>
+      </View>
+    );
+  }
+
+  // Error Alert (no duplicate UI)
+  if (error) {
+    setTimeout(() => { Alert.alert('Error', error); setError(null); }, 100);
+    return null;
+  }
+
+  if (!user) return null;
+  return <EmployeeDashboardScreen onLogout={() => router.replace('/')} />;
+}
