@@ -247,8 +247,16 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff', padding: 8 }}>
-      <ScrollView contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', paddingBottom: 32 }}>
+    <View style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff' }}>
+      <ScrollView 
+        style={{ flex: 1, padding: 8 }}
+        contentContainerStyle={{ 
+          flexDirection: 'row', 
+          flexWrap: 'wrap', 
+          justifyContent: 'center', 
+          paddingBottom: 100 // Extra padding to ensure content doesn't get cut off
+        }}
+      >
         {employees.map(emp => (
           <AdminRow
             key={emp.id}
@@ -267,13 +275,32 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
         ))}
       </ScrollView>
 
-      <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16, marginBottom: 16 }}>
-        <TouchableOpacity style={[adminStyles.addBtn, { flex: 1, marginRight: 8 }]} onPress={() => setShowAddEmployeeModal(true)}>
-          <Text style={adminStyles.addBtnText}>Add New Employee</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[adminStyles.addBtn, { flex: 1, backgroundColor: '#388e3c' }]} onPress={() => setShowAddDeptModal(true)}>
-          <Text style={[adminStyles.addBtnText, { color: '#fff' }]}>Add Department</Text>
-        </TouchableOpacity>
+      {/* Fixed position buttons at bottom */}
+      <View style={{ 
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: darkMode ? '#181a20' : '#f5faff',
+        padding: 16,
+        paddingBottom: 32,
+        borderTopWidth: 1,
+        borderTopColor: darkMode ? '#333' : '#e0e0e0'
+      }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
+          <TouchableOpacity 
+            style={[adminStyles.addBtn, { flex: 1, marginRight: 8 }]} 
+            onPress={() => setShowAddEmployeeModal(true)}
+          >
+            <Text style={adminStyles.addBtnText}>Add New Employee</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[adminStyles.addBtn, { flex: 1, backgroundColor: '#388e3c' }]} 
+            onPress={() => setShowAddDeptModal(true)}
+          >
+            <Text style={[adminStyles.addBtnText, { color: '#fff' }]}>Add Department</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Add Employee Modal */}

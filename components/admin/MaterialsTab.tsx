@@ -150,7 +150,11 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
   return (
     <View style={darkMode ? adminStyles.darkContainer : adminStyles.container}>
       <Text style={[adminStyles.sectionTitle, { marginBottom: 8 }]}>Materials</Text>
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
+      
+      <ScrollView 
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
+      >
         {materials.map(item => (
           <View key={item.id} style={[darkMode ? adminStyles.darkCard : adminStyles.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}> 
             <View style={{ flex: 1 }}>
@@ -188,13 +192,25 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
         ))}
       </ScrollView>
       
-      {/* Add Material Button */}
-      <TouchableOpacity 
-        style={[adminStyles.addBtn, { marginVertical: 16 }]} 
-        onPress={() => setAddMaterialModal(true)}
-      >
-        <Text style={adminStyles.addBtnText}>Add New Material</Text>
-      </TouchableOpacity>
+      {/* Fixed position button at bottom */}
+      <View style={{ 
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: darkMode ? '#181a20' : '#f5f6fa',
+        padding: 16,
+        paddingBottom: 32,
+        borderTopWidth: 1,
+        borderTopColor: darkMode ? '#333' : '#e0e0e0'
+      }}>
+        <TouchableOpacity 
+          style={adminStyles.addBtn} 
+          onPress={() => setAddMaterialModal(true)}
+        >
+          <Text style={adminStyles.addBtnText}>Add New Material</Text>
+        </TouchableOpacity>
+      </View>
       
       {editMaterial && (
         <View style={{ flexDirection: 'row', marginBottom: 8 }}>
