@@ -324,7 +324,11 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
                 workEnd={workEnd}
                 lunchStart={lunchStart}
                 lunchEnd={lunchEnd}
-                onExport={() => setExportModalVisible(true)}
+                onExport={(filteredData) => {
+                  // If filtered data is provided, you could store it for the export modal
+                  // For now, just open the export modal
+                  setExportModalVisible(true);
+                }}
               />
             )}
             {tab === 'employees' && isUser(user) && (

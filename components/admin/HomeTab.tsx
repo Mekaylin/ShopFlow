@@ -24,7 +24,16 @@ interface HomeTabProps {
   workEnd: string;
   lunchStart: string;
   lunchEnd: string;
-  onExport: () => void;
+  onExport: (filteredData?: {
+    dateRange: { startDate: string; endDate: string };
+    summaryRange: string;
+    summaryDate: string;
+    filteredTasks: Task[];
+    filteredMaterials: Material[];
+    materialsUsed: Record<string, number>;
+    bestPerformers: PerformanceMetrics[];
+    lateEmployees: string[];
+  }) => void;
 }
 
 const HomeTab: React.FC<HomeTabProps> = ({
@@ -277,43 +286,147 @@ const HomeTab: React.FC<HomeTabProps> = ({
         )}
       </View>
 
-      {/* Export Button */}
-      <TouchableOpacity
-        style={{
-          backgroundColor: exporting ? '#A5D6A7' : '#4CAF50',
-          borderRadius: 8,
-          paddingVertical: 12,
-          paddingHorizontal: 20,
-          alignItems: 'center',
-          marginTop: 16,
-          flexDirection: 'row',
-          opacity: exporting ? 0.7 : 1,
-        }}
-        onPress={async () => {
-          setExporting(true);
-          try {
-            await Promise.resolve(onExport());
-            // Optionally show a success message
-            // Alert.alert('Export', 'Data export started.');
-          } catch (err: any) {
-            if (err?.message) {
-              alert('Export failed: ' + err.message);
-            } else {
-              alert('Export failed.');
+      {/* Export Section with Date Filter */}
+      <View style={{ marginTop: 16, backgroundColor: '#fff', borderRadius: 16, padding: 18, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}>
+        <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', marginBottom: 12 }}>Export Data</Text>
+        
+        {/* Current Filter Display */}
+        <View style={{ backgroundColor: '#f5f9ff', borderRadius: 8, padding: 12, marginBottom: 12 }}>
+          <Text style={{ fontSize: 14, color: '#666', marginBottom: 4 }}>Current Filter:</Text>
+          <Text style={{ fontSize: 16, fontWeight: '600', color: '#1976d2' }}>
+            {summaryRange.charAt(0).toUpperCase() + summaryRange.slice(1)} - {summaryDate}
+          </Text>
+          {summaryRange !== 'day' && (
+            <Text style={{ fontSize: 12, color: '#888', marginTop: 2 }}>
+              From {startDate} to {endDate}
+            </Text>
+          )}
+        </View>
+
+        {/* Export Stats Preview */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#4CAF50' }}>{filteredTasks.length}</Text>
+            <Text style={{ fontSize: 12, color: '#666' }}>Tasks</Text>
+          </View>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#2196F3' }}>{Object.keys(materialsUsed).length}</Text>
+            <Text style={{ fontSize: 12, color: '#666' }}>Materials</Text>
+          </View>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#FF9800' }}>{bestPerformers.length}</Text>
+            <Text style={{ fontSize: 12, color: '#666' }}>Performers</Text>
+          </View>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#9C27B0' }}>{lateEmployees.length}</Text>
+            <Text style={{ fontSize: 12, color: '#666' }}>Late</Text>
+          </View>
+        </View>
+
+        {/* Quick Filter Actions */}
+        <View style={{ flexDirection: 'row', marginBottom: 12 }}>
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: '#e3f2fd',
+              borderRadius: 6,
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              alignItems: 'center',
+              marginRight: 4,
+              borderWidth: summaryRange === 'day' && summaryDate === new Date().toISOString().split('T')[0] ? 2 : 1,
+              borderColor: summaryRange === 'day' && summaryDate === new Date().toISOString().split('T')[0] ? '#1976d2' : '#ddd'
+            }}
+            onPress={() => {
+              setSummaryRange('day');
+              setSummaryDate(new Date().toISOString().split('T')[0]);
+            }}
+          >
+            <Text style={{ color: '#1976d2', fontSize: 12, fontWeight: '600' }}>Today</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: '#e8f5e9',
+              borderRadius: 6,
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              alignItems: 'center',
+              marginHorizontal: 4,
+              borderWidth: summaryRange === 'week' ? 2 : 1,
+              borderColor: summaryRange === 'week' ? '#4CAF50' : '#ddd'
+            }}
+            onPress={() => setSummaryRange('week')}
+          >
+            <Text style={{ color: '#4CAF50', fontSize: 12, fontWeight: '600' }}>This Week</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{
+              flex: 1,
+              backgroundColor: '#fff3e0',
+              borderRadius: 6,
+              paddingVertical: 8,
+              paddingHorizontal: 12,
+              alignItems: 'center',
+              marginLeft: 4,
+              borderWidth: summaryRange === 'month' ? 2 : 1,
+              borderColor: summaryRange === 'month' ? '#FF9800' : '#ddd'
+            }}
+            onPress={() => setSummaryRange('month')}
+          >
+            <Text style={{ color: '#FF9800', fontSize: 12, fontWeight: '600' }}>This Month</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          style={{
+            backgroundColor: exporting ? '#A5D6A7' : '#4CAF50',
+            borderRadius: 8,
+            paddingVertical: 12,
+            paddingHorizontal: 20,
+            alignItems: 'center',
+            flexDirection: 'row',
+            justifyContent: 'center',
+            opacity: exporting ? 0.7 : 1,
+          }}
+          onPress={async () => {
+            setExporting(true);
+            try {
+              // Pass filtered data and date range to export function
+              await Promise.resolve(onExport({
+                dateRange: { startDate, endDate },
+                summaryRange,
+                summaryDate,
+                filteredTasks,
+                filteredMaterials,
+                materialsUsed,
+                bestPerformers,
+                lateEmployees
+              }));
+              // Optionally show a success message
+              // Alert.alert('Export', 'Data export started.');
+            } catch (err: any) {
+              if (err?.message) {
+                alert('Export failed: ' + err.message);
+              } else {
+                alert('Export failed.');
+              }
+            } finally {
+              setExporting(false);
             }
-          } finally {
-            setExporting(false);
-          }
-        }}
-        disabled={exporting}
-      >
-        {exporting ? (
-          <FontAwesome5 name="spinner" size={16} color="#fff" style={{ marginRight: 8 }} spin />
-        ) : (
-          <FontAwesome5 name="download" size={16} color="#fff" style={{ marginRight: 8 }} />
-        )}
-        <Text style={{ color: '#fff', fontWeight: '600' }}>{exporting ? 'Exporting...' : 'Export Data'}</Text>
-      </TouchableOpacity>
+          }}
+          disabled={exporting}
+        >
+          {exporting ? (
+            <FontAwesome5 name="spinner" size={16} color="#fff" style={{ marginRight: 8 }} spin />
+          ) : (
+            <FontAwesome5 name="download" size={16} color="#fff" style={{ marginRight: 8 }} />
+          )}
+          <Text style={{ color: '#fff', fontWeight: '600' }}>
+            {exporting ? 'Exporting...' : `Export ${summaryRange.charAt(0).toUpperCase() + summaryRange.slice(1)} Data`}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {/* All Tasks Modal */}
       <Modal visible={showAllTasksModal} transparent animationType="slide" onRequestClose={() => setShowAllTasksModal(false)}>
