@@ -2,6 +2,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
@@ -100,14 +101,29 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       console.log('handleAddEmployee called');
       console.log('Current user:', user);
 
-      // Defensive: check for valid session/user
-      if (!user || !user.business_id || !user.id) {
-        setError('User session missing. Please log in again.');
+      // Check authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setError('You must be logged in to add an employee.');
+        setLoading(false);
         return false;
       }
 
-      // Sanitize payload: do not send undefined, use null for optional fields
+      if (!user || !user.business_id || !user.id) {
+        setError('User session missing. Please log in again.');
+        setLoading(false);
+        return false;
+      }
+
+      if (!newEmployeeName || !newEmployeeCode) {
+        setError('Please enter both name and code.');
+        setLoading(false);
+        return false;
+      }
+
+      // Prepare payload with a new UUID for id
       const payload = {
+        id: uuidv4(),
         name: newEmployeeName,
         code: newEmployeeCode,
         lunch_start: newEmployeeLunchStart || null,
@@ -118,25 +134,16 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       };
       console.log('Payload:', payload);
 
-      if (!newEmployeeName || !newEmployeeCode) {
-        setError('Please enter both name and code.');
-        return false;
-      }
-
-      // Timeout helper
-      const timeout = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), ms));
-
       let data: any = null, error: any = null;
       try {
         const result = await Promise.race([
           supabase
             .from('employees')
-            .insert(payload)
+            .insert([payload])
             .select('*')
             .single(),
-          timeout(8000), // 8 seconds
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), 8000)),
         ]);
-        // If result is from supabase, it will have data/error; if from timeout, it will throw
         if (result && typeof result === 'object' && ('data' in result || 'error' in result)) {
           data = (result as any).data;
           error = (result as any).error;
@@ -144,6 +151,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       } catch (err) {
         console.error('Add employee timeout or network error:', err);
         setError('Request timed out or network error. Check your connection and Supabase policies.');
+        setLoading(false);
         return false;
       }
 
@@ -152,6 +160,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       if (error || !data) {
         console.error('Add employee error (full object):', error);
         setError(`Code: ${error?.code || 'N/A'}\nMessage: ${error?.message || 'Failed to add employee.'}\nHint: ${error?.hint || ''}`);
+        setLoading(false);
         return false;
       }
 
@@ -175,13 +184,13 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       setNewEmployeeLunchEnd('12:30');
       setNewEmployeePhotoUri(undefined);
       setNewEmployeeDepartment('');
+      setLoading(false);
       return true;
     } catch (err) {
       console.error('handleAddEmployee exception:', err);
       setError('Unexpected error adding employee.');
-      return false;
-    } finally {
       setLoading(false);
+      return false;
     }
   };
 
