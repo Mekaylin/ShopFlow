@@ -1,4 +1,4 @@
-i want you to automatically do all thisimport { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import { supabase } from '../lib/supabase';
@@ -18,8 +18,8 @@ export default function AdminDashboard() {
         const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
         if (authError || !authUser) {
           setError(authError?.message || 'No authenticated user found.');
-          router.replace('/');
           setLoading(false);
+          setTimeout(() => router.replace('/'), 100);
           return;
         }
 
@@ -31,16 +31,16 @@ export default function AdminDashboard() {
           .single();
         if (userError || !userRecord) {
           setError(userError?.message || 'User not found in users table.');
-          router.replace('/');
           setLoading(false);
+          setTimeout(() => router.replace('/'), 100);
           return;
         }
 
         // Ensure user has admin role
         if (userRecord.role !== 'admin') {
           setError('User is not an admin.');
-          router.replace('/');
           setLoading(false);
+          setTimeout(() => router.replace('/'), 100);
           return;
         }
 
@@ -48,8 +48,8 @@ export default function AdminDashboard() {
         setLoading(false);
       } catch (error: any) {
         setError(error?.message || 'Error fetching user.');
-        router.replace('/');
         setLoading(false);
+        setTimeout(() => router.replace('/'), 100);
       }
     };
     fetchUser();
