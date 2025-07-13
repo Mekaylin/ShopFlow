@@ -295,9 +295,10 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: darkMode ? '#333950' : '#e3f2fd' }}>
           <Text style={{ fontSize: 24, fontWeight: 'bold', color: darkMode ? '#b3c0e0' : '#1976d2' }}>Admin Dashboard</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {/* Dark mode toggle */}
-            <TouchableOpacity onPress={() => setDarkMode((d) => !d)} style={{ padding: 8, marginRight: 8 }}>
-              <FontAwesome5 name={darkMode ? 'moon' : 'sun'} size={22} color={darkMode ? '#b3c0e0' : '#1976d2'} />
+            {/* Dark mode toggle - make more distinct and add label */}
+            <TouchableOpacity onPress={() => setDarkMode((d) => !d)} style={{ padding: 8, marginRight: 8, flexDirection: 'row', alignItems: 'center' }}>
+              <FontAwesome5 name={darkMode ? 'moon' : 'sun'} size={22} color={darkMode ? '#FFD700' : '#1976d2'} style={{ marginRight: 4 }} />
+              <Text style={{ color: darkMode ? '#FFD700' : '#1976d2', fontWeight: 'bold', fontSize: 13 }}>{darkMode ? 'Night' : 'Day'}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setSettingsModalVisible(true)} style={{ padding: 8 }}>
               <FontAwesome5 name="cog" size={24} color={darkMode ? '#b3c0e0' : '#1976d2'} />
@@ -332,47 +333,31 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
               />
             )}
             {tab === 'employees' && isUser(user) && (
-              <FlatList
-                data={employees}
-                keyExtractor={item => item.id}
-                renderItem={({ item }) => (
-                  <EmployeesTab
-                    user={user}
-                    darkMode={darkMode}
-                    employees={[item]}
-                    setEmployees={setEmployees}
-                    departments={departments}
-                    setDepartments={setDepartments}
-                    biometricEnabled={biometricEnabled}
-                    biometricLoggedIn={biometricLoggedIn}
-                  />
-                )}
-                contentContainerStyle={adminStyles.flatListContent}
-                ListEmptyComponent={<Text style={adminStyles.emptyListText}>No employees found.</Text>}
+              <EmployeesTab
+                user={user}
+                darkMode={darkMode}
+                employees={employees}
+                setEmployees={setEmployees}
+                departments={departments}
+                setDepartments={setDepartments}
+                biometricEnabled={biometricEnabled}
+                biometricLoggedIn={biometricLoggedIn}
               />
             )}
             {tab === 'tasks' && isUser(user) && (
-              <FlatList
-                data={tasks}
-                keyExtractor={item => item.id}
-                renderItem={({ item }) => (
-                  <TasksTab
-                    user={user}
-                    employees={employees}
-                    materials={materials}
-                    materialTypes={materialTypes}
-                    darkMode={darkMode}
-                    performanceSettings={performanceSettings}
-                    tasks={[item]}
-                    setTasks={setTasks}
-                    lateThreshold={lateThreshold}
-                    lateTaskNotifiedIds={lateTaskNotifiedIds}
-                    setLateTaskNotifiedIds={setLateTaskNotifiedIds}
-                    onRateTask={(task) => setSelectedTaskForRating(task)}
-                  />
-                )}
-                contentContainerStyle={adminStyles.flatListContent}
-                ListEmptyComponent={<Text style={adminStyles.emptyListText}>No tasks found.</Text>}
+              <TasksTab
+                user={user}
+                employees={employees}
+                materials={materials}
+                materialTypes={materialTypes}
+                darkMode={darkMode}
+                performanceSettings={performanceSettings}
+                tasks={tasks}
+                setTasks={setTasks}
+                lateThreshold={lateThreshold}
+                lateTaskNotifiedIds={lateTaskNotifiedIds}
+                setLateTaskNotifiedIds={setLateTaskNotifiedIds}
+                onRateTask={(task) => setSelectedTaskForRating(task)}
               />
             )}
             {tab === 'materials' && isUser(user) && (
