@@ -1,9 +1,10 @@
 import { FontAwesome5 } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
-import { Employee, PerformanceSettings, Task } from '../utility/types';
+import { Employee, PerformanceSettings, Task, PerformanceMetrics } from '../utility/types';
+import PerformanceMetricsModal from './PerformanceMetricsModal';
 
 import type { User } from '../utility/types';
 interface PerformanceTabProps {
@@ -24,7 +25,12 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
   setPerformanceSettings,
   darkMode,
 }) => {
+
   const businessId = user?.business_id;
+  const [metricsModalVisible, setMetricsModalVisible] = useState(false);
+  const [metrics, setMetrics] = useState<PerformanceMetrics[]>([]);
+  const [loadingMetrics, setLoadingMetrics] = useState(false);
+
 
   // Performance calculation function
   const calculatePerformanceMetrics = async () => {
@@ -45,6 +51,33 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
     } catch (error: any) {
       console.error('Error calculating performance metrics:', error);
       Alert.alert('Error', error?.message || 'Unknown error.');
+    }
+  };
+
+  // Fetch and show detailed performance metrics
+  const handleViewPerformance = async () => {
+    if (!businessId) {
+      Alert.alert('Error', 'Business ID is missing.');
+      return;
+    }
+    setLoadingMetrics(true);
+    try {
+      const { data, error } = await supabase
+        .from('performance_metrics')
+        .select('*')
+        .eq('business_id', businessId);
+      if (error) {
+        Alert.alert('Error', error.message || 'Failed to fetch metrics.');
+        setMetrics([]);
+      } else {
+        setMetrics(data || []);
+        setMetricsModalVisible(true);
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Unexpected error fetching metrics.');
+      setMetrics([]);
+    } finally {
+      setLoadingMetrics(false);
     }
   };
 
@@ -156,10 +189,11 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
         <View style={adminStyles.rowBetween}>
           <TouchableOpacity
             style={[adminStyles.actionButton, adminStyles.bgPrimary, adminStyles.flex1, adminStyles.mr8]}
-            onPress={calculatePerformanceMetrics}
+            onPress={handleViewPerformance}
+            disabled={loadingMetrics}
           >
             <FontAwesome5 name="chart-line" size={16} color="#fff" style={adminStyles.mr8} />
-            <Text style={adminStyles.actionButtonText}>View Performance</Text>
+            <Text style={adminStyles.actionButtonText}>{loadingMetrics ? 'Loading...' : 'View Performance'}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[adminStyles.actionButton, adminStyles.bgSuccess, adminStyles.flex1, adminStyles.ml8]}
@@ -169,6 +203,11 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
             <Text style={adminStyles.actionButtonText}>Recalculate</Text>
           </TouchableOpacity>
         </View>
+        <PerformanceMetricsModal
+          visible={metricsModalVisible}
+          onClose={() => setMetricsModalVisible(false)}
+          metrics={metrics}
+        />
       </View>
       {/* Quick Stats */}
       <View style={darkMode ? adminStyles.darkCard : adminStyles.card}>
