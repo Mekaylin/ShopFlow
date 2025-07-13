@@ -50,8 +50,6 @@ export default function RootLayout() {
           .eq('id', authUser.id)
           .single();
           
-        console.log('User record fetch from users table (layout):', { userRecord, userError });
-        
         if (!isMounted) return;
         
         if (userError || !userRecord) {
@@ -62,7 +60,6 @@ export default function RootLayout() {
 
         // Set complete user object with business_id and role
         setUser(userRecord);
-        console.log('Complete user object set in layout:', userRecord);
         
         // Route based on user role - only redirect if not already on the correct route
         const currentPath = Platform.OS === 'web' ? (window?.location?.pathname || '') : '';

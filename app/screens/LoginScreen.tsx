@@ -2,8 +2,8 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { createShadowStyle } from '../../utils/shadowUtils';
 import { supabase } from '../../lib/supabase';
+import { createShadowStyle } from '../../utils/shadowUtils';
 
 type LoginScreenProps = {
   onLogin: (role: 'admin' | 'employee') => void,

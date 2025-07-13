@@ -35,10 +35,8 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
 
   // Material CRUD handlers
   const handleAddMaterial = async () => {
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    console.log('Current session:', sessionData, sessionError);
+    console.log('handleAddMaterial called');
     console.log('Current user:', user);
-    await supabase.auth.refreshSession();
     if (!user || !user.business_id || !user.id) {
       Alert.alert('Auth Error', 'User session missing. Please log in again.');
       return;

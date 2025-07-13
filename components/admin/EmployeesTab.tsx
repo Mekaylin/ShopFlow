@@ -48,11 +48,8 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   const handleAddEmployee = async () => {
     setLoading(true);
     try {
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      console.log('Current session:', sessionData, sessionError);
-      console.log('Current user:', user);
-      await supabase.auth.refreshSession();
       console.log('handleAddEmployee called');
+      console.log('Current user:', user);
 
       // Defensive: check for valid session/user
       if (!user || !user.business_id || !user.id) {
@@ -201,11 +198,8 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   };
 
   const handleAddDepartment = async () => {
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    console.log('Current session:', sessionData, sessionError);
-    console.log('Current user:', user);
-    await supabase.auth.refreshSession();
     console.log('handleAddDepartment called');
+    console.log('Current user:', user);
 
     // Defensive: check for valid session/user
     if (!user || !user.business_id || !user.id) {
