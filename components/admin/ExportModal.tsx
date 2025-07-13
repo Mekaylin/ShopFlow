@@ -5,14 +5,15 @@ import { Modal, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { adminStyles } from '../utility/styles';
 import { Employee, Task } from '../utility/types';
 
+import type { ClockEvent, Material, User } from '../utility/types';
 interface ExportModalProps {
   visible: boolean;
   onClose: () => void;
   employees: Employee[];
   tasks: Task[];
-  materials: any[];
-  clockEvents: any[];
-  user: any;
+  materials: Material[];
+  clockEvents: ClockEvent[];
+  user: User;
 }
 
 const ExportModal: React.FC<ExportModalProps> = ({

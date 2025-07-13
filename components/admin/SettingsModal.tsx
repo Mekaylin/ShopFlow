@@ -3,10 +3,11 @@ import { Alert, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } fro
 import { adminStyles } from '../utility/styles';
 import { generateBusinessCode, getBusinessCode } from '../utility/utils';
 
+import type { User } from '../utility/types';
 interface SettingsModalProps {
   visible: boolean;
   onClose: () => void;
-  user: any;
+  user: User;
   darkMode: boolean;
   biometricEnabled: boolean;
   biometricLoggedIn: boolean;

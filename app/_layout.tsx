@@ -5,25 +5,24 @@ import { Stack, useRouter } from 'expo-router';
 import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { getSession, supabase } from '../services/cloud.js';
+import { supabase } from '../lib/supabase';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
-  const [restoring, setRestoring] = useState(true);
+  const [checking, setChecking] = useState(true);
+  const [user, setUser] = useState(null);
   const router = useRouter();
 
   // Add browser back button handler for web
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const onPopState = (e: PopStateEvent) => {
-      // If router.canGoBack() is true, go back in app navigation
       if (router.canGoBack && router.canGoBack()) {
         router.back();
       } else {
-        // Prevent exiting the app/root
         e.preventDefault();
         window.history.pushState(null, '', window.location.pathname);
       }
@@ -32,64 +31,73 @@ export default function RootLayout() {
     return () => window.removeEventListener('popstate', onPopState);
   }, [router]);
 
+  // Bulletproof session restore with complete user data
   useEffect(() => {
-    let didFetch = false;
-    let timeoutId;
-    const restoreSession = async () => {
+    const fetchUserData = async (authUser: any) => {
       try {
-        const stored = await getSession('supabase-session');
-        if (stored && !didFetch) {
-          didFetch = true;
-          const session = JSON.parse(stored);
-          await supabase.auth.setSession(session);
+        // Fetch complete user record from users table
+        const { data: userRecord, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authUser.id)
+          .single();
           
-          // Only fetch essential data: role and business_id
-          // const userData = await fetchUserData(session.user.id);
-          
-          // if (userData) {
-          //   const role = userData.role;
-          //   const businessId = userData.business_id;
-            
-          //   // Only check for critical issues, don't block startup
-          //   if (role === 'user' || !role) {
-          //     console.warn('User has default role, will prompt later');
-          //   }
-          //   if (!businessId) {
-          //     console.warn('User has no business_id, will prompt later');
-          //   }
-            
-          //   console.log('Session restore: user role =', role);
-            
-          //   // Redirect immediately based on role
-          //   if (role === 'admin') {
-          //     router.replace('/admin-dashboard');
-          //   } else if (role === 'employee') {
-          //     router.replace('/employee-dashboard');
-          //   } else {
-          //     // Default fallback
-          //     router.replace('/');
-          //   }
-          // } else {
-          //   console.warn('Session restore: user not found in users table.');
-          //   // Still redirect to main app, let individual screens handle missing data
-          //   router.replace('/');
-          // }
+        console.log('User record fetch from users table (layout):', { userRecord, userError });
+        
+        if (userError || !userRecord) {
+          console.log('User not found in users table, redirecting to login.');
+          setUser(null);
+          router.replace('/');
+          return;
         }
-      } catch (err) {
-        console.error('Error during session restore:', err);
-      } finally {
-        setRestoring(false);
+
+        // Set complete user object with business_id and role
+        setUser(userRecord);
+        console.log('Complete user object set in layout:', userRecord);
+        
+        // Route based on user role
+        if (userRecord.role === 'admin') {
+          router.replace('/admin-dashboard');
+        } else if (userRecord.role === 'employee') {
+          router.replace('/employee-dashboard');
+        } else {
+          console.log('Invalid user role, redirecting to login.');
+          setUser(null);
+          router.replace('/');
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        setUser(null);
+        router.replace('/');
       }
     };
-    
-    // Timeout fallback: never get stuck on loading
-    timeoutId = setTimeout(() => {
-      console.warn('Session restore timeout: forcing app to load.');
-      setRestoring(false);
-    }, 5000); // Reduced from 8s to 5s
-    
-    restoreSession();
-    return () => clearTimeout(timeoutId);
+
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state change event:', event, session?.user?.id);
+      if (session?.user) {
+        await fetchUserData(session.user);
+      } else {
+        setUser(null);
+        router.replace('/');
+      }
+      setChecking(false);
+    });
+
+    // Initial session check
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.id);
+      if (session?.user) {
+        await fetchUserData(session.user);
+      } else {
+        setUser(null);
+        router.replace('/');
+      }
+      setChecking(false);
+    });
+
+    return () => {
+      listener?.unsubscribe();
+    };
   }, [router]);
 
   // Register service worker for PWA (web only)
@@ -103,7 +111,7 @@ export default function RootLayout() {
     }
   }, []);
 
-  if (!loaded || restoring) {
+  if (!loaded || checking) {
     return (
       <>
         <Head>
@@ -118,7 +126,7 @@ export default function RootLayout() {
         </Head>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <StatusBar style="auto" />
-          {/* <Stack.Screen name="+loading" options={{ headerShown: false }} /> */}
+          {/* Loading screen */}
           <></>
         </ThemeProvider>
       </>
@@ -141,6 +149,8 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="index" options={{ title: 'Welcome to ShopFlow' }} />
+          <Stack.Screen name="admin-dashboard" options={{ headerShown: false }} />
+          <Stack.Screen name="employee-dashboard" options={{ headerShown: false }} />
           <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>

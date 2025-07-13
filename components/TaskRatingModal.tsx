@@ -3,12 +3,13 @@ import React, { useState } from 'react';
 import { Alert, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 
+import type { Business, Employee, Task } from './utility/types';
 interface TaskRatingModalProps {
   visible: boolean;
   onClose: () => void;
-  task: any;
-  employee: any;
-  business: any;
+  task: Task;
+  employee: Employee;
+  business: Business;
   onRatingSubmitted: () => void;
 }
 

@@ -3,6 +3,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 
+import type { Business } from './utility/types';
+
 interface PerformanceData {
   employee_id: string;
   employee_name: string;
@@ -11,9 +13,8 @@ interface PerformanceData {
   performance_score: number;
   tasks_rated: number;
 }
-
 interface PerformanceManagementProps {
-  business: any;
+  business: Business;
   onClose: () => void;
 }
 

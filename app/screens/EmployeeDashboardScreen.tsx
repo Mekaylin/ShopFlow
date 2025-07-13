@@ -3,7 +3,6 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Animated, FlatList, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { logClockEvent } from '../../services/cloud';
 
 // Demo employees (no login code needed)
 interface Employee {
@@ -49,10 +48,9 @@ const initialTasks: Task[] = [
 
 interface EmployeeDashboardScreenProps {
   onLogout: () => void;
-  user: any;
 }
 
-export default function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProps) {
+export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
   const colorScheme = useColorScheme();
   const [darkMode, setDarkMode] = useState(colorScheme === 'dark');
   const isDark = darkMode;
@@ -89,13 +87,14 @@ export default function EmployeeDashboardScreen({ onLogout, user }: EmployeeDash
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [clockedIn, setClockedIn] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
   const [codePromptVisible, setCodePromptVisible] = useState(false);
   const [enteredCode, setEnteredCode] = useState('');
-  const [currentEmployee] = useState<Employee | null>(null);
+  const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
   const [showEmployeeTasksPage, setShowEmployeeTasksPage] = useState(false);
   const [employeeTasksName, setEmployeeTasksName] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [materials] = useState<Material[]>(initialMaterials); // get from admin
+  const [materials, setMaterials] = useState<Material[]>(initialMaterials); // get from admin
   // taskMaterials: { [taskId]: { materialId, quantity }[] }
   const [taskMaterials, setTaskMaterials] = useState<{ [taskId: string]: { materialId: string; quantity: string }[] }>({});
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -107,12 +106,12 @@ export default function EmployeeDashboardScreen({ onLogout, user }: EmployeeDash
   const userAction = (fn: () => void) => fn;
 
   // Working hours and lunch times (should be fetched from admin, here as demo)
-  const [workStart] = useState('08:00');
-  const [workEnd] = useState('17:00');
-  const [lunchStart] = useState('12:00');
-  const [lunchEnd] = useState('12:30');
+  const [workStart, setWorkStart] = useState('08:00');
+  const [workEnd, setWorkEnd] = useState('17:00');
+  const [lunchStart, setLunchStart] = useState('12:00');
+  const [lunchEnd, setLunchEnd] = useState('12:30');
   // Auto-detect clock action
-  const [lastAction] = useState<'in' | 'lunch' | 'lunchBack' | 'out' | null>(null);
+  const [lastAction, setLastAction] = useState<'in' | 'lunch' | 'lunchBack' | 'out' | null>(null);
   const [onLunch, setOnLunch] = useState(false);
 
   // Helper to get current time as HH:mm
@@ -138,15 +137,13 @@ export default function EmployeeDashboardScreen({ onLogout, user }: EmployeeDash
   });
 
   // Handle clock action (in, lunch, lunchBack, out)
-  const handleClockAction = async () => {
+  const handleClockAction = () => {
     const action = getNextClockAction();
+    setLastAction(action);
     if (action === 'in') {
       setClockedIn(true);
       setOnLunch(false);
       setShowWelcome(true);
-      // Log clock in event
-      const ok = await logClockEvent(user.business_id, user.id, 'in');
-      if (!ok) Alert.alert('Error', 'Failed to log clock in event.');
       Animated.timing(welcomeAnim, {
         toValue: 1,
         duration: 700,
@@ -170,9 +167,6 @@ export default function EmployeeDashboardScreen({ onLogout, user }: EmployeeDash
     } else if (action === 'out') {
       setClockedIn(false);
       setOnLunch(false);
-      // Log clock out event
-      const ok = await logClockEvent(user.business_id, user.id, 'out');
-      if (!ok) Alert.alert('Error', 'Failed to log clock out event.');
       Alert.alert('Clocked Out', 'You have clocked out for the day.');
     }
     setCodePromptVisible(false);

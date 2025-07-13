@@ -464,4 +464,209 @@ GRANT EXECUTE ON FUNCTION get_employee_attendance(UUID, DATE, DATE) TO authentic
 GRANT EXECUTE ON FUNCTION get_material_usage(UUID, DATE, DATE) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_task_statistics(UUID, DATE, DATE) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_department_statistics(UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION get_business_dashboard_data(UUID, TEXT) TO authenticated; 
+GRANT EXECUTE ON FUNCTION get_business_dashboard_data(UUID, TEXT) TO authenticated;
+
+-- ============================================================================
+-- MISSING RLS POLICIES FOR CORE TABLES
+-- ============================================================================
+
+-- Enable RLS on core tables if not already enabled
+ALTER TABLE materials ENABLE ROW LEVEL SECURITY;
+ALTER TABLE employees ENABLE ROW LEVEL SECURITY;
+ALTER TABLE departments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clock_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+-- Materials table RLS policies
+CREATE POLICY "Users can view materials for their business" ON materials
+    FOR SELECT USING (
+        business_id IN (
+            SELECT business_id FROM users WHERE id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Admins can insert materials for their business" ON materials
+    FOR INSERT WITH CHECK (
+        business_id IN (
+            SELECT business_id FROM users 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+CREATE POLICY "Admins can update materials for their business" ON materials
+    FOR UPDATE USING (
+        business_id IN (
+            SELECT business_id FROM users 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+CREATE POLICY "Admins can delete materials for their business" ON materials
+    FOR DELETE USING (
+        business_id IN (
+            SELECT business_id FROM users 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+-- Employees table RLS policies
+CREATE POLICY "Users can view employees for their business" ON employees
+    FOR SELECT USING (
+        business_id IN (
+            SELECT business_id FROM users WHERE id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Admins can insert employees for their business" ON employees
+    FOR INSERT WITH CHECK (
+        business_id IN (
+            SELECT business_id FROM users 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+CREATE POLICY "Admins can update employees for their business" ON employees
+    FOR UPDATE USING (
+        business_id IN (
+            SELECT business_id FROM users 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+CREATE POLICY "Admins can delete employees for their business" ON employees
+    FOR DELETE USING (
+        business_id IN (
+            SELECT business_id FROM users 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+-- Departments table RLS policies
+CREATE POLICY "Users can view departments for their business" ON departments
+    FOR SELECT USING (
+        business_id IN (
+            SELECT business_id FROM users WHERE id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Admins can insert departments for their business" ON departments
+    FOR INSERT WITH CHECK (
+        business_id IN (
+            SELECT business_id FROM users 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+CREATE POLICY "Admins can update departments for their business" ON departments
+    FOR UPDATE USING (
+        business_id IN (
+            SELECT business_id FROM users 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+CREATE POLICY "Admins can delete departments for their business" ON departments
+    FOR DELETE USING (
+        business_id IN (
+            SELECT business_id FROM users 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+-- Tasks table RLS policies
+CREATE POLICY "Users can view tasks for their business" ON tasks
+    FOR SELECT USING (
+        business_id IN (
+            SELECT business_id FROM users WHERE id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Admins can insert tasks for their business" ON tasks
+    FOR INSERT WITH CHECK (
+        business_id IN (
+            SELECT business_id FROM users 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+CREATE POLICY "Admins can update tasks for their business" ON tasks
+    FOR UPDATE USING (
+        business_id IN (
+            SELECT business_id FROM users 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+CREATE POLICY "Admins can delete tasks for their business" ON tasks
+    FOR DELETE USING (
+        business_id IN (
+            SELECT business_id FROM users 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+-- Clock events table RLS policies
+CREATE POLICY "Users can view clock events for their business" ON clock_events
+    FOR SELECT USING (
+        business_id IN (
+            SELECT business_id FROM users WHERE id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Users can insert clock events for their business" ON clock_events
+    FOR INSERT WITH CHECK (
+        business_id IN (
+            SELECT business_id FROM users WHERE id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Users can update clock events for their business" ON clock_events
+    FOR UPDATE USING (
+        business_id IN (
+            SELECT business_id FROM users WHERE id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Admins can delete clock events for their business" ON clock_events
+    FOR DELETE USING (
+        business_id IN (
+            SELECT business_id FROM users 
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+-- Users table RLS policies
+CREATE POLICY "Users can view own profile" ON users
+    FOR SELECT USING (id = auth.uid());
+
+CREATE POLICY "Users can update own profile" ON users
+    FOR UPDATE USING (id = auth.uid());
+
+-- ============================================================================
+-- CRITICAL PERFORMANCE INDEXES
+-- ============================================================================
+
+-- Add indexes on business_id columns for performance
+CREATE INDEX IF NOT EXISTS idx_users_business_id ON users(business_id);
+CREATE INDEX IF NOT EXISTS idx_employees_business_id ON employees(business_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_business_id ON tasks(business_id);
+CREATE INDEX IF NOT EXISTS idx_materials_business_id ON materials(business_id);
+CREATE INDEX IF NOT EXISTS idx_departments_business_id ON departments(business_id);
+CREATE INDEX IF NOT EXISTS idx_clock_events_business_id ON clock_events(business_id);
+CREATE INDEX IF NOT EXISTS idx_task_ratings_business_id ON task_ratings(business_id);
+CREATE INDEX IF NOT EXISTS idx_performance_metrics_business_id ON performance_metrics(business_id);
+
+-- Add indexes on frequently queried columns
+CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to ON tasks(assigned_to);
+CREATE INDEX IF NOT EXISTS idx_tasks_completed ON tasks(completed);
+CREATE INDEX IF NOT EXISTS idx_task_ratings_employee_id ON task_ratings(employee_id);
+CREATE INDEX IF NOT EXISTS idx_task_ratings_task_id ON task_ratings(task_id);
+CREATE INDEX IF NOT EXISTS idx_clock_events_employee_id ON clock_events(employee_id);
+CREATE INDEX IF NOT EXISTS idx_employees_name ON employees(name);
+
+-- ============================================================================
+-- SUCCESS MESSAGE
+-- ============================================================================
+
+SELECT 'All database fixes applied successfully! RLS policies and indexes created.' as status; 

@@ -1,17 +1,20 @@
 import { FontAwesome5 } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../../services/cloud.js';
+import { supabase } from '../../lib/supabase';
+import { adminStyles } from '../utility/styles';
 import { Employee, PerformanceSettings, Task } from '../utility/types';
 
+import type { User } from '../utility/types';
 interface PerformanceTabProps {
-  user: any;
+  user: User;
   employees: Employee[];
   tasks: Task[];
   performanceSettings: PerformanceSettings;
   setPerformanceSettings: (settings: PerformanceSettings) => void;
   darkMode: boolean;
 }
+
 
 const PerformanceTab: React.FC<PerformanceTabProps> = ({
   user,
@@ -21,38 +24,41 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
   setPerformanceSettings,
   darkMode,
 }) => {
-  const [showPerformanceManagement] = useState(false);
+  const businessId = user?.business_id;
 
   // Performance calculation function
   const calculatePerformanceMetrics = async () => {
+    if (!businessId) {
+      Alert.alert('Error', 'Business ID is missing.');
+      return;
+    }
     try {
-      if (!user?.business_id) {
-        console.warn('calculatePerformanceMetrics: user or user.business_id is missing', user);
-        return;
-      }
-      const { data, error } = await supabase.rpc('calculate_performance_metrics', {
-        business_id_param: user.business_id
+      const { error } = await supabase.rpc('calculate_performance_metrics', {
+        business_id_param: businessId,
       });
       if (error) {
         console.error('Error calculating performance metrics:', error);
         Alert.alert('Error', 'Failed to calculate performance metrics.');
       } else {
-        console.log('Performance metrics calculated successfully:', data);
         Alert.alert('Success', 'Performance metrics have been calculated and updated.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error calculating performance metrics:', error);
+      Alert.alert('Error', error?.message || 'Unknown error.');
     }
   };
 
   // Update performance settings
   const updatePerformanceSettings = async (newSettings: PerformanceSettings) => {
+    if (!businessId) {
+      Alert.alert('Error', 'Business ID is missing.');
+      return;
+    }
     try {
-      if (!user?.business_id) return;
       const { error } = await supabase
         .from('performance_settings')
         .upsert({
-          business_id: user.business_id,
+          business_id: businessId,
           rating_system_enabled: newSettings.ratingSystemEnabled,
           auto_rate_completed_tasks: newSettings.autoRateCompletedTasks,
           default_rating: newSettings.defaultRating,
@@ -64,28 +70,48 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
         setPerformanceSettings(newSettings);
         Alert.alert('Success', 'Performance settings updated successfully.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating performance settings:', error);
+      Alert.alert('Error', error?.message || 'Unknown error.');
     }
   };
 
+  // Modular star rating UI
+  const renderStarRating = () => (
+    <View style={adminStyles.rowCenter}>
+      {[1, 2, 3, 4, 5].map((rating) => (
+        <TouchableOpacity
+          key={rating}
+          onPress={() => updatePerformanceSettings({
+            ...performanceSettings,
+            defaultRating: rating
+          })}
+          style={adminStyles.starBtn}
+        >
+          <FontAwesome5
+            name={performanceSettings.defaultRating >= rating ? 'star' : 'star-o'}
+            size={20}
+            color={performanceSettings.defaultRating >= rating ? '#FFD700' : '#ccc'}
+          />
+        </TouchableOpacity>
+      ))}
+      <Text style={adminStyles.starText}>
+        ({performanceSettings.defaultRating}/5)
+      </Text>
+    </View>
+  );
+
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff', padding: 16 }}>
+    <ScrollView style={darkMode ? adminStyles.darkContainer : adminStyles.container}>
       {/* Performance Settings */}
-      <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 16 }}>
-        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 16 }}>
-          Performance Management
-        </Text>
-        
+      <View style={darkMode ? adminStyles.darkCard : adminStyles.card}>
+        <Text style={[adminStyles.sectionTitle, adminStyles.mb16]}>Performance Management</Text>
         {/* Rating System Settings */}
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1976d2', marginBottom: 8 }}>
-            Rating System
-          </Text>
-          
-          <View style={{ marginBottom: 12 }}>
+        <View style={adminStyles.mb16}>
+          <Text style={adminStyles.ratingTitle}>Rating System</Text>
+          <View style={adminStyles.mb12}>
             <TouchableOpacity
-              style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}
+              style={[adminStyles.rowCenter, adminStyles.mb8]}
               onPress={() => updatePerformanceSettings({
                 ...performanceSettings,
                 ratingSystemEnabled: !performanceSettings.ratingSystemEnabled
@@ -95,17 +121,16 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
                 name={performanceSettings.ratingSystemEnabled ? 'toggle-on' : 'toggle-off'}
                 size={20}
                 color={performanceSettings.ratingSystemEnabled ? '#4CAF50' : '#ccc'}
-                style={{ marginRight: 12 }}
+                style={adminStyles.mr8}
               />
-              <Text style={{ fontSize: 14, color: '#333' }}>
+              <Text style={adminStyles.toggleLabel}>
                 Enable Task Rating System
               </Text>
             </TouchableOpacity>
           </View>
-          
-          <View style={{ marginBottom: 12 }}>
+          <View style={adminStyles.mb12}>
             <TouchableOpacity
-              style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}
+              style={[adminStyles.rowCenter, adminStyles.mb8]}
               onPress={() => updatePerformanceSettings({
                 ...performanceSettings,
                 autoRateCompletedTasks: !performanceSettings.autoRateCompletedTasks
@@ -115,109 +140,60 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
                 name={performanceSettings.autoRateCompletedTasks ? 'toggle-on' : 'toggle-off'}
                 size={20}
                 color={performanceSettings.autoRateCompletedTasks ? '#4CAF50' : '#ccc'}
-                style={{ marginRight: 12 }}
+                style={adminStyles.mr8}
               />
-              <Text style={{ fontSize: 14, color: '#333' }}>
+              <Text style={adminStyles.toggleLabel}>
                 Auto-rate Completed Tasks
               </Text>
             </TouchableOpacity>
           </View>
-          
-          <View style={{ marginBottom: 12 }}>
-            <Text style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>
-              Default Rating for Auto-rated Tasks:
-            </Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              {[1, 2, 3, 4, 5].map((rating) => (
-                <TouchableOpacity
-                  key={rating}
-                  onPress={() => updatePerformanceSettings({
-                    ...performanceSettings,
-                    defaultRating: rating
-                  })}
-                  style={{ marginRight: 8 }}
-                >
-                  <FontAwesome5
-                    name={performanceSettings.defaultRating >= rating ? 'star' : 'star-o'}
-                    size={20}
-                    color={performanceSettings.defaultRating >= rating ? '#FFD700' : '#ccc'}
-                  />
-                </TouchableOpacity>
-              ))}
-              <Text style={{ marginLeft: 8, fontSize: 14, color: '#666' }}>
-                ({performanceSettings.defaultRating}/5)
-              </Text>
-            </View>
-          </View>
+          <Text style={adminStyles.ratingDesc}>
+            Default Rating for Auto-rated Tasks:
+          </Text>
+          {renderStarRating()}
         </View>
-
         {/* Action Buttons */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+        <View style={adminStyles.rowBetween}>
           <TouchableOpacity
-            style={{
-              backgroundColor: '#1976d2',
-              borderRadius: 8,
-              paddingVertical: 12,
-              paddingHorizontal: 20,
-              flex: 1,
-              marginRight: 8,
-              alignItems: 'center'
-            }}
-            onPress={() => {
-              calculatePerformanceMetrics();
-            }}
-          >
-            <FontAwesome5 name="chart-line" size={16} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={{ color: '#fff', fontWeight: '600' }}>View Performance</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={{
-              backgroundColor: '#4CAF50',
-              borderRadius: 8,
-              paddingVertical: 12,
-              paddingHorizontal: 20,
-              flex: 1,
-              marginLeft: 8,
-              alignItems: 'center'
-            }}
+            style={[adminStyles.actionButton, adminStyles.bgPrimary, adminStyles.flex1, adminStyles.mr8]}
             onPress={calculatePerformanceMetrics}
           >
-            <FontAwesome5 name="sync-alt" size={16} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={{ color: '#fff', fontWeight: '600' }}>Recalculate</Text>
+            <FontAwesome5 name="chart-line" size={16} color="#fff" style={adminStyles.mr8} />
+            <Text style={adminStyles.actionButtonText}>View Performance</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[adminStyles.actionButton, adminStyles.bgSuccess, adminStyles.flex1, adminStyles.ml8]}
+            onPress={calculatePerformanceMetrics}
+          >
+            <FontAwesome5 name="sync-alt" size={16} color="#fff" style={adminStyles.mr8} />
+            <Text style={adminStyles.actionButtonText}>Recalculate</Text>
           </TouchableOpacity>
         </View>
       </View>
-
       {/* Quick Stats */}
-      <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20 }}>
-        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 16 }}>
-          Quick Stats
-        </Text>
-        
-        <View style={{ flexDirection: 'row', justifyContent: 'space-around' }}>
-          <View style={{ alignItems: 'center' }}>
+      <View style={darkMode ? adminStyles.darkCard : adminStyles.card}>
+        <Text style={[adminStyles.sectionTitle, adminStyles.mb16]}>Quick Stats</Text>
+        <View style={adminStyles.rowAround}>
+          <View style={adminStyles.statsCol}>
             <FontAwesome5 name="tasks" size={24} color="#1976d2" />
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2', marginTop: 4 }}>
+            <Text style={[adminStyles.statsNumber, adminStyles.mt4, adminStyles.textPrimary]}>
               {tasks.filter(t => t.completed).length}
             </Text>
-            <Text style={{ fontSize: 12, color: '#666' }}>Completed</Text>
+            <Text style={adminStyles.statsLabel}>Completed</Text>
           </View>
-          
-          <View style={{ alignItems: 'center' }}>
+          <View style={adminStyles.statsCol}>
             <FontAwesome5 name="star" size={24} color="#FFD700" />
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#FFD700', marginTop: 4 }}>
+            <Text style={[adminStyles.statsNumber, adminStyles.mt4, adminStyles.textGold]}>
               {tasks.filter(t => t.completed).length}
             </Text>
-            <Text style={{ fontSize: 12, color: '#666' }}>Rated</Text>
+            <Text style={adminStyles.statsLabel}>Rated</Text>
           </View>
-          
-          <View style={{ alignItems: 'center' }}>
+          <View style={adminStyles.statsCol}>
             <FontAwesome5 name="users" size={24} color="#4CAF50" />
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#4CAF50', marginTop: 4 }}>
+            <Text style={[adminStyles.statsNumber, adminStyles.mt4, adminStyles.textSuccess]}>
               {employees.length}
             </Text>
-            <Text style={{ fontSize: 12, color: '#666' }}>Employees</Text>
+            <Text style={adminStyles.statsLabel}>Employees</Text>
           </View>
         </View>
       </View>
@@ -225,4 +201,4 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
   );
 };
 
-export default PerformanceTab; 
+export default PerformanceTab;

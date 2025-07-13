@@ -406,10 +406,10 @@ export interface AnalyticsEvent {
 export interface AnalyticsData {
   totalEvents: number;
   uniqueUsers: number;
-  topEvents: Array<{
+  topEvents: {
     event: string;
     count: number;
-  }>;
+  }[];
   timeRange: {
     start: string;
     end: string;

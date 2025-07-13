@@ -74,6 +74,45 @@ const ClockEventsTab: React.FC<ClockEventsTabProps> = ({ user, employees, darkMo
           })
         )}
       </View>
+
+      {/* Events grouped by employee */}
+      <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 16 }}>
+        <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1976d2', marginBottom: 16 }}>
+          Events by Employee
+        </Text>
+        {Object.entries(clockEventsByEmployee).map(([employeeId, events]) => {
+          const employeeName = getEmployeeName(employeeId);
+          return (
+            <View key={employeeId} style={{ marginBottom: 16 }}>
+              <Text style={{ fontWeight: 'bold', color: '#333', marginBottom: 8 }}>
+                {employeeName} ({events.length} events)
+              </Text>
+              {events.slice(0, 3).map((event, index) => {
+                const type = event.clock_in && !event.clock_out ? 'in' : 'out';
+                const timestamp = event.clock_in || event.clock_out || '';
+                return (
+                  <View key={event.id || index} style={{
+                    backgroundColor: '#f0f0f0',
+                    borderRadius: 6,
+                    padding: 8,
+                    marginBottom: 4,
+                    marginLeft: 16
+                  }}>
+                    <Text style={{ color: '#666', fontSize: 12 }}>
+                      {type === 'in' ? 'Clock In' : 'Clock Out'} - {timestamp ? new Date(timestamp).toLocaleString() : ''}
+                    </Text>
+                  </View>
+                );
+              })}
+              {events.length > 3 && (
+                <Text style={{ color: '#999', fontSize: 12, marginLeft: 16 }}>
+                  +{events.length - 3} more events
+                </Text>
+              )}
+            </View>
+          );
+        })}
+      </View>
     </ScrollView>
   );
 };

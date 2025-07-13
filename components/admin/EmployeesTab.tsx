@@ -2,14 +2,16 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../../services/cloud.js';
+import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
 import { Employee } from '../utility/types';
 import AdminModal from './AdminModal';
 import AdminRow from './AdminRow';
 
+import type { User } from '../utility/types';
+
 interface EmployeesTabProps {
-  user: any;
+  user: User;
   darkMode: boolean;
   employees: Employee[];
   setEmployees: (employees: Employee[]) => void;
@@ -29,7 +31,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   biometricEnabled = false,
   biometricLoggedIn = false,
 }) => {
-  // Employee state
+  // State
   const [editEmployee, setEditEmployee] = useState<Employee | null>(null);
   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
   const [showAddDeptModal, setShowAddDeptModal] = useState(false);
@@ -40,43 +42,57 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   const [newEmployeePhotoUri, setNewEmployeePhotoUri] = useState<string | undefined>(undefined);
   const [newEmployeeDepartment, setNewEmployeeDepartment] = useState('');
   const [newDepartment, setNewDepartment] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Handlers
   const handleAddEmployee = async () => {
-    console.log('handleAddEmployee called');
-    console.log('User:', user);
-    // Defensive: check for valid session/user
-    if (!user || !user.business_id || !user.id) {
-      Alert.alert('Auth Error', 'User session missing. Please log in again.');
-      return;
-    }
-    // Sanitize payload: do not send undefined, use null for optional fields
-    const payload = {
-      name: newEmployeeName,
-      code: newEmployeeCode,
-      lunchStart: newEmployeeLunchStart || null,
-      lunchEnd: newEmployeeLunchEnd || null,
-      photo_uri: newEmployeePhotoUri || null,
-      department: newEmployeeDepartment || null,
-      business_id: user.business_id,
-    };
-    console.log('Payload:', payload);
-    if (!newEmployeeName || !newEmployeeCode) {
-      Alert.alert('Missing Fields', 'Please enter both name and code.');
-      return;
-    }
+    setLoading(true);
     try {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      console.log('Current session:', sessionData, sessionError);
+      console.log('Current user:', user);
+      await supabase.auth.refreshSession();
+      console.log('handleAddEmployee called');
+
+      // Defensive: check for valid session/user
+      if (!user || !user.business_id || !user.id) {
+        Alert.alert('Auth Error', 'User session missing. Please log in again.');
+        return;
+      }
+
+      // Sanitize payload: do not send undefined, use null for optional fields
+      const payload = {
+        name: newEmployeeName,
+        code: newEmployeeCode,
+        lunchStart: newEmployeeLunchStart || null,
+        lunchEnd: newEmployeeLunchEnd || null,
+        photo_uri: newEmployeePhotoUri || null,
+        department: newEmployeeDepartment || null,
+        business_id: user.business_id,
+      };
+      console.log('Payload:', payload);
+
+      if (!newEmployeeName || !newEmployeeCode) {
+        Alert.alert('Missing Fields', 'Please enter both name and code.');
+        return;
+      }
+
       const { data, error } = await supabase
         .from('employees')
         .insert(payload)
         .select('*')
         .single();
+
       console.log('Add employee response:', { data, error });
+
       if (error || !data) {
-        console.error('Add employee error:', error, data);
-        Alert.alert('Error', error?.message || 'Failed to add employee.');
+        console.error('Add employee error (full object):', error);
+        Alert.alert('Error', `Code: ${error?.code || 'N/A'}\nMessage: ${error?.message || 'Failed to add employee.'}\nHint: ${error?.hint || ''}`);
         return;
       }
+
+      console.log('Employee added successfully:', data);
+
       // Refetch employees from Supabase to ensure UI is up to date
       try {
         const { data: allEmployees, error: fetchError } = await supabase
@@ -88,6 +104,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       } catch (fetchErr) {
         console.error('Refetch employees error:', fetchErr);
       }
+
       setNewEmployeeName('');
       setNewEmployeeCode('');
       setNewEmployeeLunchStart('12:00');
@@ -98,6 +115,8 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
     } catch (err) {
       console.error('handleAddEmployee exception:', err);
       Alert.alert('Error', 'Unexpected error adding employee.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -114,6 +133,8 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       photo_uri: newEmployeePhotoUri,
       department: newEmployeeDepartment,
     });
+
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('employees')
@@ -128,6 +149,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
         .eq('id', editEmployee.id)
         .select('*')
         .single();
+
       console.log('Save employee response:', { data, error });
       if (!error && data) setEmployees(employees.map(e => e.id === editEmployee.id ? data : e));
       setEditEmployee(null);
@@ -139,11 +161,14 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       setNewEmployeeDepartment('');
     } catch (err) {
       console.error('handleSaveEmployee exception:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleDeleteEmployee = async (id: string) => {
     console.log('handleDeleteEmployee called for id:', id);
+    setLoading(true);
     try {
       const { error } = await supabase
         .from('employees')
@@ -153,6 +178,8 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       if (!error) setEmployees(employees.filter(e => e.id !== id));
     } catch (err) {
       console.error('handleDeleteEmployee exception:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -174,36 +201,48 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   };
 
   const handleAddDepartment = async () => {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    console.log('Current session:', sessionData, sessionError);
+    console.log('Current user:', user);
+    await supabase.auth.refreshSession();
     console.log('handleAddDepartment called');
-    console.log('User:', user);
+
     // Defensive: check for valid session/user
     if (!user || !user.business_id || !user.id) {
       Alert.alert('Auth Error', 'User session missing. Please log in again.');
       return;
     }
+
     // Sanitize payload
     const payload = {
       name: newDepartment,
       business_id: user.business_id,
     };
     console.log('Payload:', payload);
+
     if (!newDepartment) {
       Alert.alert('Missing Field', 'Please enter a department name.');
       return;
     }
+
     if (departments.includes(newDepartment)) {
       Alert.alert('Duplicate', 'This department already exists.');
       return;
     }
+
     try {
       const { error } = await supabase
         .from('departments')
         .insert(payload);
       console.log('Add department response:', { error });
+
       if (error) {
-        Alert.alert('Error', error.message || 'Failed to add department.');
+        console.error('Add department error (full object):', error);
+        Alert.alert('Error', `Code: ${error?.code || 'N/A'}\nMessage: ${error?.message || 'Failed to add department.'}\nHint: ${error?.hint || ''}`);
         return;
       }
+
+      console.log('Department added successfully:', payload);
       setDepartments([...departments, newDepartment]);
       setNewDepartment('');
       setShowAddDeptModal(false);
@@ -233,6 +272,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
           </AdminRow>
         ))}
       </ScrollView>
+
       <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16, marginBottom: 16 }}>
         <TouchableOpacity style={[adminStyles.addBtn, { flex: 1, marginRight: 8 }]} onPress={() => setShowAddEmployeeModal(true)}>
           <Text style={adminStyles.addBtnText}>Add New Employee</Text>
@@ -317,8 +357,14 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
           <Text style={adminStyles.saveBtnText}>Save</Text>
         </TouchableOpacity>
       </AdminModal>
+
+      {loading && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#0008', zIndex: 10, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: '#fff', fontSize: 18 }}>Loading...</Text>
+        </View>
+      )}
     </View>
   );
 };
 
-export default EmployeesTab; 
+export default EmployeesTab;

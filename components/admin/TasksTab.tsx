@@ -1,19 +1,20 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { FlatList, Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../../services/cloud.js';
+import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
 import { Employee, Material, MaterialType, Task } from '../utility/types';
 import { minutesLate } from '../utility/utils';
 import AdminModal from './AdminModal';
 
+import type { PerformanceSettings, User } from '../utility/types';
 interface TasksTabProps {
-  user: any;
+  user: User;
   employees: Employee[];
   materials: Material[];
   materialTypes: Record<string, MaterialType[]>;
   darkMode: boolean;
-  performanceSettings: any;
+  performanceSettings: PerformanceSettings;
   tasks: Task[];
   setTasks: (tasks: Task[]) => void;
   lateThreshold: number;
