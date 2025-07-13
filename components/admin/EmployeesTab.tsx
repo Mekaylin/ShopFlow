@@ -35,6 +35,11 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   const [editEmployee, setEditEmployee] = useState<Employee | null>(null);
   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
   const [showAddDeptModal, setShowAddDeptModal] = useState(false);
+  const [showAssignTaskModal, setShowAssignTaskModal] = useState(false);
+  const [assignTaskEmployee, setAssignTaskEmployee] = useState<Employee | null>(null);
+  const [newTaskName, setNewTaskName] = useState('');
+  const [newTaskStart, setNewTaskStart] = useState('');
+  const [newTaskDeadline, setNewTaskDeadline] = useState('');
   const [newEmployeeName, setNewEmployeeName] = useState('');
   const [newEmployeeCode, setNewEmployeeCode] = useState('');
   const [newEmployeeLunchStart, setNewEmployeeLunchStart] = useState('12:00');
@@ -43,6 +48,41 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   const [newEmployeeDepartment, setNewEmployeeDepartment] = useState('');
   const [newDepartment, setNewDepartment] = useState('');
   const [loading, setLoading] = useState(false);
+  // Assign Task Handler
+  const handleAssignTask = async () => {
+    if (!assignTaskEmployee || !newTaskName || !newTaskStart || !newTaskDeadline) {
+      Alert.alert('Missing Fields', 'Please fill in all task fields.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .insert({
+          name: newTaskName,
+          assignedTo: assignTaskEmployee.id,
+          business_id: user.business_id,
+          start: newTaskStart,
+          deadline: newTaskDeadline,
+          completed: false,
+          completedAt: null,
+        });
+      if (error) {
+        Alert.alert('Error', error.message || 'Failed to assign task.');
+      } else {
+        Alert.alert('Success', 'Task assigned!');
+        setShowAssignTaskModal(false);
+        setAssignTaskEmployee(null);
+        setNewTaskName('');
+        setNewTaskStart('');
+        setNewTaskDeadline('');
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Unexpected error assigning task.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handlers
   const handleAddEmployee = async () => {
@@ -264,15 +304,60 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
             title={emp.name}
             subtitle={emp.department || 'No Dept'}
             actions={
-              <TouchableOpacity onPress={() => handleDeleteEmployee(emp.id)} style={{ backgroundColor: '#c62828', borderRadius: 8, padding: 6 }}>
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Delete</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setAssignTaskEmployee(emp);
+                    setShowAssignTaskModal(true);
+                  }}
+                  style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 6, marginRight: 6 }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Assign Task</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleDeleteEmployee(emp.id)} style={{ backgroundColor: '#c62828', borderRadius: 8, padding: 6 }}>
+                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             }
             style={{ backgroundColor: darkMode ? '#23263a' : '#fff' }}
           >
             <Text style={{ color: '#888', fontSize: 13, marginBottom: 2 }}>{`Lunch: ${emp.lunchStart} - ${emp.lunchEnd}`}</Text>
           </AdminRow>
         ))}
+      {/* Assign Task Modal */}
+      <AdminModal
+        visible={showAssignTaskModal}
+        onClose={() => {
+          setShowAssignTaskModal(false);
+          setAssignTaskEmployee(null);
+          setNewTaskName('');
+          setNewTaskStart('');
+          setNewTaskDeadline('');
+        }}
+        title={assignTaskEmployee ? `Assign Task to ${assignTaskEmployee.name}` : 'Assign Task'}
+      >
+        <TextInput
+          style={adminStyles.inputText}
+          placeholder="Task Name"
+          value={newTaskName}
+          onChangeText={setNewTaskName}
+        />
+        <TextInput
+          style={[adminStyles.inputText, { marginTop: 12 }]}
+          placeholder="Start Time (e.g., 09:00)"
+          value={newTaskStart}
+          onChangeText={setNewTaskStart}
+        />
+        <TextInput
+          style={[adminStyles.inputText, { marginTop: 12 }]}
+          placeholder="Deadline (e.g., 17:00)"
+          value={newTaskDeadline}
+          onChangeText={setNewTaskDeadline}
+        />
+        <TouchableOpacity style={[adminStyles.addBtn, { marginTop: 16 }]} onPress={handleAssignTask}>
+          <Text style={adminStyles.addBtnText}>Assign Task</Text>
+        </TouchableOpacity>
+      </AdminModal>
       </ScrollView>
 
       {/* Fixed position buttons at bottom */}
