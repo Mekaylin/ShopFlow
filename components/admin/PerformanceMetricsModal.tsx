@@ -1,6 +1,6 @@
-import React from 'react';
-import { Modal, View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
+import React from 'react';
+import { FlatList, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { PerformanceMetrics } from '../utility/types';
 
 interface PerformanceMetricsModalProps {

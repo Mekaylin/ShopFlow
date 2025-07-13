@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
-import { Employee, PerformanceSettings, Task, PerformanceMetrics } from '../utility/types';
+import { Employee, PerformanceMetrics, PerformanceSettings, Task } from '../utility/types';
 import PerformanceMetricsModal from './PerformanceMetricsModal';
 
 import type { User } from '../utility/types';
