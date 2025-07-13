@@ -52,7 +52,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   const handleAssignTask = async () => {
     if (!assignTaskEmployee || !newTaskName || !newTaskStart || !newTaskDeadline) {
       Alert.alert('Missing Fields', 'Please fill in all task fields.');
-      return;
+      return false;
     }
     setLoading(true);
     try {
@@ -69,6 +69,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
         });
       if (error) {
         Alert.alert('Error', error.message || 'Failed to assign task.');
+        return false;
       } else {
         Alert.alert('Success', 'Task assigned!');
         setShowAssignTaskModal(false);
@@ -76,9 +77,11 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
         setNewTaskName('');
         setNewTaskStart('');
         setNewTaskDeadline('');
+        return true;
       }
     } catch (err) {
       Alert.alert('Error', 'Unexpected error assigning task.');
+      return false;
     } finally {
       setLoading(false);
     }
@@ -94,7 +97,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       // Defensive: check for valid session/user
       if (!user || !user.business_id || !user.id) {
         Alert.alert('Auth Error', 'User session missing. Please log in again.');
-        return;
+        return false;
       }
 
       // Sanitize payload: do not send undefined, use null for optional fields
@@ -111,7 +114,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
 
       if (!newEmployeeName || !newEmployeeCode) {
         Alert.alert('Missing Fields', 'Please enter both name and code.');
-        return;
+        return false;
       }
 
       const { data, error } = await supabase
@@ -125,7 +128,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       if (error || !data) {
         console.error('Add employee error (full object):', error);
         Alert.alert('Error', `Code: ${error?.code || 'N/A'}\nMessage: ${error?.message || 'Failed to add employee.'}\nHint: ${error?.hint || ''}`);
-        return;
+        return false;
       }
 
       console.log('Employee added successfully:', data);
@@ -148,10 +151,11 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       setNewEmployeeLunchEnd('12:30');
       setNewEmployeePhotoUri(undefined);
       setNewEmployeeDepartment('');
-      setShowAddEmployeeModal(false);
+      return true;
     } catch (err) {
       console.error('handleAddEmployee exception:', err);
       Alert.alert('Error', 'Unexpected error adding employee.');
+      return false;
     } finally {
       setLoading(false);
     }
@@ -354,7 +358,14 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
           value={newTaskDeadline}
           onChangeText={setNewTaskDeadline}
         />
-        <TouchableOpacity style={[adminStyles.addBtn, { marginTop: 16 }]} onPress={handleAssignTask}>
+        <TouchableOpacity
+          style={[adminStyles.addBtn, { marginTop: 16 }, (!newTaskName || !newTaskStart || !newTaskDeadline) && { opacity: 0.5 }]}
+          onPress={async () => {
+            const assigned = await handleAssignTask();
+            if (assigned) setShowAssignTaskModal(false);
+          }}
+          disabled={!newTaskName || !newTaskStart || !newTaskDeadline}
+        >
           <Text style={adminStyles.addBtnText}>Assign Task</Text>
         </TouchableOpacity>
       </AdminModal>
@@ -423,7 +434,14 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
           )}
           <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>{newEmployeePhotoUri ? 'Change Photo' : 'Add Photo'}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={adminStyles.addBtn} onPress={() => { handleAddEmployee(); setShowAddEmployeeModal(false); }}>
+        <TouchableOpacity
+          style={[adminStyles.addBtn, (!newEmployeeName || !newEmployeeCode) && { opacity: 0.5 }]}
+          onPress={async () => {
+            const added = await handleAddEmployee();
+            if (added) setShowAddEmployeeModal(false);
+          }}
+          disabled={!newEmployeeName || !newEmployeeCode}
+        >
           <Text style={adminStyles.addBtnText}>Add</Text>
         </TouchableOpacity>
       </AdminModal>
@@ -431,7 +449,11 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       {/* Add Department Modal */}
       <AdminModal visible={showAddDeptModal} onClose={() => setShowAddDeptModal(false)} title="Add Department">
         <TextInput style={adminStyles.inputText} placeholder="Department Name" value={newDepartment} onChangeText={setNewDepartment} />
-        <TouchableOpacity style={adminStyles.addBtn} onPress={handleAddDepartment}>
+        <TouchableOpacity
+          style={[adminStyles.addBtn, !newDepartment && { opacity: 0.5 }]}
+          onPress={handleAddDepartment}
+          disabled={!newDepartment}
+        >
           <Text style={adminStyles.addBtnText}>Add</Text>
         </TouchableOpacity>
       </AdminModal>
