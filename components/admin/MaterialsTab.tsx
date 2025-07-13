@@ -1,10 +1,10 @@
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
 import { Material, MaterialType } from '../utility/types';
 import AdminModal from './AdminModal';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 
 import type { User } from '../utility/types';
 interface MaterialsTabProps {

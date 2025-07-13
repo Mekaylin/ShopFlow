@@ -10,16 +10,28 @@ interface AdminModalProps {
   closeText?: string;
 }
 
+import { KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 const AdminModal: React.FC<AdminModalProps> = ({ visible, onClose, title, children, style, closeText = 'Close' }) => (
   <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
     <View style={styles.overlay}>
-      <View style={[styles.content, style]}>
-        <Text style={styles.title}>{title}</Text>
-        {children}
-        <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-          <Text style={styles.closeBtnText}>{closeText}</Text>
-        </TouchableOpacity>
-      </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ width: '100%', alignItems: 'center', justifyContent: 'center', flex: 1 }}
+      >
+        <View style={[styles.content, style]}>
+          <Text style={styles.title}>{title}</Text>
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {children}
+          </ScrollView>
+          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+            <Text style={styles.closeBtnText}>{closeText}</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   </Modal>
 );

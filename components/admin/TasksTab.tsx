@@ -1,7 +1,7 @@
 import { FontAwesome5 } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { FlatList, Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
 import { Employee, Material, MaterialType, Task } from '../utility/types';
