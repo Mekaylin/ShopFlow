@@ -1,5 +1,6 @@
 
 import { StyleSheet } from 'react-native';
+import { createShadowStyle, shadowPresets } from '../../utils/shadowUtils';
 
 export const baseButton = {
   borderRadius: 8,
@@ -12,11 +13,7 @@ const baseCard = {
   borderRadius: 14,
   padding: 24,
   backgroundColor: '#fff',
-  shadowColor: '#000',
-  shadowOpacity: 0.1,
-  shadowRadius: 8,
-  shadowOffset: { width: 0, height: 2 },
-  elevation: 2,
+  ...createShadowStyle(shadowPresets.medium),
 };
 
 export const adminStyles = StyleSheet.create({

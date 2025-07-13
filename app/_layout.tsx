@@ -5,20 +5,24 @@ import { Stack, useRouter } from 'expo-router';
 import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
+  
+  // Load fonts with error handling
+  const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+  
   const [checking, setChecking] = useState(true);
   const [user, setUser] = useState(null);
   const router = useRouter();
 
   // Add browser back button handler for web
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
     const onPopState = (e: PopStateEvent) => {
       if (router.canGoBack && router.canGoBack()) {
         router.back();
@@ -33,7 +37,11 @@ export default function RootLayout() {
 
   // Bulletproof session restore with complete user data
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchUserData = async (authUser: any) => {
+      if (!isMounted) return;
+      
       try {
         // Fetch complete user record from users table
         const { data: userRecord, error: userError } = await supabase
@@ -44,10 +52,11 @@ export default function RootLayout() {
           
         console.log('User record fetch from users table (layout):', { userRecord, userError });
         
+        if (!isMounted) return;
+        
         if (userError || !userRecord) {
-          console.log('User not found in users table, redirecting to login.');
+          console.log('User not found in users table, logging out.');
           setUser(null);
-          router.replace('/');
           return;
         }
 
@@ -55,48 +64,50 @@ export default function RootLayout() {
         setUser(userRecord);
         console.log('Complete user object set in layout:', userRecord);
         
-        // Route based on user role
-        if (userRecord.role === 'admin') {
+        // Route based on user role - only redirect if not already on the correct route
+        const currentPath = Platform.OS === 'web' ? (window?.location?.pathname || '') : '';
+        if (userRecord.role === 'admin' && !currentPath.includes('admin-dashboard')) {
           router.replace('/admin-dashboard');
-        } else if (userRecord.role === 'employee') {
+        } else if (userRecord.role === 'employee' && !currentPath.includes('employee-dashboard')) {
           router.replace('/employee-dashboard');
-        } else {
-          console.log('Invalid user role, redirecting to login.');
+        } else if (userRecord.role !== 'admin' && userRecord.role !== 'employee') {
+          console.log('Invalid user role, logging out.');
           setUser(null);
-          router.replace('/');
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
-        setUser(null);
-        router.replace('/');
+        if (isMounted) setUser(null);
       }
     };
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+      
       console.log('Auth state change event:', event, session?.user?.id);
       if (session?.user) {
         await fetchUserData(session.user);
       } else {
         setUser(null);
-        router.replace('/');
       }
       setChecking(false);
     });
 
-    // Initial session check
+    // Initial session check - only do this once
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log('Initial session check:', session?.user?.id);
+      if (!isMounted) return;
+      
+      console.log('Initial session check:', session?.user?.id || 'No session');
       if (session?.user) {
         await fetchUserData(session.user);
       } else {
         setUser(null);
-        router.replace('/');
       }
       setChecking(false);
     });
 
     return () => {
-      listener?.unsubscribe();
+      isMounted = false;
+      listener?.subscription?.unsubscribe();
     };
   }, [router]);
 
@@ -111,7 +122,24 @@ export default function RootLayout() {
     }
   }, []);
 
-  if (!loaded || checking) {
+  if (!loaded && !error) {
+    return (
+      <>
+        <Head>
+          <title>ShopFlow - Loading...</title>
+          <meta name="description" content="ShopFlow: Cloud-based business management for teams. Fast, modern, and mobile-friendly." />
+          <meta name="theme-color" content="#1976d2" />
+        </Head>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <StatusBar style="auto" />
+          {/* Loading screen - fonts not loaded yet */}
+          <></>
+        </ThemeProvider>
+      </>
+    );
+  }
+
+  if (checking) {
     return (
       <>
         <Head>

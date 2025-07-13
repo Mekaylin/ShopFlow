@@ -1,17 +1,17 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import React from 'react';
-import { Modal, ScrollView, Text, TouchableOpacity, View, TextInput } from 'react-native';
+import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { adminStyles } from '../utility/styles';
 import { Employee, Material, PerformanceMetrics, Task } from '../utility/types';
 import {
-    filterTasksByDate,
-    getBestPerformers,
-    getLateEmployeesByClockEvents,
-    getMaterialUsage,
-    limitLines
+  filterTasksByDate,
+  getBestPerformers,
+  getLateEmployeesByClockEvents,
+  getMaterialUsage,
+  limitLines
 } from '../utility/utils';
 
-import type { User, MaterialType, ClockEvent } from '../utility/types';
+import type { ClockEvent, MaterialType, User } from '../utility/types';
 interface HomeTabProps {
   user: User;
   employees: Employee[];
