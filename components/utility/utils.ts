@@ -125,7 +125,7 @@ export const arrayUtils = {
 // Validation utilities
 export const validationUtils = {
   validateRequired: (value: any): boolean => value !== null && value !== undefined && value.toString().trim() !== '',
-  validateTaskForm: (data: { name: string; start: string; deadline: string; assigned_to: string; }): { isValid: boolean; errors: string[] } => {
+  validateTaskForm: (data: { name: string; start: string; deadline: string; assignedTo: string; }): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
     if (!validationUtils.validateRequired(data.name)) errors.push('Task name is required');
     if (!validationUtils.validateRequired(data.start)) errors.push('Start date is required');
@@ -135,7 +135,7 @@ export const validationUtils = {
       const deadlineDate = new Date(data.deadline);
       if (startDate >= deadlineDate) errors.push('Deadline must be after start date');
     }
-    if (!validationUtils.validateRequired(data.assigned_to)) errors.push('Employee assignment is required');
+    if (!validationUtils.validateRequired(data.assignedTo)) errors.push('Employee assignment is required');
     return { isValid: errors.length === 0, errors };
   },
 };
@@ -164,7 +164,7 @@ export const getTaskProgress = (task: Task): number => {
 };
 
 export const getTasksByEmployee = (tasks: Task[], employeeName: string): Task[] => {
-  return tasks.filter(task => task.assigned_to === employeeName);
+  return tasks.filter(task => task.assignedTo === employeeName);
 };
 
 export const getCompletedTasks = (tasks: Task[]): Task[] => {
@@ -210,8 +210,8 @@ export const getMaterialUsage = (materials: Material[], tasks: Task[]): Record<s
   const usage: Record<string, number> = {};
   
   tasks.forEach(task => {
-    if (task.materials_used) {
-      task.materials_used.forEach((materialUsage: any) => {
+    if (task.materialsUsed) {
+      task.materialsUsed.forEach((materialUsage: any) => {
         const materialId = materialUsage.materialId;
         const quantity = materialUsage.quantity || 0;
         usage[materialId] = (usage[materialId] || 0) + quantity;
@@ -482,20 +482,9 @@ export { getMaterialUsage as getMaterialsUsed };
 /**
  * Simulated async fetch for business code (replace with real API as needed).
  */
-
-import { supabase } from '../../lib/supabase';
-
 export const getBusinessCode = async (businessId: string): Promise<string> => {
-  // Fetch the business code from Supabase
-  const { data, error } = await supabase
-    .from('businesses')
-    .select('code')
-    .eq('id', businessId)
-    .single();
-  if (error || !data?.code) {
-    throw new Error('Could not fetch business code');
-  }
-  return data.code;
+  // Simulate API call
+  return Promise.resolve(generateCode(8));
 };
 
 /**

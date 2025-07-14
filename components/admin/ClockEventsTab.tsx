@@ -52,18 +52,8 @@ const ClockEventsTab: React.FC<ClockEventsTabProps> = ({ user, employees, darkMo
         ) : (
           clockEvents.map((event, index) => {
             // Derive type and timestamp for display
-            let type = 'in';
-            let timestamp = event.clock_in;
-            if (event.lunch_start && !event.lunch_end) {
-              type = 'lunch';
-              timestamp = event.lunch_start;
-            } else if (event.lunch_end && !event.clock_out) {
-              type = 'lunchBack';
-              timestamp = event.lunch_end;
-            } else if (event.clock_out) {
-              type = 'out';
-              timestamp = event.clock_out;
-            }
+            const type = event.clock_in && !event.clock_out ? 'in' : 'out';
+            const timestamp = event.clock_in || event.clock_out || '';
             return (
               <View key={event.id || index} style={{
                 backgroundColor: '#f8f9fa',
@@ -71,17 +61,13 @@ const ClockEventsTab: React.FC<ClockEventsTabProps> = ({ user, employees, darkMo
                 padding: 12,
                 marginBottom: 8,
                 borderLeftWidth: 4,
-                borderLeftColor: type === 'in' ? '#4CAF50' : type === 'lunch' ? '#FFC107' : type === 'lunchBack' ? '#1976d2' : '#FF9800'
+                borderLeftColor: type === 'in' ? '#4CAF50' : '#FF9800'
               }}>
                 <Text style={{ fontWeight: 'bold', color: '#333' }}>
                   {getEmployeeName(event.employee_id)}
                 </Text>
                 <Text style={{ color: '#666', fontSize: 12 }}>
-                  {type === 'in' && 'Clock In'}
-                  {type === 'lunch' && 'Lunch Start'}
-                  {type === 'lunchBack' && 'Lunch End'}
-                  {type === 'out' && 'Clock Out'}
-                  {timestamp ? ` - ${new Date(timestamp).toLocaleString()}` : ''}
+                  {type === 'in' ? 'Clock In' : 'Clock Out'} - {timestamp ? new Date(timestamp).toLocaleString() : ''}
                 </Text>
               </View>
             );
@@ -102,18 +88,8 @@ const ClockEventsTab: React.FC<ClockEventsTabProps> = ({ user, employees, darkMo
                 {employeeName} ({events.length} events)
               </Text>
               {events.slice(0, 3).map((event, index) => {
-                let type = 'in';
-                let timestamp = event.clock_in;
-                if (event.lunch_start && !event.lunch_end) {
-                  type = 'lunch';
-                  timestamp = event.lunch_start;
-                } else if (event.lunch_end && !event.clock_out) {
-                  type = 'lunchBack';
-                  timestamp = event.lunch_end;
-                } else if (event.clock_out) {
-                  type = 'out';
-                  timestamp = event.clock_out;
-                }
+                const type = event.clock_in && !event.clock_out ? 'in' : 'out';
+                const timestamp = event.clock_in || event.clock_out || '';
                 return (
                   <View key={event.id || index} style={{
                     backgroundColor: '#f0f0f0',
@@ -123,11 +99,7 @@ const ClockEventsTab: React.FC<ClockEventsTabProps> = ({ user, employees, darkMo
                     marginLeft: 16
                   }}>
                     <Text style={{ color: '#666', fontSize: 12 }}>
-                      {type === 'in' && 'Clock In'}
-                      {type === 'lunch' && 'Lunch Start'}
-                      {type === 'lunchBack' && 'Lunch End'}
-                      {type === 'out' && 'Clock Out'}
-                      {timestamp ? ` - ${new Date(timestamp).toLocaleString()}` : ''}
+                      {type === 'in' ? 'Clock In' : 'Clock Out'} - {timestamp ? new Date(timestamp).toLocaleString() : ''}
                     </Text>
                   </View>
                 );

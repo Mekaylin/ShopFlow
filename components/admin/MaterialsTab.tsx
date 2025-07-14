@@ -36,44 +36,35 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
   const addMaterialModal = params.addMaterial === '1';
   const addTypeModal = typeof params.addType === 'string' ? params.addType : null;
 
-  // Reset modal state when opening/closing
-  React.useEffect(() => {
-    if (!addMaterialModal) {
-      setNewMaterialName('');
-      setNewMaterialUnit('');
-    }
-  }, [addMaterialModal]);
-  React.useEffect(() => {
-    if (!addTypeModal) {
-      setNewMaterialTypeLabel('');
-    }
-  }, [addTypeModal]);
-
   // Material CRUD handlers
   const handleAddMaterial = async () => {
-    if (!user || !user.business_id) {
+    console.log('handleAddMaterial called');
+    console.log('Current user:', user);
+    if (!user || !user.business_id || !user.id) {
       Alert.alert('Auth Error', 'User session missing. Please log in again.');
       return;
     }
-    if (!newMaterialName.trim() || !newMaterialUnit.trim()) {
+    if (!newMaterialName || !newMaterialUnit) {
       Alert.alert('Missing Fields', 'Please enter both name and unit.');
       return;
     }
+    const payload = {
+      name: newMaterialName,
+      unit: newMaterialUnit,
+      business_id: user.business_id,
+    };
+    console.log('Payload:', payload);
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('materials')
-        .insert({
-          name: newMaterialName.trim(),
-          unit: newMaterialUnit.trim(),
-          business_id: user.business_id,
-        })
+        .insert(payload)
         .select('*');
       if (error) {
-        Alert.alert('Failed to add material', error.message);
+        alert('Failed to add material: ' + error.message);
         return;
       }
-      // Refetch materials for this business only
+      // Refetch materials from Supabase
       const { data: allMaterials, error: fetchError } = await supabase
         .from('materials')
         .select('*')
@@ -83,7 +74,7 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
       setNewMaterialUnit('');
       router.back();
     } catch (err: any) {
-      Alert.alert('Unexpected error', err?.message || String(err));
+      alert('Unexpected error: ' + (err?.message || err));
     } finally {
       setLoading(false);
     }
@@ -91,7 +82,7 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
 
   const handleEditMaterial = async () => {
     if (!editMaterial) return;
-    if (!newMaterialName.trim() || !newMaterialUnit.trim()) {
+    if (!newMaterialName || !newMaterialUnit) {
       Alert.alert('Missing Fields', 'Please enter both name and unit.');
       return;
     }
@@ -100,17 +91,16 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
       const { error } = await supabase
         .from('materials')
         .update({
-          name: newMaterialName.trim(),
-          unit: newMaterialUnit.trim(),
+          name: newMaterialName,
+          unit: newMaterialUnit,
         })
         .eq('id', editMaterial.id)
-        .eq('business_id', user.business_id)
         .select('*');
       if (error) {
-        Alert.alert('Failed to update material', error.message);
+        alert('Failed to update material: ' + error.message);
         return;
       }
-      // Refetch materials for this business only
+      // Refetch materials from Supabase
       const { data: allMaterials, error: fetchError } = await supabase
         .from('materials')
         .select('*')
@@ -120,53 +110,41 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
       setNewMaterialName('');
       setNewMaterialUnit('');
     } catch (err: any) {
-      Alert.alert('Unexpected error', err?.message || String(err));
+      alert('Unexpected error: ' + (err?.message || err));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteMaterial = async (id: string) => {
-    if (!user || !user.business_id) {
-      Alert.alert('Auth Error', 'User session missing. Please log in again.');
+    const { error } = await supabase
+      .from('materials')
+      .delete()
+      .eq('id', id);
+    if (error) {
+      Alert.alert('Error', error?.message || 'Failed to delete material.');
       return;
     }
-    setLoading(true);
+    // Refetch materials from Supabase
     try {
-      const { error } = await supabase
-        .from('materials')
-        .delete()
-        .eq('id', id)
-        .eq('business_id', user.business_id);
-      if (error) {
-        Alert.alert('Error', error?.message || 'Failed to delete material.');
-        return;
-      }
-      // Refetch materials for this business only
       const { data: allMaterials, error: fetchError } = await supabase
         .from('materials')
         .select('*')
         .eq('business_id', user.business_id);
       if (!fetchError && allMaterials) setMaterials(allMaterials);
-    } catch (fetchErr: any) {
-      Alert.alert('Refetch Materials Error', fetchErr?.message || String(fetchErr));
-    } finally {
-      setLoading(false);
+    } catch (fetchErr) {
+      console.error('Refetch materials error:', fetchErr);
     }
   };
 
   // Add Material Type logic
-  // Material types are managed in state only; for multi-business, ensure types are per business
   const handleAddMaterialType = (materialId: string) => {
-    if (!newMaterialTypeLabel.trim()) return;
-    const newType = {
-      id: `${user.business_id}-${Date.now()}`,
-      name: newMaterialTypeLabel.trim(),
-      business_id: user.business_id
-    };
+    if (!newMaterialTypeLabel) return;
+    const newType = { id: Date.now().toString(), name: newMaterialTypeLabel, business_id: user.business_id };
+    // Always pass a value, not a function, to setMaterialTypes
     const updated = {
       ...materialTypes,
-      [materialId]: [...(materialTypes[materialId] || []).filter(t => t.business_id === user.business_id), newType]
+      [materialId]: [...(materialTypes[materialId] || []), newType]
     };
     setMaterialTypes(updated);
     setNewMaterialTypeLabel('');
@@ -175,8 +153,8 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
   return (
     <View style={darkMode ? adminStyles.darkContainer : adminStyles.container}>
       <Text style={[adminStyles.sectionTitle, { marginBottom: 8 }]}>Materials</Text>
-
-      <ScrollView
+      
+      <ScrollView 
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
@@ -216,9 +194,9 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
           </View>
         ))}
       </ScrollView>
-
+      
       {/* Fixed position button at bottom */}
-      <View style={{
+      <View style={{ 
         position: 'absolute',
         bottom: 0,
         left: 0,
@@ -229,52 +207,31 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
         borderTopWidth: 1,
         borderTopColor: darkMode ? '#333' : '#e0e0e0'
       }}>
-        <TouchableOpacity
-          style={adminStyles.addBtn}
+        <TouchableOpacity 
+          style={adminStyles.addBtn} 
           onPress={() => router.push({ pathname: '/admin-dashboard', params: { ...params, addMaterial: '1' } })}
         >
           <Text style={[adminStyles.addBtnText, { color: '#000' }]}>Add New Material</Text>
         </TouchableOpacity>
       </View>
-
       {/* Add Material Modal */}
       <AdminModal visible={!!addMaterialModal} onClose={() => router.back()} title="Add New Material">
-        <TextInput
-          style={adminStyles.inputText}
-          placeholder="Material Name"
-          value={newMaterialName}
-          onChangeText={setNewMaterialName}
+        <TextInput 
+          style={adminStyles.inputText} 
+          placeholder="Material Name" 
+          value={newMaterialName} 
+          onChangeText={setNewMaterialName} 
         />
-        <TextInput
-          style={[adminStyles.inputText, { marginTop: 12 }]}
-          placeholder="Unit (e.g., kg, pieces, liters)"
-          value={newMaterialUnit}
-          onChangeText={setNewMaterialUnit}
+        <TextInput 
+          style={[adminStyles.inputText, { marginTop: 12 }]} 
+          placeholder="Unit (e.g., kg, pieces, liters)" 
+          value={newMaterialUnit} 
+          onChangeText={setNewMaterialUnit} 
         />
         <TouchableOpacity style={[adminStyles.addBtn, { marginTop: 16 }]} onPress={handleAddMaterial}>
           <Text style={[adminStyles.addBtnText, { color: '#000' }]}>Add Material</Text>
         </TouchableOpacity>
       </AdminModal>
-
-      {/* Edit Material Modal */}
-      <AdminModal visible={!!editMaterial} onClose={() => { setEditMaterial(null); setNewMaterialName(''); setNewMaterialUnit(''); }} title="Edit Material">
-        <TextInput
-          style={adminStyles.inputText}
-          placeholder="Material Name"
-          value={newMaterialName}
-          onChangeText={setNewMaterialName}
-        />
-        <TextInput
-          style={[adminStyles.inputText, { marginTop: 12 }]}
-          placeholder="Unit (e.g., kg, pieces, liters)"
-          value={newMaterialUnit}
-          onChangeText={setNewMaterialUnit}
-        />
-        <TouchableOpacity style={[adminStyles.saveBtn, { marginTop: 16 }]} onPress={handleEditMaterial}>
-          <Text style={adminStyles.saveBtnText}>Save</Text>
-        </TouchableOpacity>
-      </AdminModal>
-
       {/* Add Material Type Modal */}
       <AdminModal visible={!!addTypeModal} onClose={() => router.back()} title="Add Material Type">
         <TextInput style={adminStyles.inputText} placeholder="Type Label" value={newMaterialTypeLabel} onChangeText={setNewMaterialTypeLabel} />
@@ -282,7 +239,6 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
           <Text style={[adminStyles.addBtnText, { color: '#000' }]}>Add</Text>
         </TouchableOpacity>
       </AdminModal>
-
       {loading && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#0008', zIndex: 10, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: '#fff', fontSize: 18 }}>Loading...</Text>

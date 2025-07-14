@@ -60,6 +60,19 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
+  const handleGenerateBusinessCode = async () => {
+    setBusinessCodeLoading(true);
+    try {
+      const code = await generateBusinessCode(user.business_id);
+      setBusinessCode(code);
+      Alert.alert('Success', 'New business code generated successfully.');
+    } catch (error) {
+      console.error('Error generating business code:', error);
+      Alert.alert('Error', 'Failed to generate business code.');
+    } finally {
+      setBusinessCodeLoading(false);
+    }
+  };
 
   const handleCopyBusinessCode = async () => {
     if (!businessCode) return;
@@ -169,10 +182,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 <Text style={adminStyles.settingsTitle}>Business Code</Text>
                 
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                  <TouchableOpacity style={[adminStyles.addBtn, { flex: 1 }]} onPress={handleGetBusinessCode}>
+                  <TouchableOpacity style={[adminStyles.addBtn, { flex: 1, marginRight: 8 }]} onPress={handleGetBusinessCode}>
                     <Text style={adminStyles.addBtnText}>
-                      {businessCodeLoading ? 'Loading...' : 'Show Code'}
+                      {businessCodeLoading ? 'Loading...' : 'Get Code'}
                     </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[adminStyles.addBtn, { flex: 1, backgroundColor: '#4CAF50' }]} onPress={handleGenerateBusinessCode}>
+                    <Text style={adminStyles.addBtnText}>Generate New</Text>
                   </TouchableOpacity>
                 </View>
                 

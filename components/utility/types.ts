@@ -20,11 +20,14 @@ export interface Task {
   completed: boolean;
   assigned_to?: string;
   completed_at?: string;
-  materials_used?: any[];
+  materials_used?: Array<{
+    materialId: string;
+    materialTypeId?: string;
+    quantity: number;
+  }>;
   business_id: string;
   date: string;
 }
-
 export interface Material {
   id: string;
   name: string;
@@ -39,8 +42,6 @@ export interface ClockEvent {
   employee_id: string;
   clock_in: string;
   clock_out?: string;
-  lunch_start?: string;
-  lunch_end?: string;
   business_id: string;
 }
 
@@ -197,8 +198,8 @@ export interface TaskFormData {
   name: string;
   start: string;
   deadline: string;
-  assigned_to: string;
-  materials_used: any[];
+  assignedTo: string;
+  materialsUsed: any[];
 }
 
 export interface EmployeeFormData {
