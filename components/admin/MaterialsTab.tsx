@@ -43,36 +43,37 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
       setNewMaterialUnit('');
     }
   }, [addMaterialModal]);
+  React.useEffect(() => {
+    if (!addTypeModal) {
+      setNewMaterialTypeLabel('');
+    }
+  }, [addTypeModal]);
 
   // Material CRUD handlers
   const handleAddMaterial = async () => {
-    console.log('handleAddMaterial called');
-    console.log('Current user:', user);
-    if (!user || !user.business_id || !user.id) {
+    if (!user || !user.business_id) {
       Alert.alert('Auth Error', 'User session missing. Please log in again.');
       return;
     }
-    if (!newMaterialName || !newMaterialUnit) {
+    if (!newMaterialName.trim() || !newMaterialUnit.trim()) {
       Alert.alert('Missing Fields', 'Please enter both name and unit.');
       return;
     }
-    const payload = {
-      name: newMaterialName,
-      unit: newMaterialUnit,
-      business_id: user.business_id,
-    };
-    console.log('Payload:', payload);
     setLoading(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('materials')
-        .insert(payload)
+        .insert({
+          name: newMaterialName.trim(),
+          unit: newMaterialUnit.trim(),
+          business_id: user.business_id,
+        })
         .select('*');
       if (error) {
-        alert('Failed to add material: ' + error.message);
+        Alert.alert('Failed to add material', error.message);
         return;
       }
-      // Refetch materials from Supabase
+      // Refetch materials for this business only
       const { data: allMaterials, error: fetchError } = await supabase
         .from('materials')
         .select('*')
@@ -82,7 +83,7 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
       setNewMaterialUnit('');
       router.back();
     } catch (err: any) {
-      alert('Unexpected error: ' + (err?.message || err));
+      Alert.alert('Unexpected error', err?.message || String(err));
     } finally {
       setLoading(false);
     }
@@ -90,7 +91,7 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
 
   const handleEditMaterial = async () => {
     if (!editMaterial) return;
-    if (!newMaterialName || !newMaterialUnit) {
+    if (!newMaterialName.trim() || !newMaterialUnit.trim()) {
       Alert.alert('Missing Fields', 'Please enter both name and unit.');
       return;
     }
@@ -99,16 +100,17 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
       const { error } = await supabase
         .from('materials')
         .update({
-          name: newMaterialName,
-          unit: newMaterialUnit,
+          name: newMaterialName.trim(),
+          unit: newMaterialUnit.trim(),
         })
         .eq('id', editMaterial.id)
+        .eq('business_id', user.business_id)
         .select('*');
       if (error) {
-        alert('Failed to update material: ' + error.message);
+        Alert.alert('Failed to update material', error.message);
         return;
       }
-      // Refetch materials from Supabase
+      // Refetch materials for this business only
       const { data: allMaterials, error: fetchError } = await supabase
         .from('materials')
         .select('*')
@@ -118,41 +120,53 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
       setNewMaterialName('');
       setNewMaterialUnit('');
     } catch (err: any) {
-      alert('Unexpected error: ' + (err?.message || err));
+      Alert.alert('Unexpected error', err?.message || String(err));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteMaterial = async (id: string) => {
-    const { error } = await supabase
-      .from('materials')
-      .delete()
-      .eq('id', id);
-    if (error) {
-      Alert.alert('Error', error?.message || 'Failed to delete material.');
+    if (!user || !user.business_id) {
+      Alert.alert('Auth Error', 'User session missing. Please log in again.');
       return;
     }
-    // Refetch materials from Supabase
+    setLoading(true);
     try {
+      const { error } = await supabase
+        .from('materials')
+        .delete()
+        .eq('id', id)
+        .eq('business_id', user.business_id);
+      if (error) {
+        Alert.alert('Error', error?.message || 'Failed to delete material.');
+        return;
+      }
+      // Refetch materials for this business only
       const { data: allMaterials, error: fetchError } = await supabase
         .from('materials')
         .select('*')
         .eq('business_id', user.business_id);
       if (!fetchError && allMaterials) setMaterials(allMaterials);
-    } catch (fetchErr) {
-      console.error('Refetch materials error:', fetchErr);
+    } catch (fetchErr: any) {
+      Alert.alert('Refetch Materials Error', fetchErr?.message || String(fetchErr));
+    } finally {
+      setLoading(false);
     }
   };
 
   // Add Material Type logic
+  // Material types are managed in state only; for multi-business, ensure types are per business
   const handleAddMaterialType = (materialId: string) => {
-    if (!newMaterialTypeLabel) return;
-    const newType = { id: Date.now().toString(), name: newMaterialTypeLabel, business_id: user.business_id };
-    // Always pass a value, not a function, to setMaterialTypes
+    if (!newMaterialTypeLabel.trim()) return;
+    const newType = {
+      id: `${user.business_id}-${Date.now()}`,
+      name: newMaterialTypeLabel.trim(),
+      business_id: user.business_id
+    };
     const updated = {
       ...materialTypes,
-      [materialId]: [...(materialTypes[materialId] || []), newType]
+      [materialId]: [...(materialTypes[materialId] || []).filter(t => t.business_id === user.business_id), newType]
     };
     setMaterialTypes(updated);
     setNewMaterialTypeLabel('');
