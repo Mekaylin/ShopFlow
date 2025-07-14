@@ -2,8 +2,8 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
 import { Employee } from '../utility/types';
@@ -105,18 +105,21 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         setError('You must be logged in to add an employee.');
+        Alert.alert('Add Employee Error', 'No Supabase session found.');
         setLoading(false);
         return false;
       }
 
       if (!user || !user.business_id || !user.id) {
         setError('User session missing. Please log in again.');
+        Alert.alert('Add Employee Error', 'User object missing business_id or id.');
         setLoading(false);
         return false;
       }
 
       if (!newEmployeeName || !newEmployeeCode) {
         setError('Please enter both name and code.');
+        Alert.alert('Add Employee Error', 'Name and code are required.');
         setLoading(false);
         return false;
       }
@@ -149,7 +152,9 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
           error = (result as any).error;
         }
       } catch (err) {
-        console.error('Add employee timeout or network error:', err);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.error('Add employee timeout or network error:', errMsg, err);
+        Alert.alert('Add Employee Error', `Timeout or network error: ${errMsg}`);
         setError('Request timed out or network error. Check your connection and Supabase policies.');
         setLoading(false);
         return false;
@@ -159,12 +164,14 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
 
       if (error || !data) {
         console.error('Add employee error (full object):', error);
+        Alert.alert('Add Employee Error', `Supabase error: ${JSON.stringify(error, null, 2)}`);
         setError(`Code: ${error?.code || 'N/A'}\nMessage: ${error?.message || 'Failed to add employee.'}\nHint: ${error?.hint || ''}`);
         setLoading(false);
         return false;
       }
 
       console.log('Employee added successfully:', data);
+      Alert.alert('Success', 'Employee added successfully!');
 
       // Refetch employees from Supabase to ensure UI is up to date
       try {
@@ -175,7 +182,9 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
         console.log('Refetch employees response:', { allEmployees, fetchError });
         if (!fetchError && allEmployees) setEmployees(allEmployees);
       } catch (fetchErr) {
-        console.error('Refetch employees error:', fetchErr);
+        const fetchErrMsg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+        console.error('Refetch employees error:', fetchErrMsg, fetchErr);
+        Alert.alert('Refetch Employees Error', `Error: ${fetchErrMsg}`);
       }
 
       setNewEmployeeName('');
@@ -187,7 +196,9 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       setLoading(false);
       return true;
     } catch (err) {
-      console.error('handleAddEmployee exception:', err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.error('handleAddEmployee exception:', errMsg, err);
+      Alert.alert('Add Employee Exception', `Exception: ${errMsg}`);
       setError('Unexpected error adding employee.');
       setLoading(false);
       return false;

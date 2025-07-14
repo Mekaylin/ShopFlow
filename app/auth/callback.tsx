@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert } from 'react-native';
+import { ActivityIndicator, View, Text, TextInput, TouchableOpacity, Platform } from 'react-native';
 import { supabase } from '../../lib/supabase';
 
 export default function AuthCallback() {
@@ -12,7 +12,7 @@ export default function AuthCallback() {
 
   useEffect(() => {
     // Supabase sends tokens in the URL hash for web
-    const hash = window.location.hash;
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
     if (hash.includes('type=recovery')) {
       setShowSetPassword(true);
       return;
@@ -21,13 +21,15 @@ export default function AuthCallback() {
     const doExchange = async () => {
       setLoading(true);
       try {
-        const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+        const { error } = await supabase.auth.exchangeCodeForSession(
+          typeof window !== 'undefined' ? window.location.href : ''
+        );
         if (error) {
           if (
             error.message.includes('JWT expired') ||
             error.message.includes('invalid')
           ) {
-            Alert.alert('Link expired', 'Please request a new confirmation email.');
+            setError('Link expired. Please request a new confirmation email.');
             router.replace('/admin-dashboard');
           } else {
             setError(error.message);
@@ -47,8 +49,7 @@ export default function AuthCallback() {
     doExchange();
   }, [router]);
 
-  const handleSetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSetPassword = async () => {
     setLoading(true);
     setError('');
     try {
@@ -67,41 +68,85 @@ export default function AuthCallback() {
 
   if (showSetPassword) {
     return (
-      <div style={{ padding: 40, textAlign: 'center' }}>
-        <h2>Set a New Password</h2>
-        <form onSubmit={handleSetPassword} style={{ marginTop: 24 }}>
-          <input
-            type="password"
-            placeholder="New Password"
-            value={newPassword}
-            onChange={e => setNewPassword(e.target.value)}
-            style={{ padding: 8, fontSize: 16, width: 240 }}
-            disabled={loading}
-          />
-          <br />
-          <button type="submit" style={{ marginTop: 16, padding: '8px 24px', fontSize: 16 }} disabled={loading}>
+      <View style={{ padding: 40, alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+        <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 16 }}>Set a New Password</Text>
+        <TextInput
+          secureTextEntry
+          placeholder="New Password"
+          value={newPassword}
+          onChangeText={setNewPassword}
+          style={{
+            padding: 8,
+            fontSize: 16,
+            width: 240,
+            borderWidth: 1,
+            borderColor: '#ccc',
+            borderRadius: 6,
+            marginBottom: 16,
+          }}
+          editable={!loading}
+          accessibilityLabel="New Password"
+        />
+        <TouchableOpacity
+          onPress={handleSetPassword}
+          disabled={loading || !newPassword}
+          style={{
+            backgroundColor: loading || !newPassword ? '#b0bec5' : '#1976d2',
+            paddingVertical: 10,
+            paddingHorizontal: 24,
+            borderRadius: 8,
+            marginBottom: 8,
+            opacity: loading || !newPassword ? 0.7 : 1,
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Set Password"
+          accessible
+        >
+          <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>
             {loading ? 'Setting...' : 'Set Password'}
-          </button>
-        </form>
-        {error && <p style={{ color: 'red', marginTop: 12 }}>{error}</p>}
-      </div>
+          </Text>
+        </TouchableOpacity>
+        {error ? (
+          <Text style={{ color: 'red', marginTop: 12 }}>{error}</Text>
+        ) : null}
+      </View>
     );
   }
 
   if (loading) {
     return (
-      <div style={{ padding: 40, textAlign: 'center' }}>
-        <h2>Completing sign up...</h2>
+      <View style={{ padding: 40, alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+        <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>Completing sign up...</Text>
         <ActivityIndicator size="large" color="#1976d2" />
-        <p>If you are not redirected, please <a href="/">click here</a>.</p>
-      </div>
+        <Text style={{ marginTop: 16 }}>
+          If you are not redirected, please{' '}
+          <Text
+            style={{ color: '#1976d2', textDecorationLine: 'underline' }}
+            onPress={() => router.replace('/')}
+            accessibilityRole="link"
+          >
+            click here
+          </Text>
+          .
+        </Text>
+      </View>
     );
   }
 
   return (
-    <div style={{ padding: 40, textAlign: 'center' }}>
-      <h2>Completing sign up...</h2>
-      <p>If you are not redirected, please <a href="/">click here</a>.</p>
-    </div>
+    <View style={{ padding: 40, alignItems: 'center', justifyContent: 'center', flex: 1 }}>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>Completing sign up...</Text>
+      <Text style={{ marginTop: 16 }}>
+        If you are not redirected, please{' '}
+        <Text
+          style={{ color: '#1976d2', textDecorationLine: 'underline' }}
+          onPress={() => router.replace('/')}
+          accessibilityRole="link"
+        >
+          click here
+        </Text>
+        .
+      </Text>
+    </View>
   );
-} 
+}
