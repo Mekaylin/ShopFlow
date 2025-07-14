@@ -11,6 +11,22 @@ type LoginScreenProps = {
   setSession?: (key: string, value: string) => Promise<void>
 };
 
+function RegistrationSuccessScreen({ onBack }: { onBack: () => void }) {
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#e3f2fd' }}>
+      <View style={[styles.card, { width: 340 }]}> 
+        <Text style={styles.title}>Check Your Email</Text>
+        <Text style={{ fontSize: 16, color: '#333', marginVertical: 16, textAlign: 'center' }}>
+          Registration successful! Please check your email to confirm your account before logging in.
+        </Text>
+        <TouchableOpacity onPress={onBack} style={styles.loginBtn}>
+          <Text style={styles.loginBtnText}>Back to Login</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
 export default function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,6 +34,7 @@ export default function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   const [loading, setLoading] = useState(false);
   const [shakeAnim] = useState(new Animated.Value(0));
   const [showRegister, setShowRegister] = useState(false);
+  const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
   const [showReset, setShowReset] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
@@ -58,8 +75,14 @@ export default function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
 
 
 
+  if (showRegistrationSuccess) {
+    return <RegistrationSuccessScreen onBack={() => {
+      setShowRegistrationSuccess(false);
+      setShowRegister(false);
+    }} />;
+  }
   if (showRegister) {
-    return <RegistrationScreen onBack={() => setShowRegister(false)} />;
+    return <RegistrationScreen onBack={() => setShowRegister(false)} onSuccess={() => setShowRegistrationSuccess(true)} />;
   }
 
   if (showReset) {
@@ -315,7 +338,7 @@ export default function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   );
 }
 
-function RegistrationScreen({ onBack }: { onBack: () => void }) {
+function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSuccess: () => void }) {
   const [role, setRole] = useState<'admin' | 'employee'>('employee');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -352,7 +375,13 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
     }
     setLoading(true);
     try {
-      const { data: { session: existingSession } } = await supabase.auth.getSession();
+      const { data: { session: existingSession }, error: sessionCheckError } = await supabase.auth.getSession();
+      if (sessionCheckError) {
+        console.error('Error checking session:', sessionCheckError);
+        Alert.alert('Error', 'Could not check session.');
+        setLoading(false);
+        return;
+      }
       if (existingSession) {
         Alert.alert('Already Logged In', 'You are already logged in. Please log out first.');
         setLoading(false);
@@ -370,24 +399,38 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
       });
       console.log('Sign up response:', { authData, signUpError });
       if (signUpError) {
+        console.error('Sign up error:', signUpError);
         if (signUpError.message.toLowerCase().includes('rate limit exceeded')) {
           setSignupCooldown(10);
-          throw new Error('Too many sign-up attempts. Please try again in a few seconds.');
+          Alert.alert('Too many sign-up attempts. Please try again in a few seconds.');
+          setLoading(false);
+          return;
         }
-        throw new Error('Auth sign up failed: ' + signUpError.message);
+        Alert.alert('Auth sign up failed', signUpError.message);
+        setLoading(false);
+        return;
       }
       if (!authData.user) {
-        throw new Error('User not returned from sign up.');
+        console.error('No user returned from sign up:', authData);
+        Alert.alert('Registration failed', 'User not returned from sign up.');
+        setLoading(false);
+        return;
       }
 
       // Wait for session to be available
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       console.log('Session after signup:', { session, sessionError });
       if (sessionError) {
-        throw new Error('Failed to get session after signup: ' + sessionError.message);
+        console.error('Session error after signup:', sessionError);
+        Alert.alert('Failed to get session after signup', sessionError.message);
+        setLoading(false);
+        return;
       }
       if (!session) {
-        throw new Error('No session found after signup. Please try again.');
+        console.error('No session found after signup.');
+        Alert.alert('No session found after signup. Please try again.');
+        setLoading(false);
+        return;
       }
 
       if (role === 'admin') {
@@ -398,10 +441,15 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
           .single();
         console.log('Business creation response:', { business, businessError });
         if (businessError || !business) {
+          console.error('Business creation error:', businessError);
           if (businessError?.message?.toLowerCase().includes('duplicate')) {
-            throw new Error('This business name or code is already in use. Please choose a different one.');
+            Alert.alert('This business name or code is already in use. Please choose a different one.');
+            setLoading(false);
+            return;
           }
-          throw new Error('Failed to create business: ' + (businessError?.message || 'Unknown error'));
+          Alert.alert('Failed to create business', businessError?.message || 'Unknown error');
+          setLoading(false);
+          return;
         }
         business_id = business.id;
         setGeneratedBusinessCode(business.code);
@@ -409,7 +457,9 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
         business_id = await resolveBusinessId(businessCode);
         console.log('Resolved business_id:', business_id);
         if (!business_id) {
-          throw new Error('Invalid business code. Please check with your admin.');
+          Alert.alert('Invalid business code. Please check with your admin.');
+          setLoading(false);
+          return;
         }
       }
 
@@ -419,11 +469,13 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
         .eq('id', authData.user.id);
       console.log('User update response:', { userError });
       if (userError) {
-        throw new Error('User update failed: ' + userError.message);
+        console.error('User update error:', userError);
+        Alert.alert('User update failed', userError.message);
+        setLoading(false);
+        return;
       }
 
-      Alert.alert('Check your email', 'Registration successful! Please check your email to confirm your account before logging in.');
-      setTimeout(onBack, 1200);
+      onSuccess();
     } catch (err: any) {
       console.error('Registration error:', err);
       Alert.alert('Registration failed', err.message || 'Unknown error');
