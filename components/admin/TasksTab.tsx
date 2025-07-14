@@ -51,6 +51,20 @@ const TasksTab: React.FC<TasksTabProps> = ({
   const params = useLocalSearchParams();
   const showAddTaskModal = params.addTask === '1';
 
+  // Reset modal state when opening/closing
+  React.useEffect(() => {
+    if (!showAddTaskModal) {
+      setSelectedTaskEmployee(null);
+      setNewTaskName('');
+      setNewTaskStart('');
+      setNewTaskDeadline('');
+      setMaterialsForNewTask([]);
+      setSelectedMaterialForTask('');
+      setSelectedMaterialTypeForTask('');
+      setMaterialQuantityForTask('');
+    }
+  }, [showAddTaskModal]);
+
   // Task CRUD handlers
   const handleAddTaskForEmployee = async () => {
     if (!newTaskName || !newTaskStart || !newTaskDeadline || !selectedTaskEmployee) return;
@@ -389,7 +403,7 @@ const TasksTab: React.FC<TasksTabProps> = ({
         <FontAwesome5 name="plus" size={28} color="#fff" />
       </TouchableOpacity>
       {/* Add Task Modal */}
-      <AdminModal visible={!!showAddTaskModal} onClose={() => router.back()} title={!selectedTaskEmployee ? 'Select Employee' : `Add Task for ${selectedTaskEmployee.name}`}> 
+      <AdminModal visible={!!showAddTaskModal} onClose={() => router.back()} title={!selectedTaskEmployee ? 'Select Employee' : `Add Task for ${selectedTaskEmployee.name}`}>
         {!selectedTaskEmployee ? (
           <>
             <FlatList

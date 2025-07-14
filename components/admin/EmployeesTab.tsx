@@ -54,6 +54,23 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   const showAddDeptModal = params.addDept === '1';
   const showAssignTaskModal = params.assignTask === '1';
 
+  // Reset modal state when opening/closing
+  React.useEffect(() => {
+    if (!showAddEmployeeModal) {
+      setNewEmployeeName('');
+      setNewEmployeeCode('');
+      setNewEmployeeLunchStart('12:00');
+      setNewEmployeeLunchEnd('12:30');
+      setNewEmployeePhotoUri(undefined);
+      setNewEmployeeDepartment('');
+    }
+  }, [showAddEmployeeModal]);
+  React.useEffect(() => {
+    if (!showAddDeptModal) {
+      setNewDepartment('');
+    }
+  }, [showAddDeptModal]);
+
   // Assign Task Handler
   const handleAssignTask = async () => {
     if (!newTaskName || !newTaskStart || !newTaskDeadline) {
