@@ -492,35 +492,40 @@ const TasksTab: React.FC<TasksTabProps> = ({
               </View>
               {/* List added materials for this task */}
               {materialsForNewTask.length > 0 && (
-                <View style={{ marginTop: 8 }}>
-                  <Text style={{ fontWeight: 'bold', color: '#1976d2' }}>Materials for Task:</Text>
-                  {materialsForNewTask.map((mu, idx) => {
-                    const mat = materials.find(m => m.id === mu.materialId);
-                    const type = mu.materialTypeId && materialTypes[mu.materialId]?.find(t => t.id === mu.materialTypeId);
-                    return (
-                      <Text key={idx} style={{ fontSize: 14 }}>{mat?.name}{type ? ` (${type.name})` : ''}: {mu.quantity} {mat?.unit}</Text>
-                    );
-                  })}
-                </View>
+            <View style={{ marginTop: 8 }}>
+              <Text style={{ fontWeight: 'bold', color: '#1976d2' }}>Materials for Task:</Text>
+              {materialsForNewTask.map((mu, idx) => {
+                const mat = materials.find(m => m.id === mu.materialId);
+                const type = mu.materialTypeId && materialTypes[mu.materialId]?.find(t => t.id === mu.materialTypeId);
+                return (
+                  <Text key={idx} style={{ fontSize: 14 }}>{mat ? mat.name : ''}{type ? ` (${type.name})` : ''}: {mu.quantity} {mat ? ` ${mat.unit}` : ''}</Text>
+                );
+              })}
+            </View>
               )}
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
               <TouchableOpacity style={adminStyles.addBtn} onPress={async () => {
                 if (!newTaskName || !newTaskStart || !newTaskDeadline || !selectedTaskEmployee) return;
+                const payload = {
+                  name: newTaskName,
+                  assignedTo: selectedTaskEmployee.id,
+                  business_id: user.business_id,
+                  start: newTaskStart,
+                  deadline: newTaskDeadline,
+                  completed: false,
+                  completedAt: null,
+                  materialsUsed: materialsForNewTask,
+                };
+                console.log('Add Task Payload:', payload);
                 const { data, error } = await supabase
                   .from('tasks')
-                  .insert({
-                    name: newTaskName,
-                    assignedTo: selectedTaskEmployee.id,
-                    business_id: user.business_id,
-                    start: newTaskStart,
-                    deadline: newTaskDeadline,
-                    completed: false,
-                    completedAt: null,
-                    materialsUsed: materialsForNewTask,
-                  })
+                  .insert(payload)
                   .select('*')
                   .single();
+                if (error) {
+                  console.error('Supabase Add Task Error:', error);
+                }
                 if (!error && data) setTasks([...tasks, data]);
                 setNewTaskName('');
                 setNewTaskStart('');

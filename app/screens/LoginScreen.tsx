@@ -12,9 +12,11 @@ type LoginScreenProps = {
 };
 
 export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreenProps) {
+  const [loginRole, setLoginRole] = useState<'admin' | 'employee'>('admin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [employeeBusinessCode, setEmployeeBusinessCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [shakeAnim] = useState(new Animated.Value(0));
   const [showRegister, setShowRegister] = useState(false);
@@ -118,108 +120,128 @@ export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreen
       Alert.alert('Too Many Attempts', `Please wait ${lockTimer} seconds before trying again.`);
       return;
     }
-    if (!email || !password) {
-      Alert.alert('Missing Fields', 'Please enter both email and password.');
-      return;
+    if (loginRole === 'admin') {
+      if (!email || !password) {
+        Alert.alert('Missing Fields', 'Please enter both email and password.');
+        return;
+      }
+    } else {
+      if (!employeeBusinessCode) {
+        Alert.alert('Missing Fields', 'Please enter your business code.');
+        return;
+      }
     }
     setLoading(true);
     try {
-      // Sign in with Supabase Auth
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-      if (signInError) {
-        setLoginAttempts((a) => a + 1);
-        if (loginAttempts + 1 >= 5) {
-          setLoginLocked(true);
-          setLockTimer(30);
+      if (loginRole === 'admin') {
+        // Admin login: email/password
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError) {
+          setLoginAttempts((a) => a + 1);
+          if (loginAttempts + 1 >= 5) {
+            setLoginLocked(true);
+            setLockTimer(30);
+          }
+          console.error('Auth error details:', signInError);
+          throw new Error(signInError.message);
         }
-        console.error('Auth error details:', signInError);
-        throw new Error(signInError.message);
-      }
-      
-      // Store session securely (cross-platform)
-      if (signInData?.session) {
-        await sessionSetter('supabase-session', JSON.stringify(signInData.session));
-      }
-      
-      // Check if email is confirmed
-      if (signInData?.user && !signInData.user.confirmed_at) {
-        Alert.alert(
-          'Email Not Verified',
-          'Please confirm your email address before logging in.',
-          [
-            { text: 'Resend Confirmation Email', onPress: async () => {
-                setLoading(true);
-                try {
-                  const { error } = await supabase.auth.resend({ type: 'signup', email });
-                  if (error) {
-                    Alert.alert('Error', error.message);
-                  } else {
-                    Alert.alert('Confirmation Email Sent', 'Please check your inbox.');
+        if (signInData?.session) {
+          await sessionSetter('supabase-session', JSON.stringify(signInData.session));
+        }
+        if (signInData?.user && !signInData.user.confirmed_at) {
+          Alert.alert(
+            'Email Not Verified',
+            'Please confirm your email address before logging in.',
+            [
+              { text: 'Resend Confirmation Email', onPress: async () => {
+                  setLoading(true);
+                  try {
+                    const { error } = await supabase.auth.resend({ type: 'signup', email });
+                    if (error) {
+                      Alert.alert('Error', error.message);
+                    } else {
+                      Alert.alert('Confirmation Email Sent', 'Please check your inbox.');
+                    }
+                  } finally {
+                    setLoading(false);
                   }
-                } finally {
-                  setLoading(false);
                 }
-              }
-            },
-            { text: 'OK' }
-          ]
-        );
-        return;
-      }
-      
-      // Fetch user data from users table
-      let userRole = null;
-      let businessId = null;
-      if (signInData?.user) {
-        const { id, email, user_metadata } = signInData.user;
-        const { name = '', role = '' } = user_metadata || {};
-        
-        // Upsert user into users table after login
-        const { error: upsertError } = await supabase
-          .from('users')
-          .upsert({ id, email, name, role }, { onConflict: 'id' });
-        if (upsertError) {
-          console.warn('User upsert error:', upsertError);
+              },
+              { text: 'OK' }
+            ]
+          );
+          return;
         }
-        
-        // Fetch user role and business association
-        const { data: users, error: userError } = await supabase
-          .from('users')
-          .select('role, business_id')
-          .eq('id', id)
-          .limit(1);
-        if (userError || !users || users.length === 0) {
-          console.warn('User fetch error or not found:', userError, users);
-          throw new Error('User not found or missing role. ' + (userError?.message || ''));
-        }
-        
-        userRole = users[0].role;
-        businessId = users[0].business_id;
-        
-        // Store business association if exists
-        if (businessId) {
-          const { data: business, error: businessError } = await supabase
-            .from('businesses')
-            .select('*')
-            .eq('id', businessId)
-            .single();
-          if (!businessError && business) {
-            await sessionSetter('user-business', JSON.stringify(business));
+        // Fetch user data from users table
+        let userRole = null;
+        let businessId = null;
+        if (signInData?.user) {
+          const { id, email, user_metadata } = signInData.user;
+          const { name = '', role = '' } = user_metadata || {};
+          const { error: upsertError } = await supabase
+            .from('users')
+            .upsert({ id, email, name, role }, { onConflict: 'id' });
+          if (upsertError) {
+            console.warn('User upsert error:', upsertError);
+          }
+          const { data: users, error: userError } = await supabase
+            .from('users')
+            .select('role, business_id')
+            .eq('id', id)
+            .limit(1);
+          if (userError || !users || users.length === 0) {
+            console.warn('User fetch error or not found:', userError, users);
+            throw new Error('User not found or missing role. ' + (userError?.message || ''));
+          }
+          userRole = users[0].role;
+          businessId = users[0].business_id;
+          if (businessId) {
+            const { data: business, error: businessError } = await supabase
+              .from('businesses')
+              .select('*')
+              .eq('id', businessId)
+              .single();
+            if (!businessError && business) {
+              await sessionSetter('user-business', JSON.stringify(business));
+            }
           }
         }
-      }
-      
-      if (userRole !== 'admin' && userRole !== 'employee') {
-        throw new Error('Invalid user role.');
-      }
-      
-      setLoginAttempts(0); // reset on success
-      onLogin(userRole);
-      
-      // Redirect to appropriate dashboard
-      if (userRole === 'admin') {
-        router.replace('/admin-dashboard');
+        if (userRole !== 'admin' && userRole !== 'employee') {
+          throw new Error('Invalid user role.');
+        }
+        setLoginAttempts(0); // reset on success
+        onLogin(userRole);
+        if (userRole === 'admin') {
+          router.replace('/admin-dashboard');
+        } else {
+          router.replace('/employee-dashboard');
+        }
       } else {
+        // Employee login: business code only
+        // Find a user with role employee and business_id or code matching
+        const { data: business, error: businessError } = await supabase
+          .from('businesses')
+          .select('id')
+          .or(`id.eq.${employeeBusinessCode},code.eq.${employeeBusinessCode}`)
+          .single();
+        if (businessError || !business) {
+          throw new Error('Invalid business code. Please check with your admin.');
+        }
+        // Find an employee user for this business
+        const { data: users, error: userError } = await supabase
+          .from('users')
+          .select('id, email, role')
+          .eq('business_id', business.id)
+          .eq('role', 'employee')
+          .limit(1);
+        if (userError || !users || users.length === 0) {
+          throw new Error('No employee account found for this business code.');
+        }
+        // Log in as the first employee (for demo, real app should have employee code or email)
+        // Here, just set session and redirect
+        await sessionSetter('employee-id', users[0].id);
+        await sessionSetter('user-business', JSON.stringify(business));
+        onLogin('employee');
         router.replace('/employee-dashboard');
       }
     } catch (e: unknown) {
@@ -264,41 +286,74 @@ export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreen
             <FontAwesome5 name="tools" size={54} color="#1976d2" style={{ marginBottom: 18 }} />
             <Text style={styles.title}>ShopFlow</Text>
             <Text style={styles.subtitle}>Sign in to continue</Text>
-            
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              placeholderTextColor="#b0b8c1"
-              returnKeyType="next"
-              editable={!loading}
-            />
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={[styles.input, { flex: 1, marginBottom: 0 }]}
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                placeholderTextColor="#b0b8c1"
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="done"
-                onSubmitEditing={handleLogin}
-                editable={!loading}
-              />
+            {/* Login role toggle */}
+            <View style={{ flexDirection: 'row', marginBottom: 18 }}>
               <TouchableOpacity
-                onPress={() => setShowPassword((v) => !v)}
-                style={styles.eyeBtn}
-                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                style={[styles.roleBtn, loginRole === 'admin' && styles.roleBtnActive]}
+                onPress={() => setLoginRole('admin')}
+                disabled={loading}
               >
-                <FontAwesome5 name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#1976d2" />
+                <Text style={{ color: loginRole === 'admin' ? '#fff' : '#1976d2', fontWeight: 'bold' }}>Admin</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.roleBtn, loginRole === 'employee' && styles.roleBtnActive]}
+                onPress={() => setLoginRole('employee')}
+                disabled={loading}
+              >
+                <Text style={{ color: loginRole === 'employee' ? '#fff' : '#1976d2', fontWeight: 'bold' }}>Employee</Text>
               </TouchableOpacity>
             </View>
+            {loginRole === 'admin' ? (
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="email-address"
+                  placeholderTextColor="#b0b8c1"
+                  returnKeyType="next"
+                  editable={!loading}
+                />
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                    placeholder="Password"
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    placeholderTextColor="#b0b8c1"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    returnKeyType="done"
+                    onSubmitEditing={handleLogin}
+                    editable={!loading}
+                  />
+                  <TouchableOpacity
+                    onPress={() => setShowPassword((v) => !v)}
+                    style={styles.eyeBtn}
+                    accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    <FontAwesome5 name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#1976d2" />
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Business Code"
+                  value={employeeBusinessCode}
+                  onChangeText={setEmployeeBusinessCode}
+                  autoCapitalize="characters"
+                  editable={!loading}
+                  maxLength={12}
+                  placeholderTextColor="#b0b8c1"
+                />
+              </>
+            )}
             <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} disabled={loading}>
               <Text style={styles.loginBtnText}>{loading ? 'Logging in...' : 'Login'}</Text>
             </TouchableOpacity>
@@ -661,14 +716,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 44,
     marginTop: 8,
-    alignItems: 'center',
-    ...createShadowStyle({
-      shadowColor: '#1976d2',
-      shadowOpacity: 0.18,
-      shadowRadius: 8,
-      shadowOffset: { width: 0, height: 4 },
-      elevation: 4,
-    }),
+    // If you want to add shadow, use createShadowStyle here if defined
   },
   loginBtnText: {
     color: '#fff',
