@@ -600,17 +600,12 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
               editable={!loading}
               placeholderTextColor="#b0b8c1"
             />
-            <Text style={styles.inputLabel}>Business Code (share with employees)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Create a business code (e.g. SCC123)"
-              value={businessCode}
-              onChangeText={setBusinessCode}
-              autoCapitalize="characters"
-              editable={!loading}
-              maxLength={12}
-              placeholderTextColor="#b0b8c1"
-            />
+            {generatedBusinessCode && (
+              <View style={{ marginVertical: 12, alignItems: 'center' }}>
+                <Text style={styles.inputLabel}>Your Business Code (share with employees):</Text>
+                <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2', marginTop: 8 }}>{generatedBusinessCode}</Text>
+              </View>
+            )}
           </>
         )}
         {role === 'employee' && (
