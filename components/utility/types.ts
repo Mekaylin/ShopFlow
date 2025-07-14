@@ -18,10 +18,11 @@ export interface Task {
   start: string;
   deadline: string;
   completed: boolean;
-  assignedTo?: string;
-  completedAt?: string;
-  materialsUsed?: any[];
+  assigned_to?: string;
+  completed_at?: string;
+  materials_used?: any[];
   business_id: string;
+  date: string;
 }
 
 export interface Material {
@@ -196,8 +197,8 @@ export interface TaskFormData {
   name: string;
   start: string;
   deadline: string;
-  assignedTo: string;
-  materialsUsed: any[];
+  assigned_to: string;
+  materials_used: any[];
 }
 
 export interface EmployeeFormData {

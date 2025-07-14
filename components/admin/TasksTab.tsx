@@ -41,12 +41,18 @@ const TasksTab: React.FC<TasksTabProps> = ({
   // Task state
   const [selectedTaskEmployee, setSelectedTaskEmployee] = useState<Employee | null>(null);
   const [newTaskName, setNewTaskName] = useState('');
+  const [newTaskDate, setNewTaskDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().slice(0, 10);
+  });
   const [newTaskStart, setNewTaskStart] = useState('');
   const [newTaskDeadline, setNewTaskDeadline] = useState('');
   const [selectedMaterialForTask, setSelectedMaterialForTask] = useState<string>('');
   const [selectedMaterialTypeForTask, setSelectedMaterialTypeForTask] = useState<string>('');
   const [materialQuantityForTask, setMaterialQuantityForTask] = useState('');
   const [materialsForNewTask, setMaterialsForNewTask] = useState<{ materialId: string; materialTypeId?: string; quantity: number }[]>([]);
+  const [addTaskLoading, setAddTaskLoading] = useState(false);
+  const [addTaskError, setAddTaskError] = useState<string | null>(null);
   const router = useRouter();
   const params = useLocalSearchParams();
   const showAddTaskModal = params.addTask === '1';
@@ -56,6 +62,10 @@ const TasksTab: React.FC<TasksTabProps> = ({
     if (!showAddTaskModal) {
       setSelectedTaskEmployee(null);
       setNewTaskName('');
+      setNewTaskDate(() => {
+        const today = new Date();
+        return today.toISOString().slice(0, 10);
+      });
       setNewTaskStart('');
       setNewTaskDeadline('');
       setMaterialsForNewTask([]);
@@ -67,26 +77,29 @@ const TasksTab: React.FC<TasksTabProps> = ({
 
   // Task CRUD handlers
   const handleAddTaskForEmployee = async () => {
-    if (!newTaskName || !newTaskStart || !newTaskDeadline || !selectedTaskEmployee) return;
-    
+    if (!newTaskName || !newTaskDate || !newTaskStart || !newTaskDeadline || !selectedTaskEmployee) return;
     const { data, error } = await supabase
       .from('tasks')
       .insert({
         name: newTaskName,
-        assignedTo: selectedTaskEmployee.id,
+        assigned_to: selectedTaskEmployee.id,
         business_id: user.business_id,
+        date: newTaskDate,
         start: newTaskStart,
         deadline: newTaskDeadline,
         completed: false,
-        completedAt: null,
-        materialsUsed: materialsForNewTask,
+        completed_at: null,
+        materials_used: materialsForNewTask,
       })
       .select('*')
       .single();
-      
     if (!error && data) {
       setTasks([...tasks, data]);
       setNewTaskName('');
+      setNewTaskDate(() => {
+        const today = new Date();
+        return today.toISOString().slice(0, 10);
+      });
       setNewTaskStart('');
       setNewTaskDeadline('');
       setMaterialsForNewTask([]);
@@ -112,7 +125,7 @@ const TasksTab: React.FC<TasksTabProps> = ({
   const handleCompleteTask = (taskId: string) => {
     setTasks(tasks.map(t =>
       t.id === taskId
-        ? { ...t, completed: true, completedAt: new Date().toISOString() }
+        ? { ...t, completed: true, completed_at: new Date().toISOString() }
         : t
     ));
   };
@@ -134,7 +147,7 @@ const TasksTab: React.FC<TasksTabProps> = ({
       {!selectedTaskEmployee ? null : (
         <>
           <Text style={[adminStyles.addEmployeeTitle, { marginBottom: 8 }]}>Tasks for {selectedTaskEmployee.name}</Text>
-          {tasks.filter(t => t.assignedTo === selectedTaskEmployee.id).length === 0 ? (
+          {tasks.filter(t => t.assigned_to === selectedTaskEmployee.id).length === 0 ? (
             <Text style={{ color: '#888', marginVertical: 8 }}>No tasks assigned.</Text>
           ) : null}
         </>
@@ -261,12 +274,13 @@ const TasksTab: React.FC<TasksTabProps> = ({
   // Data: always use (Employee | Task)[] and type guard in renderItem
   const data: (Employee | Task)[] = !selectedTaskEmployee
     ? employees
-    : tasks.filter(t => t.assignedTo === selectedTaskEmployee.id);
+    : tasks.filter(t => t.assigned_to === selectedTaskEmployee.id);
 
   const renderItem = ({ item }: { item: Employee | Task }) => {
-    if ('assignedTo' in item) {
-      // Task
-      const isLate = !item.completed && typeof item.deadline === 'string' && typeof item.completedAt === 'string' && minutesLate(item.deadline, item.completedAt) > lateThreshold;
+    // Type guard: is this a Task?
+    const isTask = (i: any): i is Task => 'assigned_to' in i;
+    if (isTask(item)) {
+      const isLate = !item.completed && typeof item.deadline === 'string' && typeof item.completed_at === 'string' && minutesLate(item.deadline, item.completed_at) > lateThreshold;
       return (
         <View key={item.id} style={{
           backgroundColor: item.completed ? '#e8f5e9' : isLate ? '#ffebee' : '#fffde7',
@@ -283,16 +297,16 @@ const TasksTab: React.FC<TasksTabProps> = ({
           <Text style={{ fontWeight: 'bold', fontSize: 17, color: '#1976d2', marginBottom: 2 }}>{item.name}</Text>
           <Text style={{ fontSize: 13, color: '#888', marginBottom: 4 }}>Start: {item.start} | Due: {item.deadline}</Text>
           {item.completed && (
-            <Text style={{ color: '#388e3c', fontWeight: 'bold', fontSize: 13, marginBottom: 2 }}>Completed at: {item.completedAt ? new Date(item.completedAt).toLocaleString() : ''}</Text>
+            <Text style={{ color: '#388e3c', fontWeight: 'bold', fontSize: 13, marginBottom: 2 }}>Completed at: {item.completed_at ? new Date(item.completed_at).toLocaleString() : ''}</Text>
           )}
-          {isLate && !item.completed && typeof item.deadline === 'string' && typeof item.completedAt === 'string' && (
-            <Text style={{ color: '#c62828', fontWeight: 'bold', fontSize: 13, marginBottom: 2 }}>Late by {minutesLate(item.deadline, item.completedAt)} min</Text>
+          {isLate && !item.completed && typeof item.deadline === 'string' && typeof item.completed_at === 'string' && (
+            <Text style={{ color: '#c62828', fontWeight: 'bold', fontSize: 13, marginBottom: 2 }}>Late by {minutesLate(item.deadline, item.completed_at)} min</Text>
           )}
           {/* Show materials used with type dropdown if applicable */}
-          {Array.isArray(item.materialsUsed) && item.materialsUsed.length > 0 && (
+          {Array.isArray(item.materials_used) && item.materials_used.length > 0 && (
             <View style={{ marginTop: 4, marginBottom: 4 }}>
               <Text style={{ fontSize: 13, color: '#1976d2', fontWeight: 'bold' }}>Materials Used:</Text>
-              {item.materialsUsed.map((mu, idx2) => {
+              {item.materials_used.map((mu: any, idx2: number) => {
                 const mat = materials.find(m => m.id === mu.materialId);
                 const type = mu.materialTypeId && materialTypes[mu.materialId]?.find(t => t.id === mu.materialTypeId);
                 return (
@@ -301,7 +315,6 @@ const TasksTab: React.FC<TasksTabProps> = ({
               })}
             </View>
           )}
-          
           {/* Rating Section for Completed Tasks */}
           {item.completed && performanceSettings.ratingSystemEnabled && (
             <View style={{ marginTop: 8, marginBottom: 8, padding: 8, backgroundColor: '#f8f9fa', borderRadius: 8 }}>
@@ -327,7 +340,6 @@ const TasksTab: React.FC<TasksTabProps> = ({
               </TouchableOpacity>
             </View>
           )}
-          
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 }}>
             {!item.completed && (
               <TouchableOpacity style={{ backgroundColor: '#388e3c', borderRadius: 8, padding: 8, marginRight: 8 }} onPress={() => handleCompleteTask(item.id)}>
@@ -425,6 +437,14 @@ const TasksTab: React.FC<TasksTabProps> = ({
         ) : (
           <>
             <TextInput style={adminStyles.inputText} placeholder="Task Title" value={newTaskName} onChangeText={setNewTaskName} />
+            <TextInput
+              style={adminStyles.inputText}
+              placeholder="Date (YYYY-MM-DD)"
+              value={newTaskDate}
+              onChangeText={setNewTaskDate}
+              keyboardType="numeric"
+              maxLength={10}
+            />
             <TextInput style={adminStyles.inputText} placeholder="Start Time (e.g. 09:00)" value={newTaskStart} onChangeText={setNewTaskStart} />
             <TextInput style={adminStyles.inputText} placeholder="Deadline (e.g. 17:00)" value={newTaskDeadline} onChangeText={setNewTaskDeadline} />
             {/* Materials selection (reuse existing logic) */}
@@ -505,37 +525,57 @@ const TasksTab: React.FC<TasksTabProps> = ({
               )}
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
-              <TouchableOpacity style={adminStyles.addBtn} onPress={async () => {
-                if (!newTaskName || !newTaskStart || !newTaskDeadline || !selectedTaskEmployee) return;
-                const payload = {
-                  name: newTaskName,
-                  assignedTo: selectedTaskEmployee.id,
-                  business_id: user.business_id,
-                  start: newTaskStart,
-                  deadline: newTaskDeadline,
-                  completed: false,
-                  completedAt: null,
-                  materialsUsed: materialsForNewTask,
-                };
-                console.log('Add Task Payload:', payload);
-                const { data, error } = await supabase
-                  .from('tasks')
-                  .insert(payload)
-                  .select('*')
-                  .single();
-                if (error) {
-                  console.error('Supabase Add Task Error:', error);
-                }
-                if (!error && data) setTasks([...tasks, data]);
-                setNewTaskName('');
-                setNewTaskStart('');
-                setNewTaskDeadline('');
-                setMaterialsForNewTask([]);
-                setSelectedTaskEmployee(null);
-                router.back();
-              }}>
-                <Text style={adminStyles.addBtnText}>Add Task</Text>
+              <TouchableOpacity
+                style={adminStyles.addBtn}
+                onPress={async () => {
+                  if (addTaskLoading) return;
+                  setAddTaskError(null);
+                  if (!newTaskName || !newTaskStart || !newTaskDeadline || !selectedTaskEmployee) {
+                    setAddTaskError('Please fill all required fields.');
+                    return;
+                  }
+                  setAddTaskLoading(true);
+                  try {
+                  const payload = {
+                    name: newTaskName,
+                    assigned_to: selectedTaskEmployee.id,
+                    business_id: user.business_id,
+                    date: newTaskDate,
+                    start: newTaskStart,
+                    deadline: newTaskDeadline,
+                    completed: false,
+                    completed_at: null,
+                    materials_used: materialsForNewTask,
+                  };
+                  const { data, error } = await supabase
+                    .from('tasks')
+                    .insert(payload)
+                    .select('*')
+                    .single();
+                    if (error) {
+                      setAddTaskError(error.message || 'Failed to add task.');
+                      return;
+                    }
+                    if (data) setTasks([...tasks, data]);
+                    setNewTaskName('');
+                    setNewTaskStart('');
+                    setNewTaskDeadline('');
+                    setMaterialsForNewTask([]);
+                    setSelectedTaskEmployee(null);
+                    router.back();
+                  } catch (err: any) {
+                    setAddTaskError(err?.message || 'Unexpected error.');
+                  } finally {
+                    setAddTaskLoading(false);
+                  }
+                }}
+                disabled={addTaskLoading}
+              >
+                <Text style={adminStyles.addBtnText}>{addTaskLoading ? 'Adding...' : 'Add Task'}</Text>
               </TouchableOpacity>
+              {addTaskError && (
+                <Text style={{ color: 'red', marginTop: 8 }}>{addTaskError}</Text>
+              )}
               <TouchableOpacity style={adminStyles.closeBtn} onPress={() => setSelectedTaskEmployee(null)}>
                 <Text style={adminStyles.closeBtnText}>Back</Text>
               </TouchableOpacity>
