@@ -4,14 +4,14 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { createShadowStyle } from '../../utils/shadowUtils';
+import { resolveBusinessId } from './resolveBusinessId';
 
 type LoginScreenProps = {
   onLogin: (role: 'admin' | 'employee') => void,
-  setSession?: (key: string, value: string) => Promise<void>,
-  onTest?: () => void
+  setSession?: (key: string, value: string) => Promise<void>
 };
 
-export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreenProps) {
+export default function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -308,11 +308,6 @@ export default function LoginScreen({ onLogin, setSession, onTest }: LoginScreen
             <TouchableOpacity onPress={() => setShowReset(true)} style={{ marginTop: 12 }}>
               <Text style={{ color: '#1976d2', textAlign: 'center' }}>Forgot Password?</Text>
             </TouchableOpacity>
-            {onTest && (
-              <TouchableOpacity onPress={onTest} style={{ marginTop: 24 }}>
-                <Text style={{ color: '#1976d2', textAlign: 'center' }}>Test Supabase Connection</Text>
-              </TouchableOpacity>
-            )}
           </Animated.View>
         </View>
       </KeyboardAvoidingView>
@@ -335,13 +330,9 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
 
   // Password strength checker
   function checkPasswordStrength(pw: string): 'weak' | 'medium' | 'strong' {
-    let score = 0;
-    if (pw.length >= 8) score++;
-    if (/[A-Z]/.test(pw)) score++;
-    if (/[0-9]/.test(pw)) score++;
-    if (/[^A-Za-z0-9]/.test(pw)) score++;
-    if (score >= 4) return 'strong';
-    if (score >= 2) return 'medium';
+    if (!pw || pw.length < 6) return 'weak';
+    if (pw.match(/[A-Z]/) && pw.match(/[0-9]/) && pw.match(/[^A-Za-z0-9]/) && pw.length >= 10) return 'strong';
+    if (pw.match(/[A-Z]/) && pw.match(/[0-9]/) && pw.length >= 8) return 'medium';
     return 'weak';
   }
 
@@ -349,31 +340,8 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
     setPasswordStrength(checkPasswordStrength(password));
   }, [password]);
 
-  useEffect(() => {
-    if (signupCooldown > 0) {
-      const timer = setTimeout(() => setSignupCooldown(signupCooldown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [signupCooldown]);
-
-  // Helper to resolve business code
-  async function resolveBusinessId(input: string) {
-    let { data: business, error } = await supabase
-      .from('businesses')
-      .select('id')
-      .eq('id', input)
-      .single();
-    if (!error && business) return business.id;
-    ({ data: business, error } = await supabase
-      .from('businesses')
-      .select('id')
-      .eq('code', input)
-      .single());
-    if (!error && business) return business.id;
-    return null;
-  }
-
   const handleRegister = async () => {
+    console.log('Registration started', { email, role });
     if (!email || !password) {
       Alert.alert('Missing Fields', 'Please enter both email and password.');
       return;
@@ -387,11 +355,12 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
       const { data: { session: existingSession } } = await supabase.auth.getSession();
       if (existingSession) {
         Alert.alert('Already Logged In', 'You are already logged in. Please log out first.');
+        setLoading(false);
         return;
       }
 
-      let business_id = null;
-      
+      let business_id: string | null = null;
+
       const { data: authData, error: signUpError } = await supabase.auth.signUp({ 
         email, 
         password,
@@ -399,11 +368,8 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
           data: { name, role }
         }
       });
-      
+      console.log('Sign up response:', { authData, signUpError });
       if (signUpError) {
-        if (signUpError.message.toLowerCase().includes('already registered')) {
-          throw new Error('This email is already registered. Please log in or use a different email.');
-        }
         if (signUpError.message.toLowerCase().includes('rate limit exceeded')) {
           setSignupCooldown(10);
           throw new Error('Too many sign-up attempts. Please try again in a few seconds.');
@@ -414,7 +380,9 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
         throw new Error('User not returned from sign up.');
       }
 
+      // Wait for session to be available
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log('Session after signup:', { session, sessionError });
       if (sessionError) {
         throw new Error('Failed to get session after signup: ' + sessionError.message);
       }
@@ -428,6 +396,7 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
           .insert({ name: businessName, code: businessCode })
           .select('id,code')
           .single();
+        console.log('Business creation response:', { business, businessError });
         if (businessError || !business) {
           if (businessError?.message?.toLowerCase().includes('duplicate')) {
             throw new Error('This business name or code is already in use. Please choose a different one.');
@@ -438,6 +407,7 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
         setGeneratedBusinessCode(business.code);
       } else {
         business_id = await resolveBusinessId(businessCode);
+        console.log('Resolved business_id:', business_id);
         if (!business_id) {
           throw new Error('Invalid business code. Please check with your admin.');
         }
@@ -447,7 +417,7 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
         .from('users')
         .update({ name, role, business_id })
         .eq('id', authData.user.id);
-      
+      console.log('User update response:', { userError });
       if (userError) {
         throw new Error('User update failed: ' + userError.message);
       }
@@ -455,11 +425,13 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
       Alert.alert('Check your email', 'Registration successful! Please check your email to confirm your account before logging in.');
       setTimeout(onBack, 1200);
     } catch (err: any) {
+      console.error('Registration error:', err);
       Alert.alert('Registration failed', err.message || 'Unknown error');
     } finally {
       setLoading(false);
     }
   };
+// Removed duplicate/invalid registration logic after handleRegister
 
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#e3f2fd' }}>

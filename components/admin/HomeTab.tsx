@@ -4,11 +4,11 @@ import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'reac
 import { adminStyles } from '../utility/styles';
 import { Employee, Material, PerformanceMetrics, Task } from '../utility/types';
 import {
-  filterTasksByDate,
-  getBestPerformers,
-  getLateEmployeesByClockEvents,
-  getMaterialUsage,
-  limitLines
+    filterTasksByDate,
+    getBestPerformers,
+    getLateEmployeesByClockEvents,
+    getMaterialUsage,
+    limitLines
 } from '../utility/utils';
 
 import type { ClockEvent, MaterialType, User } from '../utility/types';

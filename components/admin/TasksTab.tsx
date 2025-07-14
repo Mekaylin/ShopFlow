@@ -1,9 +1,8 @@
 import { FontAwesome5 } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Platform } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { FlatList, Image, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, Platform, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
 import { Employee, Material, MaterialType, Task } from '../utility/types';
@@ -75,7 +74,7 @@ const TasksTab: React.FC<TasksTabProps> = ({
           deadline: newTaskDeadline,
           completed: false,
           completed_at: null,
-          materials_used: materialsForNewTask,
+          materials_used: materialsForNewTask.length > 0 ? materialsForNewTask : [],
           date: newTaskDate,
         })
         .select('*')
@@ -178,82 +177,7 @@ const TasksTab: React.FC<TasksTabProps> = ({
         </View>
       </View>
       
-      {/* Material selection UI */}
-      <View style={{ marginTop: 12, marginBottom: 12, backgroundColor: '#f5faff', borderRadius: 10, padding: 10 }}>
-        <Text style={{ fontWeight: 'bold', color: '#1976d2', marginBottom: 4 }}>Add Materials Used</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-          <Text style={{ marginRight: 6 }}>Material:</Text>
-          <View style={{ flex: 1 }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {materials.map(mat => (
-                <TouchableOpacity
-                  key={mat.id}
-                  style={{
-                    backgroundColor: selectedMaterialForTask === mat.id ? '#1976d2' : '#e3f2fd',
-                    borderRadius: 8,
-                    padding: 6,
-                    marginRight: 6,
-                  }}
-                  onPress={() => {
-                    setSelectedMaterialForTask(mat.id);
-                    setSelectedMaterialTypeForTask('');
-                  }}
-                >
-                  <Text style={{ color: selectedMaterialForTask === mat.id ? '#fff' : '#1976d2' }}>{mat.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-        {selectedMaterialForTask && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-            <Text style={{ marginRight: 6 }}>Type:</Text>
-            <View style={{ flex: 1 }}>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {(materialTypes[selectedMaterialForTask] || []).map(type => (
-                  <TouchableOpacity
-                    key={type.id}
-                    style={{
-                      backgroundColor: selectedMaterialTypeForTask === type.id ? '#1976d2' : '#e3f2fd',
-                      borderRadius: 8,
-                      padding: 6,
-                      marginRight: 6,
-                    }}
-                    onPress={() => setSelectedMaterialTypeForTask(type.id)}
-                  >
-                    <Text style={{ color: selectedMaterialTypeForTask === type.id ? '#fff' : '#1976d2' }}>{type.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
-          </View>
-        )}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-          <Text style={{ marginRight: 6 }}>Quantity:</Text>
-          <TextInput
-            style={[adminStyles.inputText, { flex: 1 }]}
-            placeholder="Quantity"
-            value={materialQuantityForTask}
-            onChangeText={setMaterialQuantityForTask}
-            keyboardType="numeric"
-          />
-          <TouchableOpacity style={[adminStyles.addBtn, { marginLeft: 8 }]} onPress={handleAddMaterialToTask}>
-            <Text style={adminStyles.addBtnText}>Add</Text>
-          </TouchableOpacity>
-        </View>
-        {materialsForNewTask.length > 0 && (
-          <View style={{ marginTop: 6 }}>
-            <Text style={{ fontSize: 13, color: '#888' }}>Added:</Text>
-            {materialsForNewTask.map((mu, idx) => {
-              const mat = materials.find(m => m.id === mu.materialId);
-              const type = mu.materialTypeId && materialTypes[mu.materialId]?.find(t => t.id === mu.materialTypeId);
-              return (
-                <Text key={idx} style={{ fontSize: 14 }}>{mat?.name}{type ? ` (${type.name})` : ''}: {mu.quantity} {mat?.unit}</Text>
-              );
-            })}
-          </View>
-        )}
-      </View>
+      {/* Materials are now optional. Employees will add materials used in the Employee Dashboard. */}
       <TouchableOpacity style={[adminStyles.addBtn, { marginTop: 8, alignSelf: 'center', minWidth: 120 }]} onPress={handleAddTaskForEmployee}>
         <Text style={adminStyles.addBtnText}>Add Task</Text>
       </TouchableOpacity>
