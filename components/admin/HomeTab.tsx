@@ -96,17 +96,16 @@ const HomeTab: React.FC<HomeTabProps> = ({
   const filteredMaterials = materials.filter(material => {
     // Check if this material is used in any of the filtered tasks
     return filteredTasks.some(task => 
-      task.materialsUsed?.some((matUsed: any) => matUsed.materialId === material.id)
+      task.materials_used?.some((matUsed: any) => matUsed.materialId === material.id)
     );
   });
   const materialsUsed = getMaterialUsage(filteredMaterials, filteredTasks);
   
   // Calculate performance metrics from filtered tasks
   const performanceMetrics: PerformanceMetrics[] = employees.map(emp => {
-    const empTasks = filteredTasks.filter(task => task.assignedTo === emp.id);
+    const empTasks = filteredTasks.filter(task => task.assigned_to === emp.id);
     const completedTasks = empTasks.filter(task => task.completed);
     const performance_score = empTasks.length > 0 ? (completedTasks.length / empTasks.length) * 100 : 0;
-    
     return {
       employee_id: emp.id,
       employee_name: emp.name,

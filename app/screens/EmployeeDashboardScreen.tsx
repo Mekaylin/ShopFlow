@@ -33,14 +33,14 @@ interface Task {
   start: string;
   deadline: string;
   completed: boolean;
-  completedAt?: string; // ISO string
-  assignedTo: string;
-  materialsUsed?: { materialId: string; quantity: number }[];
+  completed_at?: string; // ISO string
+  assigned_to: string;
+  materials_used?: { materialId: string; quantity: number }[];
 }
 const initialTasks: Task[] = [
-  { id: '1', name: 'Replace windshield', start: '8:00', deadline: '10:00', completed: false, assignedTo: 'Alex Johnson', materialsUsed: [] },
-  { id: '2', name: 'Paint bumper', start: '10:15', deadline: '12:00', completed: false, assignedTo: 'Maria Lopez', materialsUsed: [] },
-  { id: '3', name: 'Oil change', start: '13:00', deadline: '14:00', completed: false, assignedTo: 'Sam Patel', materialsUsed: [] },
+  { id: '1', name: 'Replace windshield', start: '8:00', deadline: '10:00', completed: false, assigned_to: 'e1', materials_used: [] },
+  { id: '2', name: 'Paint bumper', start: '10:15', deadline: '12:00', completed: false, assigned_to: 'e2', materials_used: [] },
+  { id: '3', name: 'Oil change', start: '13:00', deadline: '14:00', completed: false, assigned_to: 'e3', materials_used: [] },
 ];
 
 // Removed auto-logout for all-day running app
@@ -92,7 +92,7 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
   const [enteredCode, setEnteredCode] = useState('');
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
   const [showEmployeeTasksPage, setShowEmployeeTasksPage] = useState(false);
-  const [employeeTasksName, setEmployeeTasksName] = useState<string | null>(null);
+  const [employeeTasksId, setEmployeeTasksId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [materials, setMaterials] = useState<Material[]>(initialMaterials); // get from admin
   // taskMaterials: { [taskId]: { materialId, quantity }[] }
@@ -183,24 +183,24 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
 
   // Remove selectedEmployee modal and use full page view instead
   // Modal for viewing all employees
-  const openEmployeeTasks = (employeeName: string) => {
-    setEmployeeTasksName(employeeName);
+  const openEmployeeTasks = (employeeId: string) => {
+    setEmployeeTasksId(employeeId);
     setShowEmployeeTasksPage(true);
     setModalVisible(false);
   };
   const closeEmployeeTasks = () => {
     setShowEmployeeTasksPage(false);
-    setEmployeeTasksName(null);
+    setEmployeeTasksId(null);
   };
 
   // Render tasks for a specific employee
   const handleSaveMaterials = (taskId: string) => {
     setTasks(prevTasks => prevTasks.map(t => {
       if (t.id !== taskId) return t;
-      // Save materialsUsed as numbers
+      // Save materials_used as numbers
       return {
         ...t,
-        materialsUsed: (taskMaterials[taskId] || [])
+        materials_used: (taskMaterials[taskId] || [])
           .filter(m => m.quantity && !isNaN(Number(m.quantity)))
           .map(m => ({ materialId: m.materialId, quantity: Number(m.quantity) })),
       };
@@ -220,8 +220,8 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
               return {
                 ...t,
                 completed: true,
-                completedAt: new Date().toISOString(),
-                materialsUsed: (taskMaterials[taskId] || [])
+                completed_at: new Date().toISOString(),
+                materials_used: (taskMaterials[taskId] || [])
                   .filter(m => m.quantity && !isNaN(Number(m.quantity)))
                   .map(m => ({ materialId: m.materialId, quantity: Number(m.quantity) })),
               };
@@ -234,36 +234,36 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
   };
 
   const renderEmployeeTasks = (employeeName: string) => {
-    const empTasks = tasks.filter(t => t.assignedTo === employeeName);
+    const empTasks = tasks.filter(t => t.assigned_to === employeeName);
     return (
       <View style={styles.empTaskList}>
-        {empTasks.length === 0 ? <Text style={styles.noTask}>No tasks assigned.</Text> :
-          empTasks.map(task => (
-            <TouchableOpacity
-              key={task.id}
-              style={[styles.task, task.completed && styles.taskCompleted]}
-              onPress={() => setSelectedTask(task)}
-            >
-              <Text style={styles.taskName}>{task.name}</Text>
-              <Text style={styles.taskTime}>Start: {task.start} | Due: {task.deadline}</Text>
-              <Text style={styles.taskStatus}>{task.completed ? 'Completed' : 'In Progress'}</Text>
-              {task.completed && task.completedAt && (
-                <Text style={{ color: '#888', fontSize: 13, marginBottom: 4 }}>Completed at: {new Date(task.completedAt).toLocaleString()}</Text>
-              )}
-              {task.completed && task.materialsUsed && task.materialsUsed.length > 0 && (
-                <View style={{ marginTop: 8 }}>
-                  <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Materials Used:</Text>
-                  {task.materialsUsed.map(mu => {
-                    const mat = materials.find(m => m.id === mu.materialId);
-                    if (!mat) return null;
-                    return (
-                      <Text key={mat.id} style={{ fontSize: 14 }}>{mat.name}: {mu.quantity} {mat.unit}</Text>
-                    );
-                  })}
-                </View>
-              )}
-            </TouchableOpacity>
-          ))}
+      {empTasks.length === 0 ? <Text style={styles.noTask}>No tasks assigned.</Text> :
+        empTasks.map(task => (
+          <TouchableOpacity
+            key={task.id}
+            style={[styles.task, task.completed && styles.taskCompleted]}
+            onPress={() => setSelectedTask(task)}
+          >
+            <Text style={styles.taskName}>{task.name}</Text>
+            <Text style={styles.taskTime}>Start: {task.start} | Due: {task.deadline}</Text>
+            <Text style={styles.taskStatus}>{task.completed ? 'Completed' : 'In Progress'}</Text>
+            {task.completed && task.completed_at && (
+              <Text style={{ color: '#888', fontSize: 13, marginBottom: 4 }}>Completed at: {new Date(task.completed_at).toLocaleString()}</Text>
+            )}
+            {task.completed && task.materials_used && task.materials_used.length > 0 && (
+              <View style={{ marginTop: 8 }}>
+                <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Materials Used:</Text>
+                {task.materials_used.map(mu => {
+                  const mat = materials.find(m => m.id === mu.materialId);
+                  if (!mat) return null;
+                  return (
+                    <Text key={mat.id} style={{ fontSize: 14 }}>{mat.name}: {mu.quantity} {mat.unit}</Text>
+                  );
+                })}
+              </View>
+            )}
+          </TouchableOpacity>
+        ))}
       </View>
     );
   };
@@ -285,8 +285,8 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
             <Text style={styles.modalTitle}>{task.name}</Text>
             <Text style={styles.taskTime}>Start: {task.start} | Due: {task.deadline}</Text>
             <Text style={styles.taskStatus}>{task.completed ? 'Completed' : 'In Progress'}</Text>
-            {task.completed && task.completedAt && (
-              <Text style={{ color: '#888', fontSize: 13, marginBottom: 4 }}>Completed at: {new Date(task.completedAt).toLocaleString()}</Text>
+            {task.completed && task.completed_at && (
+              <Text style={{ color: '#888', fontSize: 13, marginBottom: 4 }}>Completed at: {new Date(task.completed_at).toLocaleString()}</Text>
             )}
             {!task.completed && (
               <View style={{ marginTop: 10 }}>
@@ -320,10 +320,10 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
                 </TouchableOpacity>
               </View>
             )}
-            {task.completed && task.materialsUsed && task.materialsUsed.length > 0 && (
+            {task.completed && task.materials_used && task.materials_used.length > 0 && (
               <View style={{ marginTop: 8 }}>
                 <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Materials Used:</Text>
-                {task.materialsUsed.map(mu => {
+                {task.materials_used.map(mu => {
                   const mat = materials.find(m => m.id === mu.materialId);
                   if (!mat) return null;
                   return (
@@ -506,7 +506,7 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
               data={employees}
               keyExtractor={item => item.id}
               renderItem={({ item }) => (
-                <TouchableOpacity style={styles.employeeBlock} onPress={() => openEmployeeTasks(item.name)}>
+                <TouchableOpacity style={styles.employeeBlock} onPress={() => openEmployeeTasks(item.id)}>
                   <Text style={styles.employeeName}>{item.name}</Text>
                 </TouchableOpacity>
               )}
@@ -518,11 +518,11 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
         </View>
       </Modal>
       {/* Full page for selected employee's tasks */}
-      {showEmployeeTasksPage && employeeTasksName && (
+      {showEmployeeTasksPage && employeeTasksId && (
         <View style={[styles.fullPageOverlay, { backgroundColor: theme.background }]}> 
           <View style={[styles.fullPageContent, { backgroundColor: theme.card, borderRadius: 18, shadowColor: theme.shadow, shadowOpacity: 0.18, shadowRadius: 12, elevation: 8 }]}> 
-            <Text style={[styles.modalTitle, { color: theme.primary }]}>{employeeTasksName}&apos;s Tasks</Text>
-            <ScrollView>{renderEmployeeTasks(employeeTasksName)}</ScrollView>
+            <Text style={[styles.modalTitle, { color: theme.primary }]}>{employees.find(e => e.id === employeeTasksId)?.name}&apos;s Tasks</Text>
+            <ScrollView>{renderEmployeeTasks(employeeTasksId)}</ScrollView>
             <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.primary }]} onPress={userAction(closeEmployeeTasks)}>
               <Text style={styles.closeBtnText}>Back</Text>
             </TouchableOpacity>

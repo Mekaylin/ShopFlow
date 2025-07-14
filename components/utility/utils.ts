@@ -163,8 +163,11 @@ export const getTaskProgress = (task: Task): number => {
   return Math.round((elapsedTime / totalTime) * 100);
 };
 
-export const getTasksByEmployee = (tasks: Task[], employeeName: string): Task[] => {
-  return tasks.filter(task => task.assignedTo === employeeName);
+/**
+ * Returns all tasks assigned to a given employee by their ID.
+ */
+export const getTasksByEmployee = (tasks: Task[], employeeId: string): Task[] => {
+  return tasks.filter(task => task.assigned_to === employeeId);
 };
 
 export const getCompletedTasks = (tasks: Task[]): Task[] => {
@@ -180,6 +183,9 @@ export const getLateTasks = (tasks: Task[]): Task[] => {
 };
 
 // Employee utilities
+/**
+ * Returns stats for an employee by their ID.
+ */
 export const getEmployeeStats = (employee: Employee, tasks: Task[]): {
   totalTasks: number;
   completedTasks: number;
@@ -187,11 +193,10 @@ export const getEmployeeStats = (employee: Employee, tasks: Task[]): {
   lateTasks: number;
   completionRate: number;
 } => {
-  const employeeTasks = getTasksByEmployee(tasks, employee.name);
+  const employeeTasks = getTasksByEmployee(tasks, employee.id);
   const completedTasks = getCompletedTasks(employeeTasks);
   const pendingTasks = getPendingTasks(employeeTasks);
   const lateTasks = getLateTasks(employeeTasks);
-  
   return {
     totalTasks: employeeTasks.length,
     completedTasks: completedTasks.length,
@@ -210,8 +215,8 @@ export const getMaterialUsage = (materials: Material[], tasks: Task[]): Record<s
   const usage: Record<string, number> = {};
   
   tasks.forEach(task => {
-    if (task.materialsUsed) {
-      task.materialsUsed.forEach((materialUsage: any) => {
+    if (task.materials_used) {
+      task.materials_used.forEach((materialUsage: any) => {
         const materialId = materialUsage.materialId;
         const quantity = materialUsage.quantity || 0;
         usage[materialId] = (usage[materialId] || 0) + quantity;
