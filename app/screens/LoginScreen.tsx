@@ -375,21 +375,7 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
     }
     setLoading(true);
     try {
-      const { data: { session: existingSession }, error: sessionCheckError } = await supabase.auth.getSession();
-      if (sessionCheckError) {
-        console.error('Error checking session:', sessionCheckError);
-        Alert.alert('Error', 'Could not check session.');
-        setLoading(false);
-        return;
-      }
-      if (existingSession) {
-        Alert.alert('Already Logged In', 'You are already logged in. Please log out first.');
-        setLoading(false);
-        return;
-      }
-
-      let business_id: string | null = null;
-
+      // 1. Sign up user
       const { data: authData, error: signUpError } = await supabase.auth.signUp({ 
         email, 
         password,
@@ -410,16 +396,28 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
         setLoading(false);
         return;
       }
-
       if (!authData.user) {
         console.error('No user returned from sign up:', authData);
         Alert.alert('Registration failed', 'User not returned from sign up.');
         setLoading(false);
         return;
       }
-      // If user is returned, show registration success immediately (don't wait for session)
 
+      // 2. Wait for session to be established (poll for session)
+      let session = null;
+      for (let i = 0; i < 10; i++) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        session = sessionData?.session;
+        if (session) break;
+        await new Promise(res => setTimeout(res, 400));
+      }
+      if (!session) {
+        Alert.alert('Registration failed', 'Session not established after sign up. Please check your email to confirm your account, then log in.');
+        setLoading(false);
+        return;
+      }
 
+      let business_id: string | null = null;
       if (role === 'admin') {
         const { data: business, error: businessError } = await supabase
           .from('businesses')
@@ -449,7 +447,6 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
           return;
         }
       }
-
 
       if (authData.user?.id) {
         const { error: userError } = await supabase

@@ -91,6 +91,10 @@ interface EmployeeDashboardScreenProps {
 }
 
 export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
+  // Business code entry state
+  const [businessCode, setBusinessCode] = useState('');
+  const [businessId, setBusinessId] = useState<string | null>(null);
+  const [businessCodeError, setBusinessCodeError] = useState('');
   // Notification panel state
   const [notificationPanelVisible, setNotificationPanelVisible] = useState(false);
   // Notifications: show clock events as notifications (demo)
@@ -138,36 +142,14 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
   const [codePromptVisible, setCodePromptVisible] = useState(false);
   const [enteredCode, setEnteredCode] = useState('');
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
-  // Fetch employees for the current business on mount
+  // Fetch employees for the current business when businessId is set
   useEffect(() => {
+    if (!businessId) return;
     const fetchEmployees = async () => {
       setLoadingEmployees(true);
-      let businessId = null;
       try {
-        // Try to get from localStorage (web) or AsyncStorage (native) or context
-        if (typeof window !== 'undefined' && window.localStorage) {
-          const userStr = window.localStorage.getItem('user');
-          if (userStr) {
-            const userObj = JSON.parse(userStr);
-            businessId = userObj.business_id;
-          }
-        }
-      } catch (e) {
-        console.error('Error reading business_id from localStorage:', e);
-      }
-      try {
-        // Fallback: try to get from supabase.auth.getUser()
-        if (!businessId && supabase.auth) {
-          const { data: { user }, error: userError } = await supabase.auth.getUser();
-          if (userError) {
-            console.error('Error fetching user from supabase:', userError);
-          }
-          if (user && user.user_metadata && user.user_metadata.business_id) {
-            businessId = user.user_metadata.business_id;
-          }
-        }
         let query = supabase.from('employees').select('id, name, code, business_id');
-        if (businessId) query = query.eq('business_id', businessId);
+        query = query.eq('business_id', businessId);
         const { data, error } = await query;
         if (error) {
           console.error('Error fetching employees:', error);
@@ -184,7 +166,38 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
       }
     };
     fetchEmployees();
+  }, [businessId]);
+
+  // On mount, check if businessId is stored in AsyncStorage
+  useEffect(() => {
+    (async () => {
+      try {
+        const stored = await AsyncStorage.getItem('business_id');
+        if (stored) setBusinessId(stored);
+      } catch {}
+    })();
   }, []);
+
+  // Handler for business code submit
+  const handleBusinessCodeSubmit = async () => {
+    setBusinessCodeError('');
+    if (!businessCode.trim()) {
+      setBusinessCodeError('Please enter a business code.');
+      return;
+    }
+    // Look up business by code
+    try {
+      const { data, error } = await supabase.from('businesses').select('id').eq('code', businessCode.trim()).single();
+      if (error || !data) {
+        setBusinessCodeError('Invalid business code.');
+        return;
+      }
+      setBusinessId(data.id);
+      await AsyncStorage.setItem('business_id', data.id);
+    } catch (e) {
+      setBusinessCodeError('Error verifying business code.');
+    }
+  };
   const [showEmployeeTasksPage, setShowEmployeeTasksPage] = useState(false);
   const [employeeTasksId, setEmployeeTasksId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -232,7 +245,11 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
 
   // Log clock event to the database, with offline queue, and add notification
   const logClockEvent = async (action: 'in' | 'out' | 'lunch' | 'lunchBack') => {
-    if (!currentEmployee) return;
+    if (!currentEmployee) {
+      console.error('logClockEvent: No currentEmployee set');
+      Alert.alert('Error', 'No employee selected for clock event.');
+      return;
+    }
     const event = {
       employee_id: currentEmployee.id,
       business_id: currentEmployee.business_id,
@@ -242,12 +259,14 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
     try {
       const { error } = await supabase.from('clock_events').insert(event);
       if (error) {
+        console.error('logClockEvent: Supabase insert error:', error);
         await queueClockEvent(event);
         Alert.alert('Offline', 'Clock event saved locally and will sync when online.');
       } else {
         await syncClockEvents();
       }
-    } catch {
+    } catch (err) {
+      console.error('logClockEvent: Exception during insert:', err);
       await queueClockEvent(event);
       Alert.alert('Offline', 'Clock event saved locally and will sync when online.');
     }
@@ -269,42 +288,47 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
 
   // Handle clock action (in, lunch, lunchBack, out) and log event
   const handleClockAction = async () => {
-    const action = getNextClockAction();
-    setLastAction(action);
-    if (action === 'in') {
-      setClockedIn(true);
-      setOnLunch(false);
-      setShowWelcome(true);
-      Animated.timing(welcomeAnim, {
-        toValue: 1,
-        duration: 700,
-        useNativeDriver: true,
-      }).start(() => {
-        setTimeout(() => {
-          Animated.timing(welcomeAnim, {
-            toValue: 0,
-            duration: 500,
-            useNativeDriver: true,
-          }).start(() => setShowWelcome(false));
-        }, 1800);
-      });
-      Alert.alert('Clocked In', 'You are clocked in.');
-      await logClockEvent('in');
-    } else if (action === 'lunch') {
-      setOnLunch(true);
-      Alert.alert('Lunch Break', 'You are clocked out for lunch.');
-      await logClockEvent('lunch');
-    } else if (action === 'lunchBack') {
-      setOnLunch(false);
-      Alert.alert('Back from Lunch', 'You are clocked in from lunch.');
-      await logClockEvent('lunchBack');
-    } else if (action === 'out') {
-      setClockedIn(false);
-      setOnLunch(false);
-      Alert.alert('Clocked Out', 'You have clocked out for the day.');
-      await logClockEvent('out');
+    try {
+      const action = getNextClockAction();
+      setLastAction(action);
+      if (action === 'in') {
+        setClockedIn(true);
+        setOnLunch(false);
+        setShowWelcome(true);
+        Animated.timing(welcomeAnim, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }).start(() => {
+          setTimeout(() => {
+            Animated.timing(welcomeAnim, {
+              toValue: 0,
+              duration: 500,
+              useNativeDriver: true,
+            }).start(() => setShowWelcome(false));
+          }, 1800);
+        });
+        Alert.alert('Clocked In', 'You are clocked in.');
+        await logClockEvent('in');
+      } else if (action === 'lunch') {
+        setOnLunch(true);
+        Alert.alert('Lunch Break', 'You are clocked out for lunch.');
+        await logClockEvent('lunch');
+      } else if (action === 'lunchBack') {
+        setOnLunch(false);
+        Alert.alert('Back from Lunch', 'You are clocked in from lunch.');
+        await logClockEvent('lunchBack');
+      } else if (action === 'out') {
+        setClockedIn(false);
+        setOnLunch(false);
+        Alert.alert('Clocked Out', 'You have clocked out for the day.');
+        await logClockEvent('out');
+      }
+      setCodePromptVisible(false);
+    } catch (err) {
+      console.error('handleClockAction: Exception:', err);
+      Alert.alert('Error', 'An error occurred during clock action.');
     }
-    setCodePromptVisible(false);
   };
 
   // For clock in/out, use the selected employee's code
@@ -496,6 +520,28 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
     shadow: isDark ? '#000' : '#b0b8c1',
   };
 
+  // Business code entry screen
+  if (!businessId) {
+    return (
+      <View style={[styles.container, { backgroundColor: '#f8fafd', justifyContent: 'center', alignItems: 'center' }]}> 
+        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#1976d2', textAlign: 'center', marginBottom: 18 }}>Enter Business Code</Text>
+        <TextInput
+          style={[styles.codeInput, { marginBottom: 10, width: 260 }]}
+          placeholder="Business code"
+          value={businessCode}
+          onChangeText={setBusinessCode}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        {businessCodeError ? <Text style={{ color: '#c62828', marginBottom: 10 }}>{businessCodeError}</Text> : null}
+        <TouchableOpacity style={[styles.codeBtn, { width: 120, marginBottom: 20 }]} onPress={handleBusinessCodeSubmit}>
+          <Text style={styles.closeBtnText}>Submit</Text>
+        </TouchableOpacity>
+        {/* Optionally, allow admin to log in or go back */}
+      </View>
+    );
+  }
+
   // Shared-tablet flow: If no employee is selected, show employee picker
   if (!currentEmployee) {
     return (
@@ -573,12 +619,15 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
       {/* Add a "Logout" button that resets currentEmployee and clockedIn state */}
       <TouchableOpacity
         style={[styles.closeBtn, { marginTop: 30, backgroundColor: '#c62828' }]}
-        onPress={() => {
+        onPress={async () => {
           setCurrentEmployee(null);
           setClockedIn(false);
           setOnLunch(false);
           setSelectedEmployee(null);
           setEnteredCode('');
+          // Optionally, allow logging out of business session
+          await AsyncStorage.removeItem('business_id');
+          setBusinessId(null);
         }}
       >
         <Text style={styles.closeBtnText}>Logout</Text>

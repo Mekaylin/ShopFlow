@@ -1,3 +1,29 @@
+-- Fix RLS and policies for the 'businesses' table in Supabase
+-- 1. Enable RLS if not already enabled
+ALTER TABLE businesses ENABLE ROW LEVEL SECURITY;
+
+-- 2. Drop any existing insert policy that may be incorrect
+DROP POLICY IF EXISTS "Allow insert for authenticated users" ON businesses;
+
+-- 3. Create a correct insert policy for authenticated users
+CREATE POLICY "Allow insert for authenticated users" ON businesses
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (auth.role() = 'authenticated');
+
+-- 4. (Optional) Ensure select policy exists for public (read access)
+DROP POLICY IF EXISTS "Allow business read access" ON businesses;
+CREATE POLICY "Allow business read access" ON businesses
+  FOR SELECT
+  TO public
+  USING (true);
+
+-- 5. (Optional) Grant privileges if needed (Supabase usually manages this)
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE businesses TO authenticated;
+GRANT SELECT ON TABLE businesses TO anon;
+
+-- 6. (Optional) Show all policies for verification
+-- SELECT policyname, permissive, roles, cmd, qual, with_check FROM pg_policies WHERE tablename = 'businesses';
 -- ShopFlow Database Fixes and Optimizations
 -- Run this in Supabase SQL Editor
 
