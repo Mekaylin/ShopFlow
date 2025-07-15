@@ -1,7 +1,7 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
 import React, { Suspense, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import ClockEventsTab from '../../components/admin/ClockEventsTab';
 import EmployeesTab from '../../components/admin/EmployeesTab';
 import ExportModal from '../../components/admin/ExportModal';
@@ -13,6 +13,8 @@ import TasksTab from '../../components/admin/TasksTab';
 import PerformanceManagement from '../../components/PerformanceManagement';
 import TaskRatingModal from '../../components/TaskRatingModal';
 import { adminStyles, tabButton, tabButtonText } from '../../components/utility/styles';
+import NotificationPanel from '../../components/admin/NotificationPanel';
+import type { Notification } from '../../components/admin/NotificationPanel';
 
 import type { Business, ClockEvent, Employee, Material, MaterialType, PerformanceSettings, Task, User } from '../../components/utility/types';
 import { supabase } from '../../lib/supabase';
@@ -65,6 +67,13 @@ function isBusiness(obj: any): obj is Business {
 }
 
 function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
+  // Notification panel modal state
+  const [notificationPanelVisible, setNotificationPanelVisible] = useState(false);
+  // Example notifications (replace with real logic as needed)
+  const notifications: Notification[] = [
+    // { id: '1', message: 'Task X is overdue!', timestamp: new Date().toISOString(), type: 'late' },
+    // ...
+  ];
   // Always use utility for businessId extraction
   const businessId = getBusinessId(user);
 
@@ -291,11 +300,16 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
   return (
     <DashboardErrorBoundary>
       <SafeAreaView style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff' }}>
-        {/* Header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: darkMode ? '#333950' : '#e3f2fd' }}>
-          <Text style={{ fontSize: 24, fontWeight: 'bold', color: darkMode ? '#b3c0e0' : '#1976d2' }}>Admin Dashboard</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {/* Dark mode toggle - make more distinct and add label */}
+        {/* Header with centered title and notification bell */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: darkMode ? '#333950' : '#e3f2fd', position: 'relative' }}>
+          {/* Left: Notification bell */}
+          <TouchableOpacity onPress={() => setNotificationPanelVisible(true)} style={{ position: 'absolute', left: 0, padding: 8 }}>
+            <FontAwesome5 name="bell" size={24} color={darkMode ? '#b3c0e0' : '#1976d2'} />
+          </TouchableOpacity>
+          {/* Center: Title */}
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: darkMode ? '#b3c0e0' : '#1976d2', textAlign: 'center', flex: 1 }}>Admin Dashboard</Text>
+          {/* Right: Dark mode and settings */}
+          <View style={{ position: 'absolute', right: 0, flexDirection: 'row', alignItems: 'center' }}>
             <TouchableOpacity onPress={() => setDarkMode((d) => !d)} style={{ padding: 8, marginRight: 8, flexDirection: 'row', alignItems: 'center' }}>
               <FontAwesome5 name={darkMode ? 'moon' : 'sun'} size={22} color={darkMode ? '#FFD700' : '#1976d2'} style={{ marginRight: 4 }} />
               <Text style={{ color: darkMode ? '#FFD700' : '#1976d2', fontWeight: 'bold', fontSize: 13 }}>{darkMode ? 'Night' : 'Day'}</Text>
@@ -305,6 +319,10 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
             </TouchableOpacity>
           </View>
         </View>
+        {/* Notification Panel Modal */}
+        <Modal visible={notificationPanelVisible} animationType="slide" transparent onRequestClose={() => setNotificationPanelVisible(false)}>
+          <NotificationPanel notifications={notifications} onClose={() => setNotificationPanelVisible(false)} />
+        </Modal>
 
         {/* Tab Bar */}
         {renderTabBar()}

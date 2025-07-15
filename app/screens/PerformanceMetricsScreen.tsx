@@ -61,7 +61,7 @@ const PerformanceMetricsScreen: React.FC = () => {
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16 }}>
           {metrics.length === 0 ? (
-            <Text style={{ color: '#888', fontSize: 16 }}>No performance metrics found.</Text>
+            (() => { alert('No performance metrics found for this business.'); return <Text style={{ color: '#888', fontSize: 16 }}>No performance metrics found.</Text>; })()
           ) : (
             metrics.map((m, idx) => (
               <View key={m.employee_id || idx} style={{ backgroundColor: '#fff', borderRadius: 10, padding: 16, marginBottom: 14, shadowColor: '#1976d2', shadowOpacity: 0.06, shadowRadius: 6, elevation: 1 }}>

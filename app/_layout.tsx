@@ -5,7 +5,7 @@ import { Stack, useRouter } from 'expo-router';
 import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { Platform, View, Text, ActivityIndicator } from 'react-native';
 import { supabase } from '../lib/supabase';
 
 export default function RootLayout() {
@@ -151,8 +151,10 @@ export default function RootLayout() {
         </Head>
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <StatusBar style="auto" />
-          {/* Loading screen */}
-          <></>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colorScheme === 'dark' ? '#181a20' : '#f5f6fa' }}>
+            <Text style={{ fontSize: 20, color: colorScheme === 'dark' ? '#fff' : '#222', marginBottom: 16 }}>Loading...</Text>
+            <ActivityIndicator size="large" color="#1976d2" />
+          </View>
         </ThemeProvider>
       </>
     );

@@ -2,7 +2,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import React from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 
-interface Notification {
+export interface Notification {
   id: string;
   message: string;
   timestamp: string;

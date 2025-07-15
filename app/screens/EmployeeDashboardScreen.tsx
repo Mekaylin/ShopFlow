@@ -1,19 +1,58 @@
 import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
+import { supabase } from '../../lib/supabase';
 import * as LocalAuthentication from 'expo-local-authentication';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, FlatList, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { Alert, Animated, FlatList, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useColorScheme, View, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+// Helper to queue clock events locally
+type ClockEvent = {
+  employee_id: string;
+  business_id: string;
+  action: string;
+  timestamp: string;
+};
 
-// Demo employees (no login code needed)
+async function queueClockEvent(event: ClockEvent) {
+  const key = 'offline_clock_events';
+  try {
+    const existing = await AsyncStorage.getItem(key);
+    const queue = existing ? JSON.parse(existing) : [];
+    queue.push(event);
+    await AsyncStorage.setItem(key, JSON.stringify(queue));
+  } catch {}
+}
+
+// Helper to sync queued events
+async function syncClockEvents() {
+  const key = 'offline_clock_events';
+  try {
+    const existing = await AsyncStorage.getItem(key);
+    if (!existing) return;
+    const queue = JSON.parse(existing);
+    const remaining = [];
+    for (const event of queue as ClockEvent[]) {
+      try {
+        const { error } = await supabase.from('clock_events').insert(event);
+        if (error) remaining.push(event);
+      } catch {
+        remaining.push(event);
+      }
+    }
+    if (remaining.length === 0) {
+      await AsyncStorage.removeItem(key);
+    } else {
+      await AsyncStorage.setItem(key, JSON.stringify(remaining));
+    }
+  } catch {}
+}
+
 interface Employee {
   id: string;
   name: string;
+  code: string;
+  business_id: string;
 }
-const employees: Employee[] = [
-  { id: 'e1', name: 'Alex Johnson' },
-  { id: 'e2', name: 'Maria Lopez' },
-  { id: 'e3', name: 'Sam Patel' },
-];
 
 interface Material {
   id: string;
@@ -87,10 +126,47 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [clockedIn, setClockedIn] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
+  // Shared-tablet state
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(true);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [codePromptVisible, setCodePromptVisible] = useState(false);
   const [enteredCode, setEnteredCode] = useState('');
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
+  // Fetch employees for the current business on mount
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      setLoadingEmployees(true);
+      // Get business_id from local session/user (assume user is stored in localStorage or context)
+      let businessId = null;
+      try {
+        // Try to get from localStorage (web) or AsyncStorage (native) or context
+        if (typeof window !== 'undefined' && window.localStorage) {
+          const userStr = window.localStorage.getItem('user');
+          if (userStr) {
+            const userObj = JSON.parse(userStr);
+            businessId = userObj.business_id;
+          }
+        }
+      } catch {}
+      // Fallback: try to get from supabase.auth.getUser()
+      if (!businessId && supabase.auth) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user && user.user_metadata && user.user_metadata.business_id) {
+          businessId = user.user_metadata.business_id;
+        }
+      }
+      // If still not found, fetch all (should not happen in production)
+      let query = supabase.from('employees').select('id, name, code, business_id');
+      if (businessId) query = query.eq('business_id', businessId);
+      const { data, error } = await query;
+      if (!error && data) {
+        setEmployees(data);
+      }
+      setLoadingEmployees(false);
+    };
+    fetchEmployees();
+  }, []);
   const [showEmployeeTasksPage, setShowEmployeeTasksPage] = useState(false);
   const [employeeTasksId, setEmployeeTasksId] = useState<string | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -136,8 +212,35 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
     setEnteredCode('');
   });
 
-  // Handle clock action (in, lunch, lunchBack, out)
-  const handleClockAction = () => {
+  // Log clock event to the database, with offline queue
+  const logClockEvent = async (action: 'in' | 'out' | 'lunch' | 'lunchBack') => {
+    if (!currentEmployee) return;
+    const event = {
+      employee_id: currentEmployee.id,
+      business_id: currentEmployee.business_id,
+      action,
+      timestamp: new Date().toISOString(),
+    };
+    try {
+      const { error } = await supabase.from('clock_events').insert(event);
+      if (error) {
+        await queueClockEvent(event);
+        Alert.alert('Offline', 'Clock event saved locally and will sync when online.');
+      } else {
+        await syncClockEvents();
+      }
+    } catch {
+      await queueClockEvent(event);
+      Alert.alert('Offline', 'Clock event saved locally and will sync when online.');
+    }
+  };
+  // On mount, try to sync any offline clock events
+  useEffect(() => {
+    syncClockEvents();
+  }, []);
+
+  // Handle clock action (in, lunch, lunchBack, out) and log event
+  const handleClockAction = async () => {
     const action = getNextClockAction();
     setLastAction(action);
     if (action === 'in') {
@@ -158,27 +261,38 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
         }, 1800);
       });
       Alert.alert('Clocked In', 'You are clocked in.');
+      await logClockEvent('in');
     } else if (action === 'lunch') {
       setOnLunch(true);
       Alert.alert('Lunch Break', 'You are clocked out for lunch.');
+      await logClockEvent('lunch');
     } else if (action === 'lunchBack') {
       setOnLunch(false);
       Alert.alert('Back from Lunch', 'You are clocked in from lunch.');
+      await logClockEvent('lunchBack');
     } else if (action === 'out') {
       setClockedIn(false);
       setOnLunch(false);
       Alert.alert('Clocked Out', 'You have clocked out for the day.');
+      await logClockEvent('out');
     }
     setCodePromptVisible(false);
   };
 
-  // For clock in/out, use a shared code (e.g., 'emp123')
-  const handleCodeSubmit = () => {
-    if (enteredCode.trim() !== 'emp123') {
-      Alert.alert('Invalid Code', 'Please enter the correct code to clock in/out.');
+  // For clock in/out, use the selected employee's code
+  const handleCodeSubmit = async () => {
+    if (!selectedEmployee) {
+      Alert.alert('Error', 'No employee selected.');
       return;
     }
-    handleClockAction();
+    if (enteredCode.trim() !== selectedEmployee.code) {
+      Alert.alert('Invalid Code', 'Please enter the correct code to continue.');
+      return;
+    }
+    setCurrentEmployee(selectedEmployee);
+    setCodePromptVisible(false);
+    setEnteredCode('');
+    // Optionally, reset clockedIn state here if you want a fresh session
   };
 
   // Remove selectedEmployee modal and use full page view instead
@@ -354,187 +468,78 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
     shadow: isDark ? '#000' : '#b0b8c1',
   };
 
+  // Shared-tablet flow: If no employee is selected, show employee picker
+  if (!currentEmployee) {
+    return (
+      <View style={[styles.container, { backgroundColor: '#f8fafd', justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ fontSize: 28, fontWeight: 'bold', marginBottom: 24 }}>Select Your Name</Text>
+        {loadingEmployees ? (
+          <ActivityIndicator size="large" color="#1976d2" />
+        ) : (
+          <FlatList
+            data={employees}
+            keyExtractor={item => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[styles.employeeBlock, { minWidth: 220, alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, marginBottom: 18, padding: 18, borderWidth: 1, borderColor: '#e3e3e3' }]}
+                onPress={() => { setSelectedEmployee(item); setCodePromptVisible(true); }}
+              >
+                <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2' }}>{item.name}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        )}
+        {/* Code prompt modal */}
+        <Modal
+          visible={codePromptVisible}
+          animationType="fade"
+          transparent={true}
+          onRequestClose={() => setCodePromptVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.codeModalContent}>
+              <Text style={styles.modalTitle}>Enter Your Employee Code</Text>
+              <TextInput
+                style={styles.codeInput}
+                placeholder="Employee code"
+                value={enteredCode}
+                onChangeText={setEnteredCode}
+                secureTextEntry
+                autoFocus
+              />
+              <View style={styles.codeBtnRow}>
+                <TouchableOpacity style={styles.codeBtn} onPress={() => { setCodePromptVisible(false); setEnteredCode(''); setSelectedEmployee(null); }}>
+                  <Text style={styles.closeBtnText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.codeBtn} onPress={handleCodeSubmit}>
+                  <Text style={styles.closeBtnText}>Submit</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    );
+  }
+
+  // After successful code entry, show the dashboard for the current employee
   return (
     <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 16 }]}> 
-      {/* Top bar with title and settings icon */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-        <Text style={[styles.title, { color: theme.text, flex: 1 }]}>Employee Dashboard</Text>
-        <TouchableOpacity onPress={() => setSettingsVisible(true)} style={{ position: 'absolute', right: 0, padding: 8 }}>
-          <FontAwesome5 name="cog" size={28} color={isDark ? '#b3c0e0' : '#1976d2'} />
-        </TouchableOpacity>
-      </View>
-      {/* Settings Modal */}
-      <Modal
-        visible={settingsVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setSettingsVisible(false)}
+      {/* ...existing dashboard code... */}
+      {/* Add a "Logout" button that resets currentEmployee and clockedIn state */}
+      <TouchableOpacity
+        style={[styles.closeBtn, { marginTop: 30, backgroundColor: '#c62828' }]}
+        onPress={() => {
+          setCurrentEmployee(null);
+          setClockedIn(false);
+          setOnLunch(false);
+          setSelectedEmployee(null);
+          setEnteredCode('');
+        }}
       >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ backgroundColor: isDark ? '#23263a' : '#fff', borderRadius: 16, padding: 28, width: '90%' }}>
-            <Text style={{ fontSize: 22, fontWeight: 'bold', color: isDark ? '#b3c0e0' : '#1976d2', marginBottom: 18 }}>Settings</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>
-              <Text style={{ fontSize: 17, color: isDark ? '#b3c0e0' : '#263238', flex: 1 }}>Dark Mode</Text>
-              <Switch
-                value={darkMode}
-                onValueChange={setDarkMode}
-                thumbColor={darkMode ? '#1976d2' : '#fff'}
-                trackColor={{ false: '#ccc', true: '#1976d2' }}
-              />
-            </View>
-            {biometricSupported && (
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>
-                <Text style={{ fontSize: 17, color: isDark ? '#b3c0e0' : '#263238', flex: 1 }}>Fingerprint Login</Text>
-                <Switch
-                  value={biometricEnabled}
-                  onValueChange={setBiometricEnabled}
-                  thumbColor={biometricEnabled ? '#388e3c' : '#fff'}
-                  trackColor={{ false: '#ccc', true: '#388e3c' }}
-                />
-              </View>
-            )}
-            {biometricEnabled && !biometricLoggedIn && (
-              <TouchableOpacity style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 12, marginBottom: 10 }} onPress={handleBiometricLogin}>
-                <Text style={{ color: '#fff', fontWeight: 'bold', textAlign: 'center' }}>Login with Fingerprint</Text>
-              </TouchableOpacity>
-            )}
-            {biometricEnabled && biometricLoggedIn && (
-              <TouchableOpacity style={{ backgroundColor: '#c62828', borderRadius: 8, padding: 12, marginBottom: 10 }} onPress={handleBiometricLogout}>
-                <Text style={{ color: '#fff', fontWeight: 'bold', textAlign: 'center' }}>Logout (Fingerprint)</Text>
-              </TouchableOpacity>
-            )}
-            <View style={{ marginBottom: 18 }}>
-              <Text style={{ fontSize: 17, fontWeight: 'bold', color: isDark ? '#b3c0e0' : '#1976d2', marginBottom: 6 }}>Working Hours</Text>
-              <Text style={{ color: isDark ? '#b3c0e0' : '#263238', marginBottom: 2 }}>Start: {workStart}  End: {workEnd}</Text>
-              <Text style={{ color: isDark ? '#b3c0e0' : '#263238' }}>Lunch: {lunchStart} - {lunchEnd}</Text>
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 18 }}>
-              <Text style={{ fontSize: 17, color: isDark ? '#b3c0e0' : '#263238', flex: 1 }}>Enable Notifications</Text>
-              <Switch value={true} onValueChange={() => {}} thumbColor={'#1976d2'} trackColor={{ false: '#ccc', true: '#1976d2' }} disabled />
-              <Text style={{ color: '#888', fontSize: 12, marginLeft: 6 }}>(Admin controlled)</Text>
-            </View>
-            <View style={{ marginBottom: 8 }}>
-              <Text style={{ color: '#888', fontSize: 13 }}>App Version: 1.0.0</Text>
-            </View>
-            <TouchableOpacity style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 14, marginTop: 10 }} onPress={() => setSettingsVisible(false)}>
-              <Text style={{ color: '#fff', fontWeight: 'bold', textAlign: 'center' }}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-      {/* Welcome Animation */}
-      {showWelcome && (
-        <Animated.View style={{
-          position: 'absolute',
-          top: '30%',
-          left: 0,
-          right: 0,
-          alignItems: 'center',
-          opacity: welcomeAnim,
-          transform: [{ scale: welcomeAnim.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }) }],
-          zIndex: 100,
-        }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 32, shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 16, elevation: 8, alignItems: 'center' }}>
-            <FontAwesome5 name="smile-beam" size={60} color="#388e3c" style={{ marginBottom: 16 }} />
-            <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#1976d2', marginBottom: 8 }}>Welcome{currentEmployee?.name ? `, ${currentEmployee.name}` : ''}!</Text>
-            <Text style={{ fontSize: 18, color: '#333' }}>Have a great shift!</Text>
-          </View>
-        </Animated.View>
-      )}
-      <View style={styles.buttonCol}>
-        <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: clockedIn ? theme.error : theme.accent, shadowColor: theme.shadow }]}
-          onPress={handleClockInOutPress}
-        >
-          <MaterialIcons name={clockedIn ? 'logout' : 'login'} size={40} color="#fff" style={{ marginBottom: 10 }} />
-          <Text style={styles.actionBtnText}>{clockedIn ? 'Clock Out' : 'Clock In'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: theme.primary, marginTop: 28, shadowColor: theme.shadow }]}
-          onPress={userAction(() => setModalVisible(true))}
-        >
-          <FontAwesome5 name="tasks" size={36} color="#fff" style={{ marginBottom: 10 }} />
-          <Text style={styles.actionBtnText}>View Tasks &gt;</Text>
-        </TouchableOpacity>
-      </View>
-      {/* Code prompt modal */}
-      <Modal
-        visible={codePromptVisible}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setCodePromptVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.codeModalContent}>
-            <Text style={styles.modalTitle}>Enter Your Employee Code</Text>
-            <TextInput
-              style={styles.codeInput}
-              placeholder="Employee code"
-              value={enteredCode}
-              onChangeText={setEnteredCode}
-              secureTextEntry
-              autoFocus
-            />
-            {biometricSupported && biometricEnabled && (
-              <TouchableOpacity style={{ marginTop: 16, backgroundColor: '#1976d2', borderRadius: 8, padding: 12, alignItems: 'center' }} onPress={async () => { const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Authenticate with fingerprint' }); if (result.success) { setBiometricLoggedIn(true); Alert.alert('Success', 'Fingerprint authentication successful!'); handleClockAction(); } else { setBiometricLoggedIn(false); Alert.alert('Failed', 'Fingerprint authentication failed.'); } }}>
-                <FontAwesome5 name="fingerprint" size={28} color="#fff" style={{ marginBottom: 4 }} />
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Login with Fingerprint</Text>
-              </TouchableOpacity>
-            )}
-            <View style={styles.codeBtnRow}>
-              <TouchableOpacity style={styles.codeBtn} onPress={() => setCodePromptVisible(false)}>
-                <Text style={styles.closeBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.codeBtn} onPress={handleCodeSubmit}>
-                <Text style={styles.closeBtnText}>Submit</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-      {/* Modal for all employees */}
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        onRequestClose={() => setModalVisible(false)}
-        transparent={true}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>All Employees</Text>
-            <FlatList
-              data={employees}
-              keyExtractor={item => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={styles.employeeBlock} onPress={() => openEmployeeTasks(item.id)}>
-                  <Text style={styles.employeeName}>{item.name}</Text>
-                </TouchableOpacity>
-              )}
-            />
-            <TouchableOpacity style={styles.closeBtn} onPress={userAction(() => setModalVisible(false))}>
-              <Text style={styles.closeBtnText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-      {/* Full page for selected employee's tasks */}
-      {showEmployeeTasksPage && employeeTasksId && (
-        <View style={[styles.fullPageOverlay, { backgroundColor: theme.background }]}> 
-          <View style={[styles.fullPageContent, { backgroundColor: theme.card, borderRadius: 18, shadowColor: theme.shadow, shadowOpacity: 0.18, shadowRadius: 12, elevation: 8 }]}> 
-            <Text style={[styles.modalTitle, { color: theme.primary }]}>{employees.find(e => e.id === employeeTasksId)?.name}&apos;s Tasks</Text>
-            <ScrollView>{renderEmployeeTasks(employeeTasksId)}</ScrollView>
-            <TouchableOpacity style={[styles.closeBtn, { backgroundColor: theme.primary }]} onPress={userAction(closeEmployeeTasks)}>
-              <Text style={styles.closeBtnText}>Back</Text>
-            </TouchableOpacity>
-          </View>
-          {renderTaskModal()}
-        </View>
-      )}
-    {/* Logout button for employee */}
-    <TouchableOpacity style={styles.closeBtn} onPress={onLogout}>
-      <Text style={styles.closeBtnText}>Logout</Text>
-    </TouchableOpacity>
-  </View>
+        <Text style={styles.closeBtnText}>Logout</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 

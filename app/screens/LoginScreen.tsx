@@ -410,28 +410,15 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
         setLoading(false);
         return;
       }
+
       if (!authData.user) {
         console.error('No user returned from sign up:', authData);
         Alert.alert('Registration failed', 'User not returned from sign up.');
         setLoading(false);
         return;
       }
+      // If user is returned, show registration success immediately (don't wait for session)
 
-      // Wait for session to be available
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log('Session after signup:', { session, sessionError });
-      if (sessionError) {
-        console.error('Session error after signup:', sessionError);
-        Alert.alert('Failed to get session after signup', sessionError.message);
-        setLoading(false);
-        return;
-      }
-      if (!session) {
-        console.error('No session found after signup.');
-        Alert.alert('No session found after signup. Please try again.');
-        setLoading(false);
-        return;
-      }
 
       if (role === 'admin') {
         const { data: business, error: businessError } = await supabase
@@ -451,8 +438,8 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
           setLoading(false);
           return;
         }
-        business_id = business.id;
-        setGeneratedBusinessCode(business.code);
+        business_id = business?.id ?? null;
+        if (business?.code) setGeneratedBusinessCode(business?.code);
       } else {
         business_id = await resolveBusinessId(businessCode);
         console.log('Resolved business_id:', business_id);
@@ -463,19 +450,24 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
         }
       }
 
-      const { error: userError } = await supabase
-        .from('users')
-        .update({ name, role, business_id })
-        .eq('id', authData.user.id);
-      console.log('User update response:', { userError });
-      if (userError) {
-        console.error('User update error:', userError);
-        Alert.alert('User update failed', userError.message);
-        setLoading(false);
-        return;
+
+      if (authData.user?.id) {
+        const { error: userError } = await supabase
+          .from('users')
+          .update({ name, role, business_id })
+          .eq('id', authData.user?.id);
+        console.log('User update response:', { userError });
+        if (userError ?? false) {
+          console.error('User update error:', userError);
+          Alert.alert('User update failed', userError?.message ?? 'Unknown error');
+          setLoading(false);
+          return;
+        }
       }
 
       onSuccess();
+      setLoading(false);
+      return;
     } catch (err: any) {
       console.error('Registration error:', err);
       Alert.alert('Registration failed', err.message || 'Unknown error');

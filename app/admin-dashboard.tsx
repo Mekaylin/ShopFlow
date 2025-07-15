@@ -56,20 +56,19 @@ export default function AdminDashboard() {
   }, [router]);
 
   // Loading overlay
-  if (loading) {
+  if (loading || !user) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
-        <Text style={{ fontSize: 18 }}>Loading...</Text>
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f6fa' }}>
+        <Text style={{ fontSize: 20, color: '#222', marginBottom: 16 }}>Loading...</Text>
       </View>
     );
   }
 
-  // Error Alert (no duplicate UI)
+  // Error Alert
   if (error) {
     setTimeout(() => { Alert.alert('Error', error); setError(null); }, 100);
     return null;
   }
 
-  if (!user) return null;
   return <AdminDashboardScreen onLogout={() => router.replace('/')} user={user} />;
 }
