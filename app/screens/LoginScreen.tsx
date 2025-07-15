@@ -128,24 +128,28 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   }
 
   // Admin login handler
+  // SAFEGUARD: Never generate or mutate business code in login! Business code generation is for registration only.
   const handleAdminLogin = async () => {
+    console.log('[AdminLogin] Handler called.');
     if (loginLocked) {
-      console.warn('Login attempt blocked: too many attempts.');
+      console.warn('[AdminLogin] Login attempt blocked: too many attempts.');
       Alert.alert('Too Many Attempts', `Please wait ${lockTimer} seconds before trying again.`);
       return;
     }
     if (!adminEmail || !adminPassword) {
-      console.warn('Login failed: missing email or password.');
+      console.warn('[AdminLogin] Login failed: missing email or password.');
       setAdminError('Please enter both email and password.');
       return;
     }
     setAdminLoading(true);
     setAdminError('');
     try {
-      console.log('Attempting admin login:', { email: adminEmail });
+      console.log('[AdminLogin] Attempting admin login:', { email: adminEmail });
+      // SAFEGUARD: Do not generate or assign business code here
       const { data, error } = await supabase.auth.signInWithPassword({ email: adminEmail, password: adminPassword });
+      console.log('[AdminLogin] signInWithPassword result:', { data, error });
       if (error || !data.session) {
-        console.error('Admin login failed:', error, data);
+        console.error('[AdminLogin] Admin login failed:', error, data);
         setAdminError('Invalid email or password.');
         setLoginAttempts((a) => a + 1);
         if (loginAttempts + 1 >= 5) {
@@ -173,6 +177,7 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
       }
       // Fetch user details from users table after login
       const userId = data.user?.id;
+      console.log('[AdminLogin] User id after login:', userId);
       if (!userId) {
         setAdminError('Could not get user id after login.');
         setAdminLoading(false);
@@ -183,8 +188,9 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
         .select('*')
         .eq('id', userId)
         .single();
+      console.log('[AdminLogin] User row fetch result:', { userRow, userFetchError });
       if (userFetchError || !userRow) {
-        console.error('Failed to fetch user details after login:', userFetchError);
+        console.error('[AdminLogin] Failed to fetch user details after login:', userFetchError);
         setAdminError('Could not fetch user details.');
         setAdminLoading(false);
         return;
@@ -192,10 +198,10 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
       setLoginAttempts(0);
       if (onLogin) onLogin('admin');
       // Optionally, store userRow in context or session here
-      console.log('Admin login successful, user details:', userRow);
+      console.log('[AdminLogin] Admin login successful, user details:', userRow);
       router.replace('/admin-dashboard');
     } catch (e: any) {
-      console.error('Admin login exception:', e);
+      console.error('[AdminLogin] Exception:', e);
       setAdminError(e.message || 'Login failed.');
       Animated.sequence([
         Animated.timing(shakeAnim, {
@@ -221,40 +227,44 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   };
 
   // Employee login handler (shared tablet: only business code required)
+  // SAFEGUARD: Never generate or mutate business code in login! Business code generation is for registration only.
   const handleEmployeeLogin = async () => {
+    console.log('[EmployeeLogin] Handler called.');
     if (loginLocked) {
-      console.warn('Employee login blocked: too many attempts.');
+      console.warn('[EmployeeLogin] Login blocked: too many attempts.');
       Alert.alert('Too Many Attempts', `Please wait ${lockTimer} seconds before trying again.`);
       return;
     }
     if (!empBusinessCode) {
-      console.warn('Employee login failed: missing business code.');
+      console.warn('[EmployeeLogin] Login failed: missing business code.');
       setEmpError('Please enter the business code.');
       return;
     }
     setEmpLoading(true);
     setEmpError('');
     try {
-      console.log('Attempting employee login with business code:', empBusinessCode);
+      console.log('[EmployeeLogin] Attempting login with business code:', empBusinessCode);
+      // SAFEGUARD: Do not generate or assign business code here
       // Find business
       const { data: business, error: businessError } = await supabase
         .from('businesses')
         .select('id')
         .eq('code', empBusinessCode)
         .single();
+      console.log('[EmployeeLogin] Business fetch result:', { business, businessError });
       if (businessError || !business) {
-        console.error('Employee login failed: business not found', businessError, business);
+        console.error('[EmployeeLogin] Business not found', businessError, business);
         setEmpError('Business not found.');
         setEmpLoading(false);
         return;
       }
       setLoginAttempts(0);
       if (onLogin) onLogin('employee');
-      console.log('Employee login successful, navigating to dashboard.');
+      console.log('[EmployeeLogin] Login successful, navigating to dashboard.');
       // You may want to store business.id in session for later use
       router.replace('/employee-dashboard');
     } catch (e: any) {
-      console.error('Employee login exception:', e);
+      console.error('[EmployeeLogin] Exception:', e);
       setEmpError(e.message || 'Login failed.');
       Animated.sequence([
         Animated.timing(shakeAnim, {
