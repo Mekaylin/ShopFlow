@@ -87,7 +87,9 @@ const TasksTab: React.FC<TasksTabProps> = ({
           <Text style={{ fontWeight: 'bold', fontSize: 17, color: '#1976d2', marginBottom: 2 }}>{task.name}</Text>
           <Text style={{ fontSize: 13, color: '#888', marginBottom: 4 }}>Start: {task.start} | Due: {task.deadline}</Text>
           {task.completed && (
-            <Text style={{ color: '#388e3c', fontWeight: 'bold', fontSize: 13, marginBottom: 2 }}>Completed at: {task.completed_at ? new Date(task.completed_at).toLocaleString() : ''}</Text>
+            <Text style={{ color: '#388e3c', fontWeight: 'bold', fontSize: 13, marginBottom: 2 }}>
+              Completed at: {task.completed_at ? new Date(task.completed_at).toLocaleString() : 'N/A'}
+            </Text>
           )}
           {isLate && !task.completed && typeof task.deadline === 'string' && typeof task.completed_at === 'string' && (
             <Text style={{ color: '#c62828', fontWeight: 'bold', fontSize: 13, marginBottom: 2 }}>Late by {minutesLate(task.deadline, task.completed_at)} min</Text>
@@ -95,7 +97,16 @@ const TasksTab: React.FC<TasksTabProps> = ({
           {/* Show materials used with type dropdown if applicable */}
           {Array.isArray(task.materials_used) && task.materials_used.length > 0 && (
             <View style={{ marginTop: 4, marginBottom: 4 }}>
-              <Text style={{ fontSize: 13, color: '#1976d2', fontWeight: 'bold' }}>Materials Used:</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+                <Text style={{ fontSize: 13, color: '#1976d2', fontWeight: 'bold', marginRight: 4 }}>Materials Used:</Text>
+                <TouchableOpacity
+                  onPress={() => alert('Materials and types used for this task, if any.')}
+                  style={{ padding: 2 }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <FontAwesome5 name="info-circle" size={13} color="#1976d2" />
+                </TouchableOpacity>
+              </View>
               {task.materials_used.map((mu, idx2) => {
                 const mat = materials.find(m => m.id === mu.materialId);
                 const type = mu.materialTypeId && materialTypes[mu.materialId]?.find(t => t.id === mu.materialTypeId);
@@ -108,9 +119,18 @@ const TasksTab: React.FC<TasksTabProps> = ({
           {/* Rating Section for Completed Tasks */}
           {task.completed && performanceSettings.ratingSystemEnabled && (
             <View style={{ marginTop: 8, marginBottom: 8, padding: 8, backgroundColor: '#f8f9fa', borderRadius: 8 }}>
-              <Text style={{ fontSize: 13, color: '#1976d2', fontWeight: 'bold', marginBottom: 4 }}>
-                Task Rating
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                <Text style={{ fontSize: 13, color: '#1976d2', fontWeight: 'bold', marginRight: 4 }}>
+                  Task Rating
+                </Text>
+                <TouchableOpacity
+                  onPress={() => alert('Rate the quality of task completion. Tap to open the rating modal.')}
+                  style={{ padding: 2 }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <FontAwesome5 name="info-circle" size={13} color="#1976d2" />
+                </TouchableOpacity>
+              </View>
               <TouchableOpacity
                 style={{
                   backgroundColor: '#FFD700',
@@ -171,13 +191,64 @@ const TasksTab: React.FC<TasksTabProps> = ({
     }
     return null;
   };
+
+  // Day/Week/Month filter state
+  const [filterTab, setFilterTab] = useState<'day' | 'week' | 'month'>('day');
+  // Calculate date range for filter
+  const today = new Date();
+  let startDate = today;
+  if (filterTab === 'week') {
+    startDate = new Date(today);
+    startDate.setDate(today.getDate() - today.getDay()); // Sunday
+  } else if (filterTab === 'month') {
+    startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+  }
+  // Helper: is task in range
+  const inRange = (dateStr: string | undefined) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    return d >= startDate && d <= today;
+  };
+  // Filtered tasks by date range
+  const filteredTasks = tasks.filter(t => inRange(t.deadline));
   // Data: always use (Employee | Task)[] and type guard in renderItem
   const data: (Employee | Task)[] = !selectedTaskEmployee
     ? employees
-    : tasks.filter(t => t.assigned_to === selectedTaskEmployee.id);
+    : filteredTasks.filter(t => t.assigned_to === selectedTaskEmployee.id);
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
+      {/* Day/Week/Month Filter Tabs */}
+      <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 12, marginBottom: 8 }}>
+        {(['day', 'week', 'month'] as const).map(tab => (
+          <TouchableOpacity
+            key={tab}
+            style={{
+              backgroundColor: filterTab === tab ? '#1976d2' : '#e3f2fd',
+              borderRadius: 8,
+              paddingVertical: 8,
+              paddingHorizontal: 18,
+              marginHorizontal: 4,
+              flexDirection: 'row',
+              alignItems: 'center',
+            }}
+            onPress={() => setFilterTab(tab)}
+          >
+            <Text style={{ color: filterTab === tab ? '#fff' : '#1976d2', fontWeight: 'bold', marginRight: 4 }}>
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </Text>
+            <TouchableOpacity
+              onPress={() => alert(
+                tab === 'day' ? 'Shows tasks due today.' : tab === 'week' ? 'Shows tasks due this week.' : 'Shows tasks due this month.'
+              )}
+              style={{ padding: 2 }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <FontAwesome5 name="info-circle" size={14} color={filterTab === tab ? '#fff' : '#1976d2'} />
+            </TouchableOpacity>
+          </TouchableOpacity>
+        ))}
+      </View>
       {/* Notification Bell Icon */}
       <View style={{ position: 'absolute', top: 16, left: 16, zIndex: 1000 }}>
         <TouchableOpacity
@@ -275,7 +346,16 @@ const TasksTab: React.FC<TasksTabProps> = ({
             <TextInput style={adminStyles.inputText} placeholder="Deadline (e.g. 17:00)" value={newTaskDeadline} onChangeText={setNewTaskDeadline} />
             {/* Materials selection (reuse existing logic) */}
             <View style={{ marginTop: 12, marginBottom: 12, backgroundColor: '#f5faff', borderRadius: 10, padding: 10 }}>
-              <Text style={{ fontWeight: 'bold', color: '#1976d2', marginBottom: 4 }}>Add Materials Used</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                <Text style={{ fontWeight: 'bold', color: '#1976d2', marginRight: 4 }}>Add Materials Used</Text>
+                <TouchableOpacity
+                  onPress={() => alert('Optionally add materials and types used for this task. You can leave this blank if not needed.')}
+                  style={{ padding: 2 }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <FontAwesome5 name="info-circle" size={14} color="#1976d2" />
+                </TouchableOpacity>
+              </View>
               {/* ...existing code for materials... */}
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
