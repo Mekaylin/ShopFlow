@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { adminStyles } from '../utility/styles';
-import { generateBusinessCode, getBusinessCode } from '../utility/utils';
+import { getBusinessCode } from '../utility/utils';
 
 import type { User } from '../utility/types';
 interface SettingsModalProps {
@@ -51,28 +51,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     setBusinessCodeLoading(true);
     try {
       const code = await getBusinessCode(user.business_id);
-      setBusinessCode(code);
+      if (!code) {
+        setBusinessCode(null);
+        Alert.alert('Error', 'No business code found. Please contact support.');
+      } else {
+        setBusinessCode(code);
+      }
     } catch (error) {
       console.error('Error getting business code:', error);
+      setBusinessCode(null);
       Alert.alert('Error', 'Failed to get business code.');
     } finally {
       setBusinessCodeLoading(false);
     }
   };
 
-  const handleGenerateBusinessCode = async () => {
-    setBusinessCodeLoading(true);
-    try {
-      const code = await generateBusinessCode(user.business_id);
-      setBusinessCode(code);
-      Alert.alert('Success', 'New business code generated successfully.');
-    } catch (error) {
-      console.error('Error generating business code:', error);
-      Alert.alert('Error', 'Failed to generate business code.');
-    } finally {
-      setBusinessCodeLoading(false);
-    }
-  };
+  // Remove generate business code logic. Business code is only set at signup.
 
   const handleCopyBusinessCode = async () => {
     if (!businessCode) return;
@@ -187,9 +181,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                       {businessCodeLoading ? 'Loading...' : 'Get Code'}
                     </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={[adminStyles.addBtn, { flex: 1, backgroundColor: '#4CAF50' }]} onPress={handleGenerateBusinessCode}>
-                    <Text style={adminStyles.addBtnText}>Generate New</Text>
-                  </TouchableOpacity>
+                  {/* No generate new code button. Code is set at business signup. */}
                 </View>
                 
                 {businessCode && (

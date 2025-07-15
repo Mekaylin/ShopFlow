@@ -488,14 +488,15 @@ export { getMaterialUsage as getMaterialsUsed };
  * Simulated async fetch for business code (replace with real API as needed).
  */
 export const getBusinessCode = async (businessId: string): Promise<string> => {
-  // Simulate API call
-  return Promise.resolve(generateCode(8));
+  // Use real API to fetch the business code
+  const { getBusinessCode } = await import('../../services/cloud');
+  return getBusinessCode(businessId);
 };
 
 /**
  * Simulated async generator for a new business code (replace with real API as needed).
  */
 export const generateBusinessCode = async (businessId: string): Promise<string> => {
-  // Simulate API call
-  return Promise.resolve(generateCode(8));
+  // Deprecated: Business code should only be generated once at business creation
+  throw new Error('Business code can only be generated at business signup.');
 }; 
