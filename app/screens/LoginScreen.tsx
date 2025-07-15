@@ -574,11 +574,21 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
       if (authData.user?.id && business_id) {
         let userError;
         try {
+          // Always use the current session user id for upsert to satisfy RLS
+          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+          const sessionUserId = sessionData?.session?.user?.id;
+          if (!sessionUserId) {
+            setErrorLog('[Step 5] No session user id found for upsert.');
+            console.error('[Step 5] No session user id found for upsert.', sessionData, sessionError);
+            Alert.alert('User update failed', 'No session user id found.');
+            setLoading(false);
+            return;
+          }
           const userUpsertResult = await supabase
             .from('users')
-            .upsert({ id: authData.user.id, name, role, business_id, business_code: codeToUse, email }, { onConflict: 'id' });
+            .upsert({ id: sessionUserId, name, role, business_id, business_code: codeToUse, email }, { onConflict: 'id' });
           userError = userUpsertResult.error;
-          console.log('[Step 5] User upsert result:', { userId: authData.user.id, business_id, email, userError, data: userUpsertResult.data });
+          console.log('[Step 5] User upsert result:', { userId: sessionUserId, business_id, email, userError, data: userUpsertResult.data });
         } catch (err) {
           setErrorLog('[Step 5] Exception during user upsert: ' + (err instanceof Error ? err.message : JSON.stringify(err)));
           console.error('[Step 5] Exception during user upsert:', err);
