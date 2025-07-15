@@ -535,11 +535,11 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
       if (business?.code) setGeneratedBusinessCode(business?.code);
 
       // 5. Upsert user (in case row does not exist)
-      if (authData.user?.id) {
-        console.log('Upserting user:', { id: authData.user.id, name, role, business_id });
+      if (authData.user?.id && business_id) {
+        console.log('Upserting user:', { id: authData.user.id, name, role, business_id, business_code: codeToUse });
         const { error: userError } = await supabase
           .from('users')
-          .upsert({ id: authData.user.id, name, role, business_id }, { onConflict: 'id' });
+          .upsert({ id: authData.user.id, name, role, business_id, business_code: codeToUse }, { onConflict: 'id' });
         if (userError ?? false) {
           setErrorLog('User upsert error: ' + (userError?.message || JSON.stringify(userError)));
           console.error('User upsert error:', userError);
@@ -547,6 +547,12 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
           setLoading(false);
           return;
         }
+      } else if (authData.user?.id) {
+        setErrorLog('Business ID missing when upserting user.');
+        console.error('Business ID missing when upserting user.');
+        Alert.alert('Registration failed', 'Business ID missing when saving user.');
+        setLoading(false);
+        return;
       }
 
       setErrorLog('');
