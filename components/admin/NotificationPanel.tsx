@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, FlatList } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
+import React from 'react';
+import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 
 interface Notification {
   id: string;

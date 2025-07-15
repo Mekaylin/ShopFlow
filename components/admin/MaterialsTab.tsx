@@ -72,9 +72,10 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
       if (!fetchError && allMaterials) setMaterials(allMaterials);
       setNewMaterialName('');
       setNewMaterialUnit('');
-      router.back();
+      // Close modal using local state if needed
     } catch (err: any) {
-      alert('Unexpected error: ' + (err?.message || err));
+      const errMsg = err && typeof err === 'object' && 'message' in err ? (err as any).message : String(err);
+      alert('Unexpected error: ' + errMsg);
     } finally {
       setLoading(false);
     }
@@ -137,37 +138,74 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
     }
   };
 
-  // Add Material Type logic
-  const handleAddMaterialType = (materialId: string) => {
+  // Add Material Type logic (persist to Supabase)
+  const handleAddMaterialType = async (materialId: string) => {
     if (!newMaterialTypeLabel) return;
-    const newType = { id: Date.now().toString(), name: newMaterialTypeLabel, business_id: user.business_id };
-    // Always pass a value, not a function, to setMaterialTypes
-    const updated = {
-      ...materialTypes,
-      [materialId]: [...(materialTypes[materialId] || []), newType]
-    };
-    setMaterialTypes(updated);
-    setNewMaterialTypeLabel('');
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('material_types')
+        .insert({
+          name: newMaterialTypeLabel,
+          material_id: materialId,
+          business_id: user.business_id,
+        });
+      if (error) {
+        const errMsg = typeof error === 'object' && error && 'message' in error ? (error as any).message : String(error);
+        alert('Failed to add type: ' + errMsg);
+        return;
+      }
+      // Refetch types for this material
+      const { data: types, error: fetchError } = await supabase
+        .from('material_types')
+        .select('*')
+        .eq('material_id', materialId)
+        .eq('business_id', user.business_id);
+      if (!fetchError && types) {
+        setMaterialTypes({ ...materialTypes, [materialId]: types });
+      }
+      setNewMaterialTypeLabel('');
+      // Close modal using local state if needed
+    } catch (err) {
+      const errMsg = typeof err === 'object' && err && 'message' in err ? (err as any).message : String(err);
+      alert('Unexpected error: ' + errMsg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <View style={darkMode ? adminStyles.darkContainer : adminStyles.container}>
       <Text style={[adminStyles.sectionTitle, { marginBottom: 8 }]}>Materials</Text>
       
-      <ScrollView 
+      <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 60, paddingHorizontal: 2 }}
+        showsVerticalScrollIndicator={false}
       >
         {materials.map(item => (
-          <View key={item.id} style={[darkMode ? adminStyles.darkCard : adminStyles.card, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}> 
+          <View key={item.id} style={[
+            darkMode ? adminStyles.darkCard : adminStyles.card,
+            {
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderRadius: 10,
+              padding: 8,
+              marginBottom: 8,
+              marginHorizontal: 1,
+              minWidth: 0,
+              maxWidth: '100%',
+            },
+          ]}>
             <View style={{ flex: 1 }}>
-              <Text style={[adminStyles.subtitle, darkMode && adminStyles.darkSubtitle, { fontSize: 16 }]}> 
+              <Text style={[adminStyles.subtitle, darkMode && adminStyles.darkSubtitle, { fontSize: 14 }]}>
                 {item.name} <Text style={adminStyles.textSecondary}>({item.unit})</Text>
               </Text>
               {/* Only show the name, not 'Material Name' */}
               {materialTypes[item.id] && materialTypes[item.id].length > 0 && (
-                <View style={[adminStyles.chipRow, { marginTop: 4 }]}> 
-                  <Text style={adminStyles.textSecondary}>Types:</Text>
+                <View style={[adminStyles.chipRow, { marginTop: 3 }]}> 
+                  <Text style={[adminStyles.textSecondary, { fontSize: 12 }]}>Types:</Text>
                   {materialTypes[item.id].map(type => (
                     <View key={type.id} style={adminStyles.chip}>
                       <Text style={adminStyles.chipText}>{type.name}</Text>
@@ -182,13 +220,13 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
                 setNewMaterialName(item.name);
                 setNewMaterialUnit(item.unit);
               }} style={adminStyles.actionBtn}>
-                <Text style={[adminStyles.actionBtnEdit, { color: '#000' }]}>Edit</Text>
+                <Text style={[adminStyles.actionBtnEdit, { color: '#000', fontSize: 13 }]}>Edit</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleDeleteMaterial(item.id)} style={adminStyles.actionBtn}>
-                <Text style={[adminStyles.actionBtnDelete, { color: '#000' }]}>Delete</Text>
+                <Text style={[adminStyles.actionBtnDelete, { color: '#000', fontSize: 13 }]}>Delete</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => router.push({ pathname: '/admin-dashboard', params: { ...params, addType: item.id } })} style={adminStyles.actionBtn}>
-                <Text style={[adminStyles.actionBtnAdd, { color: '#000' }]}>Add Type</Text>
+                <Text style={[adminStyles.actionBtnAdd, { color: '#000', fontSize: 13 }]}>Add Type</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -238,6 +276,37 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
         <TouchableOpacity style={adminStyles.addBtn} onPress={() => addTypeModal && handleAddMaterialType(addTypeModal)}>
           <Text style={[adminStyles.addBtnText, { color: '#000' }]}>Add</Text>
         </TouchableOpacity>
+      </AdminModal>
+      {/* Edit Material Modal */}
+      <AdminModal visible={!!editMaterial} onClose={() => {
+        setEditMaterial(null);
+        setNewMaterialName('');
+        setNewMaterialUnit('');
+      }} title={editMaterial ? `Edit Material: ${editMaterial.name}` : 'Edit Material'}>
+        <TextInput
+          style={adminStyles.inputText}
+          placeholder="Material Name"
+          value={newMaterialName}
+          onChangeText={setNewMaterialName}
+        />
+        <TextInput
+          style={[adminStyles.inputText, { marginTop: 12 }]}
+          placeholder="Unit (e.g., kg, pieces, liters)"
+          value={newMaterialUnit}
+          onChangeText={setNewMaterialUnit}
+        />
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
+          <TouchableOpacity style={adminStyles.addBtn} onPress={handleEditMaterial}>
+            <Text style={[adminStyles.addBtnText, { color: '#000' }]}>Save</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={adminStyles.closeBtn} onPress={() => {
+            setEditMaterial(null);
+            setNewMaterialName('');
+            setNewMaterialUnit('');
+          }}>
+            <Text style={adminStyles.closeBtnText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
       </AdminModal>
       {loading && (
         <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: '#0008', zIndex: 10, alignItems: 'center', justifyContent: 'center' }}>

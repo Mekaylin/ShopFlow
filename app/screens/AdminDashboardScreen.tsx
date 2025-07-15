@@ -361,21 +361,13 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
               />
             )}
             {tab === 'materials' && isUser(user) && (
-              <FlatList
-                data={materials}
-                keyExtractor={item => item.id}
-                renderItem={({ item }) => (
-                  <MaterialsTab
-                    user={user}
-                    materials={[item]}
-                    setMaterials={setMaterials}
-                    materialTypes={materialTypes}
-                    setMaterialTypes={setMaterialTypes}
-                    darkMode={darkMode}
-                  />
-                )}
-                contentContainerStyle={adminStyles.flatListContent}
-                ListEmptyComponent={<Text style={adminStyles.emptyListText}>No materials found.</Text>}
+              <MaterialsTab
+                user={user}
+                materials={materials}
+                setMaterials={setMaterials}
+                materialTypes={materialTypes}
+                setMaterialTypes={setMaterialTypes}
+                darkMode={darkMode}
               />
             )}
             {tab === 'clock' && isUser(user) && (
@@ -455,7 +447,7 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
             <TaskRatingModal
               visible={!!selectedTaskForRating}
               task={selectedTaskForRating}
-              employee={employees.find(e => e.id === selectedTaskForRating.assignedTo) ?? employees[0]}
+              employee={employees.find(e => e.id === selectedTaskForRating.assigned_to) ?? employees[0]}
               business={user}
               onClose={() => setSelectedTaskForRating(null)}
               onRatingSubmitted={() => {

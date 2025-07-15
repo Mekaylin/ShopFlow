@@ -26,8 +26,21 @@ const ExportModal: React.FC<ExportModalProps> = ({
   user,
 }) => {
   const [exportType, setExportType] = useState<'tasks' | 'materials' | 'employees' | 'attendance' | 'all'>('all');
-  const [startDate] = useState(new Date().toISOString().split('T')[0]);
-  const [endDate] = useState(new Date().toISOString().split('T')[0]);
+  const [metricsTab, setMetricsTab] = useState<'day' | 'week' | 'month'>('day');
+  // Calculate date range based on tab
+  const today = new Date();
+  let startDate = today.toISOString().split('T')[0];
+  let endDate = today.toISOString().split('T')[0];
+  if (metricsTab === 'week') {
+    const first = new Date(today);
+    first.setDate(today.getDate() - today.getDay()); // Sunday
+    startDate = first.toISOString().split('T')[0];
+    endDate = today.toISOString().split('T')[0];
+  } else if (metricsTab === 'month') {
+    const first = new Date(today.getFullYear(), today.getMonth(), 1);
+    startDate = first.toISOString().split('T')[0];
+    endDate = today.toISOString().split('T')[0];
+  }
 
   const handleExport = async () => {
     let data = '';
@@ -38,17 +51,17 @@ const ExportModal: React.FC<ExportModalProps> = ({
     const end = new Date(endDate);
     // Helper function to check if date is in range
     const inRange = (date: Date) => {
-      return date >= start && date <= end;
+      return date >= new Date(startDate) && date <= new Date(endDate);
     };
 
     if (exportType === 'tasks' || exportType === 'all') {
       const filtered = tasks.filter(t => {
-        const d = t.completedAt ? new Date(t.completedAt) : new Date();
+        const d = t.completed_at ? new Date(t.completed_at) : (t.deadline ? new Date(t.deadline) : new Date());
         return inRange(d);
       });
       data += 'Task Name,Assigned To,Start,Deadline,Completed,Completed At\n';
       filtered.forEach(t => {
-        data += `${t.name},${t.assignedTo || t.assignedTo},${t.start},${t.deadline},${t.completed ? 'Yes' : 'No'},${t.completedAt || ''}\n`;
+        data += `${t.name},${t.assigned_to || ''},${t.start},${t.deadline},${t.completed ? 'Yes' : 'No'},${t.completed_at || ''}\n`;
       });
       filename = 'tasks.csv';
     }
@@ -62,7 +75,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
     if (exportType === 'employees' || exportType === 'all') {
       data += '\nEmployee Name,Code,Lunch Start,Lunch End\n';
       employees.forEach(e => {
-        data += `${e.name},${e.code},${e.lunchStart},${e.lunchEnd}\n`;
+        data += `${e.name},${e.code},${e.lunchStart || ''},${e.lunchEnd || ''}\n`;
       });
       filename = 'employees.csv';
     }
@@ -107,10 +120,10 @@ const ExportModal: React.FC<ExportModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>
-        <View style={{ backgroundColor: '#fff', borderRadius: 14, padding: 24, width: '90%' }}>
-          <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16, color: '#1976d2' }}>Export Data</Text>
+        <View style={{ backgroundColor: '#fff', borderRadius: 10, padding: 10, width: '98%', marginHorizontal: 2, minWidth: 0, maxWidth: '100%' }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 10, color: '#1976d2' }}>Export Data</Text>
           <Text style={{ fontWeight: 'bold', marginBottom: 8, color: '#333' }}>Export Type:</Text>
-          
+          {/* Export Type Selection */}
           {(['tasks', 'materials', 'employees', 'attendance', 'all'] as const).map(type => (
             <TouchableOpacity
               key={type}
@@ -128,6 +141,26 @@ const ExportModal: React.FC<ExportModalProps> = ({
               </Text>
             </TouchableOpacity>
           ))}
+          {/* Metrics Tab Selection */}
+          <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 10 }}>
+            {(['day', 'week', 'month'] as const).map(tab => (
+              <TouchableOpacity
+                key={tab}
+                style={{
+                  backgroundColor: metricsTab === tab ? '#1976d2' : '#e3f2fd',
+                  borderRadius: 8,
+                  paddingVertical: 8,
+                  paddingHorizontal: 18,
+                  marginHorizontal: 4,
+                }}
+                onPress={() => setMetricsTab(tab)}
+              >
+                <Text style={{ color: metricsTab === tab ? '#fff' : '#1976d2', fontWeight: 'bold' }}>
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
             <TouchableOpacity style={adminStyles.addBtn} onPress={handleExport}>

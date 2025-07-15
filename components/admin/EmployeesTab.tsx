@@ -1,6 +1,6 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
@@ -48,11 +48,10 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const params = useLocalSearchParams();
-  // Modal state from navigation
-  const showAddEmployeeModal = params.addEmployee === '1';
-  const showAddDeptModal = params.addDept === '1';
-  const showAssignTaskModal = params.assignTask === '1';
+  // Modal state using local state instead of navigation
+  const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
+  const [showAddDeptModal, setShowAddDeptModal] = useState(false);
+  const [showAssignTaskModal, setShowAssignTaskModal] = useState(false);
 
   // Assign Task Handler
   const handleAssignTask = async () => {
@@ -354,28 +353,53 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
         }}
       >
         {employees.map(emp => (
-          <AdminRow
+          <TouchableOpacity
             key={emp.id}
-            icon={((emp as any).photo_url || emp.photoUri) ? undefined : 'user'}
-            title={emp.name}
-            subtitle={emp.department || 'No Dept'}
-            actions={
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <TouchableOpacity
-                  onPress={() => router.push({ pathname: '/admin-dashboard', params: { ...params, assignTask: '1' } })}
-                  style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 6, marginRight: 6 }}
-                >
-                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Assign Task</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleDeleteEmployee(emp.id)} style={{ backgroundColor: '#c62828', borderRadius: 8, padding: 6 }}>
-                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Delete</Text>
-                </TouchableOpacity>
-              </View>
-            }
-            style={{ backgroundColor: darkMode ? '#23263a' : '#fff' }}
+            onPress={() => {
+              setEditEmployee(emp);
+              setNewEmployeeName(emp.name || '');
+              setNewEmployeeCode(emp.code || '');
+              setNewEmployeeLunchStart(((emp as any).lunch_start ?? emp.lunchStart) || '12:00');
+              setNewEmployeeLunchEnd(((emp as any).lunch_end ?? emp.lunchEnd) || '12:30');
+              setNewEmployeePhotoUri(((emp as any).photo_url ?? emp.photoUri) || undefined);
+              setNewEmployeeDepartment(emp.department || '');
+            }}
+            activeOpacity={0.85}
+            style={{
+              backgroundColor: darkMode ? '#23263a' : '#fff',
+              borderRadius: 10,
+              marginBottom: 7,
+              marginHorizontal: 2,
+              paddingVertical: 8,
+              paddingHorizontal: 6,
+              borderWidth: 1.2,
+              borderColor: '#1976d2',
+              flexDirection: 'row',
+              alignItems: 'center',
+              minWidth: 0,
+              maxWidth: '100%',
+            }}
           >
-            <Text style={{ color: '#888', fontSize: 13, marginBottom: 2 }}>{`Lunch: ${((emp as any).lunch_start ?? emp.lunchStart) || ''} - ${((emp as any).lunch_end ?? emp.lunchEnd) || ''}`}</Text>
-          </AdminRow>
+            <AdminRow
+              icon={((emp as any).photo_url || emp.photoUri) ? undefined : 'user'}
+              title={emp.name}
+              subtitle={emp.department || 'No Dept'}
+              actions={
+                <TouchableOpacity
+                  onPress={() => {
+                    setEditEmployee(emp);
+                    setShowAssignTaskModal(true);
+                  }}
+                  style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 6 }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 13 }}>Assign Task</Text>
+                </TouchableOpacity>
+              }
+              style={{ backgroundColor: 'transparent' }}
+            >
+              <Text style={{ color: '#888', fontSize: 12, marginBottom: 2 }}>{`Lunch: ${((emp as any).lunch_start ?? emp.lunchStart) || ''} - ${((emp as any).lunch_end ?? emp.lunchEnd) || ''}`}</Text>
+            </AdminRow>
+          </TouchableOpacity>
         ))}
       </ScrollView>
       {/* Fixed position buttons at bottom */}
@@ -393,20 +417,20 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
           <TouchableOpacity 
             style={[adminStyles.addBtn, { flex: 1, marginRight: 8 }]} 
-            onPress={() => router.push({ pathname: '/admin-dashboard', params: { ...params, addEmployee: '1' } })}
+            onPress={() => setShowAddEmployeeModal(true)}
           >
             <Text style={adminStyles.addBtnText}>Add New Employee</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[adminStyles.addBtn, { flex: 1, backgroundColor: '#388e3c' }]} 
-            onPress={() => router.push({ pathname: '/admin-dashboard', params: { ...params, addDept: '1' } })}
+            onPress={() => setShowAddDeptModal(true)}
           >
             <Text style={[adminStyles.addBtnText, { color: '#fff' }]}>Add Department</Text>
           </TouchableOpacity>
         </View>
       </View>
       {/* Add Employee Modal */}
-      <AdminModal visible={!!showAddEmployeeModal} onClose={() => router.back()} title="Add New Employee">
+      <AdminModal visible={!!showAddEmployeeModal} onClose={() => setShowAddEmployeeModal(false)} title="Add New Employee">
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
           <View style={adminStyles.addEmployeeInputsRow}>
             <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Name" value={newEmployeeName} onChangeText={setNewEmployeeName} />
@@ -445,7 +469,15 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
             style={[adminStyles.addBtn, (!newEmployeeName || !newEmployeeCode) && { opacity: 0.5 }]}
             onPress={async () => {
               const added = await handleAddEmployee();
-              if (added) router.back();
+              if (added) {
+                setShowAddEmployeeModal(false);
+                setNewEmployeeName('');
+                setNewEmployeeCode('');
+                setNewEmployeeLunchStart('12:00');
+                setNewEmployeeLunchEnd('12:30');
+                setNewEmployeePhotoUri(undefined);
+                setNewEmployeeDepartment('');
+              }
             }}
             disabled={!newEmployeeName || !newEmployeeCode}
           >
@@ -455,12 +487,16 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       </AdminModal>
 
       {/* Add Department Modal */}
-      <AdminModal visible={!!showAddDeptModal} onClose={() => router.back()} title="Add Department">
+      <AdminModal visible={!!showAddDeptModal} onClose={() => setShowAddDeptModal(false)} title="Add Department">
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
           <TextInput style={adminStyles.inputText} placeholder="Department Name" value={newDepartment} onChangeText={setNewDepartment} />
           <TouchableOpacity
             style={[adminStyles.addBtn, !newDepartment && { opacity: 0.5 }]}
-            onPress={handleAddDepartment}
+            onPress={async () => {
+              await handleAddDepartment();
+              setShowAddDeptModal(false);
+              setNewDepartment('');
+            }}
             disabled={!newDepartment}
           >
             <Text style={adminStyles.addBtnText}>Add</Text>
@@ -495,13 +531,16 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
           <TouchableOpacity style={adminStyles.saveBtn} onPress={handleSaveEmployee}>
             <Text style={adminStyles.saveBtnText}>Save</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={[adminStyles.closeBtn, { backgroundColor: '#c62828', marginTop: 12 }]} onPress={() => { if (editEmployee) handleDeleteEmployee(editEmployee.id); setEditEmployee(null); }}>
+            <Text style={[adminStyles.closeBtnText, { color: '#fff' }]}>Delete Employee</Text>
+          </TouchableOpacity>
         </ScrollView>
       </AdminModal>
 
       {/* Assign Task Modal */}
       <AdminModal
         visible={!!showAssignTaskModal}
-        onClose={() => router.back()}
+        onClose={() => setShowAssignTaskModal(false)}
         title={editEmployee ? `Assign Task to ${editEmployee.name}` : 'Assign Task'}
       >
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">

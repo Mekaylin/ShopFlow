@@ -100,9 +100,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>
-        <View style={{ backgroundColor: '#fff', borderRadius: 14, padding: 24, width: '90%', maxHeight: '90%' }}>
-          <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2', marginBottom: 16 }}>Settings</Text>
-          
+        <View style={{ backgroundColor: '#fff', borderRadius: 10, padding: 10, width: '98%', marginHorizontal: 2, minWidth: 0, maxWidth: '100%', maxHeight: '92%' }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1976d2', marginBottom: 10 }}>Settings</Text>
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* Task Options */}
             <View style={adminStyles.settingsCard}>

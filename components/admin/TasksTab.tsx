@@ -1,14 +1,14 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { FlatList, Image, Platform, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, Platform, SafeAreaView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
 import { Employee, Material, MaterialType, Task } from '../utility/types';
 import { minutesLate } from '../utility/utils';
-import NotificationPanel from './NotificationPanel';
 import AdminModal from './AdminModal';
+import NotificationPanel from './NotificationPanel';
 
 import type { PerformanceSettings, User } from '../utility/types';
 interface TasksTabProps {
@@ -57,7 +57,8 @@ const TasksTab: React.FC<TasksTabProps> = ({
   const [materialQuantityForTask, setMaterialQuantityForTask] = useState('');
   const [materialsForNewTask, setMaterialsForNewTask] = useState<{ materialId: string; materialTypeId?: string; quantity: number }[]>([]);
   const router = useRouter();
-  const params = useLocalSearchParams();
+  // Remove params.addTask usage; use local state for modal
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   // Task CRUD handlers
   const handleCompleteTask = async (taskId: string) => {
     // TODO: Implement complete task logic
@@ -74,15 +75,18 @@ const TasksTab: React.FC<TasksTabProps> = ({
       return (
         <View key={task.id} style={{
           backgroundColor: task.completed ? '#e8f5e9' : isLate ? '#ffebee' : '#fffde7',
-          borderRadius: 14,
-          padding: 14,
-          marginBottom: 12,
+          borderRadius: 10,
+          padding: 8,
+          marginBottom: 8,
+          marginHorizontal: 2,
           shadowColor: '#1976d2',
           shadowOpacity: 0.06,
-          shadowRadius: 6,
+          shadowRadius: 3,
           elevation: 1,
-          borderLeftWidth: 6,
+          borderLeftWidth: 3,
           borderLeftColor: task.completed ? '#388e3c' : isLate ? '#c62828' : '#ff9800',
+          minWidth: 0,
+          maxWidth: '100%',
         }}>
           <Text style={{ fontWeight: 'bold', fontSize: 17, color: '#1976d2', marginBottom: 2 }}>{task.name}</Text>
           <Text style={{ fontSize: 13, color: '#888', marginBottom: 4 }}>Start: {task.start} | Due: {task.deadline}</Text>
@@ -163,28 +167,37 @@ const TasksTab: React.FC<TasksTabProps> = ({
         </View>
       );
     } else if (item && typeof item === 'object' && 'id' in item && 'name' in item) {
-      // Employee
+      // Employee: clicking opens Add Task modal for that employee
       return (
-        <TouchableOpacity style={{
-          backgroundColor: '#fff',
-          borderRadius: 14,
-          marginBottom: 10,
-          alignItems: 'center',
-          padding: 10,
-          borderWidth: 2,
-          borderColor: '#1976d2',
-          flexDirection: 'row',
-        }} onPress={() => setSelectedTaskEmployee(item as Employee)}>
-          <View style={{ width: 36, height: 36, borderRadius: 18, marginRight: 10, backgroundColor: '#e3f2fd', alignItems: 'center', justifyContent: 'center' }}>
+        <TouchableOpacity
+          style={{
+            backgroundColor: '#fff',
+            borderRadius: 10,
+            marginBottom: 6,
+            alignItems: 'center',
+            paddingVertical: 7,
+            paddingHorizontal: 4,
+            borderWidth: 1.2,
+            borderColor: '#1976d2',
+            flexDirection: 'row',
+            minWidth: 0,
+            maxWidth: '100%',
+          }}
+          onPress={() => {
+            setSelectedTaskEmployee(item as Employee);
+            setShowAddTaskModal(true);
+          }}
+        >
+          <View style={{ width: 28, height: 28, borderRadius: 14, marginRight: 7, backgroundColor: '#e3f2fd', alignItems: 'center', justifyContent: 'center' }}>
             {'photoUri' in item && item.photoUri ? (
-              <Image source={{ uri: item.photoUri }} style={{ width: 36, height: 36, borderRadius: 18 }} />
+              <Image source={{ uri: item.photoUri }} style={{ width: 28, height: 28, borderRadius: 14 }} />
             ) : (
-              <FontAwesome5 name="user" size={18} color="#b3c0e0" />
+              <FontAwesome5 name="user" size={16} color="#b3c0e0" />
             )}
           </View>
           <View>
-            <Text style={{ fontWeight: 'bold', color: '#1976d2', fontSize: 15 }}>{item.name}</Text>
-            <Text style={{ color: '#888', fontSize: 12 }}>{'department' in item && item.department ? item.department : 'No Dept'}</Text>
+            <Text style={{ fontWeight: 'bold', color: '#1976d2', fontSize: 13 }}>{item.name}</Text>
+            <Text style={{ color: '#888', fontSize: 11 }}>{'department' in item && item.department ? item.department : 'No Dept'}</Text>
           </View>
         </TouchableOpacity>
       );
@@ -218,50 +231,24 @@ const TasksTab: React.FC<TasksTabProps> = ({
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      {/* Day/Week/Month Filter Tabs */}
-      <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 12, marginBottom: 8 }}>
-        {(['day', 'week', 'month'] as const).map(tab => (
+      {/* Banner with Notification Icon and Centered Heading */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 18, paddingBottom: 10, backgroundColor: '#f5faff', position: 'relative' }}>
+        {/* Notification Bell Icon (top left) */}
+        <View style={{ position: 'absolute', left: 16, top: 0, bottom: 0, justifyContent: 'center' }}>
           <TouchableOpacity
-            key={tab}
-            style={{
-              backgroundColor: filterTab === tab ? '#1976d2' : '#e3f2fd',
-              borderRadius: 8,
-              paddingVertical: 8,
-              paddingHorizontal: 18,
-              marginHorizontal: 4,
-              flexDirection: 'row',
-              alignItems: 'center',
-            }}
-            onPress={() => setFilterTab(tab)}
+            onPress={() => setShowNotifications(true)}
+            accessibilityLabel="Show Notifications"
           >
-            <Text style={{ color: filterTab === tab ? '#fff' : '#1976d2', fontWeight: 'bold', marginRight: 4 }}>
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </Text>
-            <TouchableOpacity
-              onPress={() => alert(
-                tab === 'day' ? 'Shows tasks due today.' : tab === 'week' ? 'Shows tasks due this week.' : 'Shows tasks due this month.'
-              )}
-              style={{ padding: 2 }}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <FontAwesome5 name="info-circle" size={14} color={filterTab === tab ? '#fff' : '#1976d2'} />
-            </TouchableOpacity>
+            <FontAwesome5 name="bell" size={26} color="#1976d2" />
+            {notifications.filter(n => n.type === 'late').length > 0 && (
+              <View style={{ position: 'absolute', top: -4, right: -4, backgroundColor: '#c62828', borderRadius: 8, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{notifications.filter(n => n.type === 'late').length}</Text>
+              </View>
+            )}
           </TouchableOpacity>
-        ))}
-      </View>
-      {/* Notification Bell Icon */}
-      <View style={{ position: 'absolute', top: 16, left: 16, zIndex: 1000 }}>
-        <TouchableOpacity
-          onPress={() => setShowNotifications(true)}
-          accessibilityLabel="Show Notifications"
-        >
-          <FontAwesome5 name="bell" size={26} color="#1976d2" />
-          {notifications.filter(n => n.type === 'late').length > 0 && (
-            <View style={{ position: 'absolute', top: -4, right: -4, backgroundColor: '#c62828', borderRadius: 8, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{notifications.filter(n => n.type === 'late').length}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        </View>
+        {/* Centered Heading */}
+        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1976d2', textAlign: 'center' }}>Employee Dashboard</Text>
       </View>
       {showNotifications && (
         <NotificationPanel notifications={notifications} onClose={() => setShowNotifications(false)} />
@@ -290,13 +277,16 @@ const TasksTab: React.FC<TasksTabProps> = ({
           elevation: 4,
           zIndex: 100,
         }}
-        onPress={() => router.push({ pathname: '/admin-dashboard', params: { ...params, addTask: '1' } })}
+        onPress={() => setShowAddTaskModal(true)}
         accessibilityLabel="Add Task"
       >
         <FontAwesome5 name="plus" size={28} color="#fff" />
       </TouchableOpacity>
       {/* Add Task Modal */}
-      <AdminModal visible={!!params.addTask} onClose={() => router.back()} title={!selectedTaskEmployee ? 'Select Employee' : `Add Task for ${selectedTaskEmployee?.name || ''}`}>
+      <AdminModal visible={showAddTaskModal} onClose={() => {
+        setShowAddTaskModal(false);
+        setSelectedTaskEmployee(null);
+      }} title={!selectedTaskEmployee ? 'Select Employee' : `Add Task for ${selectedTaskEmployee?.name || ''}`}>
         {!selectedTaskEmployee ? (
           <View>
             <FlatList
@@ -311,7 +301,10 @@ const TasksTab: React.FC<TasksTabProps> = ({
                 </TouchableOpacity>
               )}
             />
-            <TouchableOpacity style={adminStyles.closeBtn} onPress={() => router.back()}>
+            <TouchableOpacity style={adminStyles.closeBtn} onPress={() => {
+              setShowAddTaskModal(false);
+              setSelectedTaskEmployee(null);
+            }}>
               <Text style={adminStyles.closeBtnText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -380,8 +373,8 @@ const TasksTab: React.FC<TasksTabProps> = ({
                 setNewTaskStart('');
                 setNewTaskDeadline('');
                 setMaterialsForNewTask([]);
-                setSelectedTaskEmployee(null);
-                router.back();
+              setSelectedTaskEmployee(null);
+              setShowAddTaskModal(false);
               }}>
                 <Text style={adminStyles.addBtnText}>Add Task</Text>
               </TouchableOpacity>

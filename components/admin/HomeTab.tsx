@@ -198,11 +198,14 @@ const HomeTab: React.FC<HomeTabProps> = ({
           </Text>
         ) : (
           <>
-            {limitLines(filteredTasks, 10).map((t, idx) => (
-              <Text key={t.id} style={{ color: t.completed ? '#388e3c' : '#263238', fontSize: 15 }} numberOfLines={1} ellipsizeMode="tail">
-                {idx + 1}. {t.name} {t.completed ? '(Completed)' : ''}
-              </Text>
-            ))}
+            {limitLines(filteredTasks, 10).map((t, idx) => {
+              const isLate = !t.completed && t.deadline && new Date(t.deadline) < new Date();
+              return (
+                <Text key={t.id} style={{ color: t.completed ? '#388e3c' : isLate ? '#c62828' : '#263238', fontSize: 15 }} numberOfLines={1} ellipsizeMode="tail">
+                  {idx + 1}. {t.name} {t.completed ? '(Completed)' : isLate ? '(Late)' : ''}
+                </Text>
+              );
+            })}
             {filteredTasks.length > 10 && (
               <Text style={{ color: '#1976d2', fontWeight: 'bold', marginTop: 4 }}>+{filteredTasks.length - 10} more...</Text>
             )}
@@ -433,11 +436,14 @@ const HomeTab: React.FC<HomeTabProps> = ({
           <View style={adminStyles.modalContent}>
             <Text style={adminStyles.modalTitle}>All Tasks</Text>
             <ScrollView>
-              {filteredTasks.map((task, idx) => (
-                <Text key={task.id} style={[adminStyles.taskListText, task.completed ? adminStyles.textSuccess : adminStyles.textPrimary]}>
-                  {idx + 1}. {task.name} {task.completed ? '(Completed)' : ''}
-                </Text>
-              ))}
+              {filteredTasks.map((task, idx) => {
+                const isLate = !task.completed && task.deadline && new Date(task.deadline) < new Date();
+                return (
+                  <Text key={task.id} style={[adminStyles.taskListText, task.completed ? adminStyles.textSuccess : isLate ? adminStyles.textError : adminStyles.textPrimary]}>
+                    {idx + 1}. {task.name} {task.completed ? '(Completed)' : isLate ? '(Late)' : ''}
+                  </Text>
+                );
+              })}
             </ScrollView>
             <TouchableOpacity style={adminStyles.closeBtn} onPress={() => setShowAllTasksModal(false)}>
               <Text style={adminStyles.closeBtnText}>Close</Text>

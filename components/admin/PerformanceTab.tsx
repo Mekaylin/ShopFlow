@@ -58,30 +58,12 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
   };
 
   // Fetch and show detailed performance metrics
-  const handleViewPerformance = async () => {
+  const handleViewPerformance = () => {
     if (!businessId) {
       Alert.alert('Error', 'Business ID is missing.');
       return;
     }
-    setLoadingMetrics(true);
-    try {
-      const { data, error } = await supabase
-        .from('performance_metrics')
-        .select('*')
-        .eq('business_id', businessId);
-      if (error) {
-        Alert.alert('Error', error.message || 'Failed to fetch metrics.');
-        setMetrics([]);
-      } else {
-        setMetrics(data || []);
-        setMetricsModalVisible(true);
-      }
-    } catch (err) {
-      Alert.alert('Error', 'Unexpected error fetching metrics.');
-      setMetrics([]);
-    } finally {
-      setLoadingMetrics(false);
-    }
+    router.push({ pathname: '/screens/PerformanceMetricsScreen', params: { businessId } });
   };
 
   // Update performance settings
@@ -138,10 +120,17 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
   );
 
   return (
-    <ScrollView style={darkMode ? adminStyles.darkContainer : adminStyles.container}>
+    <ScrollView
+      style={darkMode ? adminStyles.darkContainer : adminStyles.container}
+      contentContainerStyle={{ padding: 8, paddingBottom: 40 }}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Performance Settings */}
-      <View style={darkMode ? adminStyles.darkCard : adminStyles.card}>
-        <Text style={[adminStyles.sectionTitle, adminStyles.mb16]}>Performance Management</Text>
+      <View style={[
+        darkMode ? adminStyles.darkCard : adminStyles.card,
+        { borderRadius: 10, padding: 10, marginBottom: 10, minWidth: 0, maxWidth: '100%' }
+      ]}>
+        <Text style={[adminStyles.sectionTitle, adminStyles.mb16, { fontSize: 18 }]}>Performance Management</Text>
         {/* Rating System Settings */}
         <View style={adminStyles.mb16}>
           <Text style={adminStyles.ratingTitle}>Rating System</Text>
