@@ -1,10 +1,11 @@
-import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
-import { supabase } from '../../lib/supabase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, FlatList, Modal, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, useColorScheme, View, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Alert, Animated, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { FontAwesome5 } from '@expo/vector-icons';
+import NotificationPanel, { Notification } from '../../components/admin/NotificationPanel';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../../lib/supabase';
 // Helper to queue clock events locally
 type ClockEvent = {
   employee_id: string;
@@ -90,6 +91,10 @@ interface EmployeeDashboardScreenProps {
 }
 
 export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
+  // Notification panel state
+  const [notificationPanelVisible, setNotificationPanelVisible] = useState(false);
+  // Notifications: show clock events as notifications (demo)
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const colorScheme = useColorScheme();
   const [darkMode, setDarkMode] = useState(colorScheme === 'dark');
   const isDark = darkMode;
@@ -225,7 +230,7 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
     setEnteredCode('');
   });
 
-  // Log clock event to the database, with offline queue
+  // Log clock event to the database, with offline queue, and add notification
   const logClockEvent = async (action: 'in' | 'out' | 'lunch' | 'lunchBack') => {
     if (!currentEmployee) return;
     const event = {
@@ -246,6 +251,16 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
       await queueClockEvent(event);
       Alert.alert('Offline', 'Clock event saved locally and will sync when online.');
     }
+    // Add notification (demo)
+    setNotifications(prev => [
+      {
+        id: Math.random().toString(36).slice(2),
+        message: `Clock ${action === 'in' ? 'In' : action === 'out' ? 'Out' : action === 'lunch' ? 'Lunch Start' : 'Lunch End'} for ${currentEmployee.name}`,
+        timestamp: new Date().toISOString(),
+        type: action === 'in' || action === 'out' ? 'info' : 'late',
+      },
+      ...prev.slice(0, 19), // keep max 20
+    ]);
   };
   // On mount, try to sync any offline clock events
   useEffect(() => {
@@ -484,8 +499,8 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
   // Shared-tablet flow: If no employee is selected, show employee picker
   if (!currentEmployee) {
     return (
-      <View style={[styles.container, { backgroundColor: '#f8fafd', justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ fontSize: 28, fontWeight: 'bold', marginBottom: 24 }}>Select Your Name</Text>
+      <View style={[styles.container, { backgroundColor: '#f8fafd', justifyContent: 'center', alignItems: 'center' }]}> 
+        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#1976d2', textAlign: 'center', marginBottom: 8 }}>Select Your Name</Text>
         {loadingEmployees ? (
           <ActivityIndicator size="large" color="#1976d2" />
         ) : (
@@ -531,6 +546,10 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
             </View>
           </View>
         </Modal>
+        {/* Notification Panel Modal */}
+        <Modal visible={notificationPanelVisible} animationType="slide" transparent onRequestClose={() => setNotificationPanelVisible(false)}>
+          <NotificationPanel notifications={notifications} onClose={() => setNotificationPanelVisible(false)} />
+        </Modal>
       </View>
     );
   }
@@ -538,6 +557,18 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
   // After successful code entry, show the dashboard for the current employee
   return (
     <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 16 }]}> 
+      {/* Header with notification bell */}
+      <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8, position: 'relative' }}>
+        <TouchableOpacity onPress={() => setNotificationPanelVisible(true)} style={{ position: 'absolute', left: 0, padding: 8 }}>
+          <FontAwesome5 name="bell" size={24} color={theme.primary} />
+          {notifications.length > 0 && (
+            <View style={{ position: 'absolute', top: 2, right: 2, backgroundColor: '#c62828', borderRadius: 8, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{notifications.length}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', color: theme.primary, textAlign: 'center' }}>Employee Dashboard</Text>
+      </View>
       {/* ...existing dashboard code... */}
       {/* Add a "Logout" button that resets currentEmployee and clockedIn state */}
       <TouchableOpacity
@@ -552,6 +583,10 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
       >
         <Text style={styles.closeBtnText}>Logout</Text>
       </TouchableOpacity>
+      {/* Notification Panel Modal */}
+      <Modal visible={notificationPanelVisible} animationType="slide" transparent onRequestClose={() => setNotificationPanelVisible(false)}>
+        <NotificationPanel notifications={notifications} onClose={() => setNotificationPanelVisible(false)} />
+      </Modal>
     </View>
   );
 }

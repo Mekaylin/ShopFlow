@@ -7,14 +7,14 @@ import EmployeesTab from '../../components/admin/EmployeesTab';
 import ExportModal from '../../components/admin/ExportModal';
 import HomeTab from '../../components/admin/HomeTab';
 import MaterialsTab from '../../components/admin/MaterialsTab';
+import type { Notification } from '../../components/admin/NotificationPanel';
+import NotificationPanel from '../../components/admin/NotificationPanel';
 import PerformanceTab from '../../components/admin/PerformanceTab';
 import SettingsModal from '../../components/admin/SettingsModal';
 import TasksTab from '../../components/admin/TasksTab';
 import PerformanceManagement from '../../components/PerformanceManagement';
 import TaskRatingModal from '../../components/TaskRatingModal';
 import { adminStyles, tabButton, tabButtonText } from '../../components/utility/styles';
-import NotificationPanel from '../../components/admin/NotificationPanel';
-import type { Notification } from '../../components/admin/NotificationPanel';
 
 import type { Business, ClockEvent, Employee, Material, MaterialType, PerformanceSettings, Task, User } from '../../components/utility/types';
 import { supabase } from '../../lib/supabase';

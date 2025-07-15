@@ -5,7 +5,7 @@ import { Stack, useRouter } from 'expo-router';
 import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { Platform, View, Text, ActivityIndicator } from 'react-native';
+import { ActivityIndicator, Platform, Text, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 
 export default function RootLayout() {

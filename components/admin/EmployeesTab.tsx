@@ -386,7 +386,8 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
               subtitle={emp.department || 'No Dept'}
               actions={
                 <TouchableOpacity
-                  onPress={() => {
+                  onPress={e => {
+                    e.stopPropagation && e.stopPropagation();
                     setEditEmployee(emp);
                     setShowAssignTaskModal(true);
                   }}
