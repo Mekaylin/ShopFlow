@@ -417,6 +417,7 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
           .select('id')
           .eq('code', codeToUse)
           .maybeSingle();
+        console.log(`[BusinessCodeGen] Attempt ${attempts + 1}: code=${codeToUse}, existingBiz=`, existingBiz, 'error=', bizCheckError);
         if (!existingBiz && !bizCheckError) {
           unique = true;
         } else {
@@ -443,14 +444,17 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
         .select('id')
         .eq('code', codeToUse)
         .maybeSingle();
+      console.log('[Step 1] Check for duplicate business code:', { codeToUse, existingBiz, bizCheckError });
       if (bizCheckError) {
         setErrorLog('Could not check business code: ' + (bizCheckError.message || JSON.stringify(bizCheckError)));
+        console.error('[Step 1] Business code check error:', bizCheckError);
         Alert.alert('Error', 'Could not check business code. Please try again.');
         setLoading(false);
         return;
       }
       if (existingBiz) {
         setErrorLog('Business code already in use. Please choose a different code.');
+        console.warn('[Step 1] Registration failed: business code already in use.');
         Alert.alert('Business code already in use. Please choose a different code.');
         setLoading(false);
         return;
@@ -464,8 +468,10 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
           data: { name, role }
         }
       });
+      console.log('[Step 2] Supabase signUp result:', { authData, signUpError });
       if (signUpError) {
         setErrorLog('Supabase signUp error: ' + (signUpError.message || JSON.stringify(signUpError)));
+        console.error('[Step 2] Supabase signUp error:', signUpError);
         if (signUpError.message.toLowerCase().includes('rate limit exceeded')) {
           setSignupCooldown(10);
           Alert.alert('Too many sign-up attempts. Please try again in a few seconds.');
@@ -478,6 +484,7 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
       }
       if (!authData.user) {
         setErrorLog('No user returned from signUp.');
+        console.error('[Step 2] No user returned from signUp:', authData);
         Alert.alert('Registration failed', 'User not returned from sign up.');
         setLoading(false);
         return;
@@ -488,11 +495,13 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
       for (let i = 0; i < 10; i++) {
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         session = sessionData?.session;
+        console.log(`[Step 3] Session poll ${i + 1}:`, { session, sessionError });
         if (session) break;
         await new Promise(res => setTimeout(res, 400));
       }
       if (!session) {
         setErrorLog('Session not established after sign up.');
+        console.error('[Step 3] Session not established after sign up.');
         Alert.alert('Registration failed', 'Session not established after sign up. Please check your email to confirm your account, then log in.');
         setLoading(false);
         return;
@@ -505,8 +514,10 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
         .insert({ name: businessName, code: codeToUse })
         .select('id,code')
         .single();
+      console.log('[Step 4] Business insert result:', { business, businessError });
       if (businessError || !business) {
         setErrorLog('Business creation error: ' + (businessError?.message || JSON.stringify(businessError)));
+        console.error('[Step 4] Business creation error:', businessError);
         if (businessError?.message?.toLowerCase().includes('duplicate')) {
           Alert.alert('This business name or code is already in use. Please choose a different one.');
           setLoading(false);
@@ -524,14 +535,17 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
         const { error: userError } = await supabase
           .from('users')
           .upsert({ id: authData.user.id, name, role, business_id, business_code: codeToUse }, { onConflict: 'id' });
+        console.log('[Step 5] User upsert result:', { userId: authData.user.id, business_id, userError });
         if (userError ?? false) {
           setErrorLog('User upsert error: ' + (userError?.message || JSON.stringify(userError)));
+          console.error('[Step 5] User upsert error:', userError);
           Alert.alert('User update failed', userError?.message ?? 'Unknown error');
           setLoading(false);
           return;
         }
       } else if (authData.user?.id) {
         setErrorLog('Business ID missing when upserting user.');
+        console.error('[Step 5] Business ID missing when upserting user.');
         Alert.alert('Registration failed', 'Business ID missing when saving user.');
         setLoading(false);
         return;
@@ -540,9 +554,11 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
       setErrorLog('');
       setShowCodeAfter(true);
       setLoading(false);
+      console.log('[Step 6] Registration successful!');
       return;
     } catch (err: any) {
       setErrorLog('Registration failed: ' + (err?.message || JSON.stringify(err)));
+      console.error('[Catch] Registration failed:', err);
       Alert.alert('Registration failed', err.message || 'Unknown error');
     } finally {
       setLoading(false);
