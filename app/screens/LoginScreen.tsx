@@ -534,8 +534,8 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
       if (authData.user?.id && business_id) {
         const { error: userError } = await supabase
           .from('users')
-          .upsert({ id: authData.user.id, name, role, business_id, business_code: codeToUse }, { onConflict: 'id' });
-        console.log('[Step 5] User upsert result:', { userId: authData.user.id, business_id, userError });
+          .upsert({ id: authData.user.id, name, role, business_id, business_code: codeToUse, email }, { onConflict: 'id' });
+        console.log('[Step 5] User upsert result:', { userId: authData.user.id, business_id, email, userError });
         if (userError ?? false) {
           setErrorLog('User upsert error: ' + (userError?.message || JSON.stringify(userError)));
           console.error('[Step 5] User upsert error:', userError);
