@@ -220,13 +220,13 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
                 setNewMaterialName(item.name);
                 setNewMaterialUnit(item.unit);
               }} style={adminStyles.actionBtn}>
-                <Text style={[adminStyles.actionBtnEdit, { color: '#000', fontSize: 13 }]}>Edit</Text>
+                <Text style={[adminStyles.actionBtnEdit, { color: '#fff', fontSize: 13 }]}>Edit</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => handleDeleteMaterial(item.id)} style={adminStyles.actionBtn}>
-                <Text style={[adminStyles.actionBtnDelete, { color: '#000', fontSize: 13 }]}>Delete</Text>
+                <Text style={[adminStyles.actionBtnDelete, { color: '#fff', fontSize: 13 }]}>Delete</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setAddTypeModal(item.id)} style={adminStyles.actionBtn}>
-                <Text style={[adminStyles.actionBtnAdd, { color: '#000', fontSize: 13 }]}>Add Type</Text>
+                <Text style={[adminStyles.actionBtnAdd, { color: '#fff', fontSize: 13 }]}>Add Type</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -249,7 +249,7 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
           style={adminStyles.addBtn} 
           onPress={() => router.push({ pathname: '/admin-dashboard', params: { ...params, addMaterial: '1' } })}
         >
-          <Text style={[adminStyles.addBtnText, { color: '#000' }]}>Add New Material</Text>
+          <Text style={[adminStyles.addBtnText, { color: '#fff' }]}>Add New Material</Text>
         </TouchableOpacity>
       </View>
       {/* Add Material Modal */}
@@ -267,14 +267,14 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
           onChangeText={setNewMaterialUnit} 
         />
         <TouchableOpacity style={[adminStyles.addBtn, { marginTop: 16 }]} onPress={handleAddMaterial}>
-          <Text style={[adminStyles.addBtnText, { color: '#000' }]}>Add Material</Text>
+          <Text style={[adminStyles.addBtnText, { color: '#fff' }]}>Add Material</Text>
         </TouchableOpacity>
       </AdminModal>
       {/* Add Material Type Modal */}
       <AdminModal visible={!!addTypeModal} onClose={() => setAddTypeModal(null)} title="Add Material Type">
         <TextInput style={adminStyles.inputText} placeholder="Type Label" value={newMaterialTypeLabel} onChangeText={setNewMaterialTypeLabel} />
         <TouchableOpacity style={adminStyles.addBtn} onPress={() => addTypeModal && handleAddMaterialType(addTypeModal)}>
-          <Text style={[adminStyles.addBtnText, { color: '#000' }]}>Add</Text>
+          <Text style={[adminStyles.addBtnText, { color: '#fff' }]}>Add</Text>
         </TouchableOpacity>
       </AdminModal>
       {/* Edit Material Modal */}
@@ -297,7 +297,7 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
         />
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
           <TouchableOpacity style={adminStyles.addBtn} onPress={handleEditMaterial}>
-            <Text style={[adminStyles.addBtnText, { color: '#000' }]}>Save</Text>
+            <Text style={[adminStyles.addBtnText, { color: '#fff' }]}>Save</Text>
           </TouchableOpacity>
           <TouchableOpacity style={adminStyles.closeBtn} onPress={() => {
             setEditMaterial(null);

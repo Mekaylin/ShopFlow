@@ -19,21 +19,6 @@ type LoginScreenProps = {
 // ...existing code...
 
 
-function RegistrationSuccessScreen({ onBack }: { onBack: () => void }) {
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#e3f2fd' }}>
-      <View style={[styles.card, { width: 340 }]}> 
-        <Text style={styles.title}>Check Your Email</Text>
-        <Text style={{ fontSize: 16, color: '#333', marginVertical: 16, textAlign: 'center' }}>
-          Registration successful! Please check your email to confirm your account before logging in.
-        </Text>
-        <TouchableOpacity onPress={onBack} style={styles.loginBtn}>
-          <Text style={styles.loginBtnText}>Back to Login</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-}
 function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   // State for role selection
   const [role, setRole] = useState<'admin' | 'employee'>('employee');
@@ -88,14 +73,8 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
     return () => clearInterval(timer);
   }, [loginLocked, lockTimer]);
 
-  if (showRegistrationSuccess) {
-    return <RegistrationSuccessScreen onBack={() => {
-      setShowRegistrationSuccess(false);
-      setShowRegister(false);
-    }} />;
-  }
   if (showRegister) {
-    return <RegistrationScreen onBack={() => setShowRegister(false)} onSuccess={() => setShowRegistrationSuccess(true)} />;
+    return <RegistrationScreen onBack={() => setShowRegister(false)} />;
   }
   if (showReset) {
     return (
@@ -376,7 +355,7 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
 
 
 
-function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSuccess: () => void }) {
+function RegistrationScreen({ onBack }: { onBack: () => void }) {
   const [role] = useState<'admin'>('admin');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -416,13 +395,11 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
     console.log('Registration attempt:', { name, email, businessName, businessCode });
     // Early validation
     if (!email || !password || !name) {
-      console.warn('Registration failed: missing name, email, or password.');
       setErrorLog('Please enter your name, email, and password.');
       Alert.alert('Missing Fields', 'Please enter your name, email, and password.');
       return;
     }
     if (!businessName) {
-      console.warn('Registration failed: missing business name.');
       setErrorLog('Please enter a business name.');
       Alert.alert('Missing Fields', 'Please enter a business name.');
       return;
@@ -454,7 +431,6 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
       }
     }
     if (passwordStrength === 'weak') {
-      console.warn('Registration failed: weak password.');
       setErrorLog('Please choose a stronger password.');
       Alert.alert('Weak Password', 'Please choose a stronger password.');
       return;
@@ -462,7 +438,6 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
     setLoading(true);
     try {
       // 1. Check for duplicate business code
-      console.log('Checking for duplicate business code:', codeToUse);
       const { data: existingBiz, error: bizCheckError } = await supabase
         .from('businesses')
         .select('id')
@@ -470,21 +445,18 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
         .maybeSingle();
       if (bizCheckError) {
         setErrorLog('Could not check business code: ' + (bizCheckError.message || JSON.stringify(bizCheckError)));
-        console.error('Business code check error:', bizCheckError);
         Alert.alert('Error', 'Could not check business code. Please try again.');
         setLoading(false);
         return;
       }
       if (existingBiz) {
         setErrorLog('Business code already in use. Please choose a different code.');
-        console.warn('Registration failed: business code already in use.');
         Alert.alert('Business code already in use. Please choose a different code.');
         setLoading(false);
         return;
       }
 
       // 2. Sign up user
-      console.log('Signing up user:', { email });
       const { data: authData, error: signUpError } = await supabase.auth.signUp({ 
         email, 
         password,
@@ -494,7 +466,6 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
       });
       if (signUpError) {
         setErrorLog('Supabase signUp error: ' + (signUpError.message || JSON.stringify(signUpError)));
-        console.error('Supabase signUp error:', signUpError);
         if (signUpError.message.toLowerCase().includes('rate limit exceeded')) {
           setSignupCooldown(10);
           Alert.alert('Too many sign-up attempts. Please try again in a few seconds.');
@@ -507,7 +478,6 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
       }
       if (!authData.user) {
         setErrorLog('No user returned from signUp.');
-        console.error('No user returned from signUp:', authData);
         Alert.alert('Registration failed', 'User not returned from sign up.');
         setLoading(false);
         return;
@@ -517,17 +487,12 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
       let session = null;
       for (let i = 0; i < 10; i++) {
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) {
-          setErrorLog('Session polling error: ' + (sessionError.message || JSON.stringify(sessionError)));
-          console.error('Session polling error:', sessionError);
-        }
         session = sessionData?.session;
         if (session) break;
         await new Promise(res => setTimeout(res, 400));
       }
       if (!session) {
         setErrorLog('Session not established after sign up.');
-        console.error('Session not established after sign up.');
         Alert.alert('Registration failed', 'Session not established after sign up. Please check your email to confirm your account, then log in.');
         setLoading(false);
         return;
@@ -535,7 +500,6 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
 
       // 4. Create business
       let business_id: string | null = null;
-      console.log('Creating business:', { name: businessName, code: codeToUse });
       const { data: business, error: businessError } = await supabase
         .from('businesses')
         .insert({ name: businessName, code: codeToUse })
@@ -543,7 +507,6 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
         .single();
       if (businessError || !business) {
         setErrorLog('Business creation error: ' + (businessError?.message || JSON.stringify(businessError)));
-        console.error('Business creation error:', businessError);
         if (businessError?.message?.toLowerCase().includes('duplicate')) {
           Alert.alert('This business name or code is already in use. Please choose a different one.');
           setLoading(false);
@@ -558,20 +521,17 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
 
       // 5. Upsert user (in case row does not exist)
       if (authData.user?.id && business_id) {
-        console.log('Upserting user:', { id: authData.user.id, name, role, business_id, business_code: codeToUse });
         const { error: userError } = await supabase
           .from('users')
           .upsert({ id: authData.user.id, name, role, business_id, business_code: codeToUse }, { onConflict: 'id' });
         if (userError ?? false) {
           setErrorLog('User upsert error: ' + (userError?.message || JSON.stringify(userError)));
-          console.error('User upsert error:', userError);
           Alert.alert('User update failed', userError?.message ?? 'Unknown error');
           setLoading(false);
           return;
         }
       } else if (authData.user?.id) {
         setErrorLog('Business ID missing when upserting user.');
-        console.error('Business ID missing when upserting user.');
         Alert.alert('Registration failed', 'Business ID missing when saving user.');
         setLoading(false);
         return;
@@ -580,11 +540,9 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
       setErrorLog('');
       setShowCodeAfter(true);
       setLoading(false);
-      console.log('Registration successful!');
       return;
     } catch (err: any) {
       setErrorLog('Registration failed: ' + (err?.message || JSON.stringify(err)));
-      console.error('Registration failed:', err);
       Alert.alert('Registration failed', err.message || 'Unknown error');
     } finally {
       setLoading(false);
