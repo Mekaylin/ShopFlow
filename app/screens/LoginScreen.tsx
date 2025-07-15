@@ -429,7 +429,29 @@ function RegistrationScreen({ onBack, onSuccess }: { onBack: () => void, onSucce
     }
     let codeToUse = businessCode.trim();
     if (!codeToUse) {
-      codeToUse = generateBusinessCode();
+      // Try up to 5 times to generate a unique business code
+      let attempts = 0;
+      let unique = false;
+      while (attempts < 5 && !unique) {
+        codeToUse = generateBusinessCode();
+        // Check for duplicate business code
+        const { data: existingBiz, error: bizCheckError } = await supabase
+          .from('businesses')
+          .select('id')
+          .eq('code', codeToUse)
+          .maybeSingle();
+        if (!existingBiz && !bizCheckError) {
+          unique = true;
+        } else {
+          attempts++;
+        }
+      }
+      if (!unique) {
+        setErrorLog('Failed to generate a unique business code. Please try again.');
+        Alert.alert('Error', 'Failed to generate a unique business code. Please try again.');
+        setLoading(false);
+        return;
+      }
     }
     if (passwordStrength === 'weak') {
       console.warn('Registration failed: weak password.');
