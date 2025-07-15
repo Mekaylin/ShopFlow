@@ -171,9 +171,28 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
         ]).start();
         return;
       }
+      // Fetch user details from users table after login
+      const userId = data.user?.id;
+      if (!userId) {
+        setAdminError('Could not get user id after login.');
+        setAdminLoading(false);
+        return;
+      }
+      const { data: userRow, error: userFetchError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      if (userFetchError || !userRow) {
+        console.error('Failed to fetch user details after login:', userFetchError);
+        setAdminError('Could not fetch user details.');
+        setAdminLoading(false);
+        return;
+      }
       setLoginAttempts(0);
       if (onLogin) onLogin('admin');
-      console.log('Admin login successful, navigating to dashboard.');
+      // Optionally, store userRow in context or session here
+      console.log('Admin login successful, user details:', userRow);
       router.replace('/admin-dashboard');
     } catch (e: any) {
       console.error('Admin login exception:', e);
@@ -509,15 +528,26 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
 
       // 4. Create business
       let business_id: string | null = null;
-      const { data: business, error: businessError } = await supabase
-        .from('businesses')
-        .insert({ name: businessName, code: codeToUse })
-        .select('id,code')
-        .single();
-      console.log('[Step 4] Business insert result:', { business, businessError });
+      let business, businessError;
+      try {
+        const businessResult = await supabase
+          .from('businesses')
+          .insert({ name: businessName, code: codeToUse })
+          .select('id,code')
+          .single();
+        business = businessResult.data;
+        businessError = businessResult.error;
+        console.log('[Step 4] Business insert result:', { business, businessError });
+      } catch (err) {
+        setErrorLog('[Step 4] Exception during business insert: ' + (err instanceof Error ? err.message : JSON.stringify(err)));
+        console.error('[Step 4] Exception during business insert:', err);
+        Alert.alert('Failed to create business', err instanceof Error ? err.message : 'Unknown error');
+        setLoading(false);
+        return;
+      }
       if (businessError || !business) {
-        setErrorLog('Business creation error: ' + (businessError?.message || JSON.stringify(businessError)));
-        console.error('[Step 4] Business creation error:', businessError);
+        setErrorLog('[Step 4] Business creation error: ' + (businessError?.message || JSON.stringify(businessError)));
+        console.error('[Step 4] Business creation error:', businessError, business);
         if (businessError?.message?.toLowerCase().includes('duplicate')) {
           Alert.alert('This business name or code is already in use. Please choose a different one.');
           setLoading(false);
@@ -532,19 +562,29 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
 
       // 5. Upsert user (in case row does not exist)
       if (authData.user?.id && business_id) {
-        const { error: userError } = await supabase
-          .from('users')
-          .upsert({ id: authData.user.id, name, role, business_id, business_code: codeToUse, email }, { onConflict: 'id' });
-        console.log('[Step 5] User upsert result:', { userId: authData.user.id, business_id, email, userError });
+        let userError;
+        try {
+          const userUpsertResult = await supabase
+            .from('users')
+            .upsert({ id: authData.user.id, name, role, business_id, business_code: codeToUse, email }, { onConflict: 'id' });
+          userError = userUpsertResult.error;
+          console.log('[Step 5] User upsert result:', { userId: authData.user.id, business_id, email, userError, data: userUpsertResult.data });
+        } catch (err) {
+          setErrorLog('[Step 5] Exception during user upsert: ' + (err instanceof Error ? err.message : JSON.stringify(err)));
+          console.error('[Step 5] Exception during user upsert:', err);
+          Alert.alert('User update failed', err instanceof Error ? err.message : 'Unknown error');
+          setLoading(false);
+          return;
+        }
         if (userError ?? false) {
-          setErrorLog('User upsert error: ' + (userError?.message || JSON.stringify(userError)));
+          setErrorLog('[Step 5] User upsert error: ' + (userError?.message || JSON.stringify(userError)));
           console.error('[Step 5] User upsert error:', userError);
           Alert.alert('User update failed', userError?.message ?? 'Unknown error');
           setLoading(false);
           return;
         }
       } else if (authData.user?.id) {
-        setErrorLog('Business ID missing when upserting user.');
+        setErrorLog('[Step 5] Business ID missing when upserting user.');
         console.error('[Step 5] Business ID missing when upserting user.');
         Alert.alert('Registration failed', 'Business ID missing when saving user.');
         setLoading(false);
