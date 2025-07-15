@@ -137,7 +137,6 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
   useEffect(() => {
     const fetchEmployees = async () => {
       setLoadingEmployees(true);
-      // Get business_id from local session/user (assume user is stored in localStorage or context)
       let businessId = null;
       try {
         // Try to get from localStorage (web) or AsyncStorage (native) or context
@@ -148,22 +147,36 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
             businessId = userObj.business_id;
           }
         }
-      } catch {}
-      // Fallback: try to get from supabase.auth.getUser()
-      if (!businessId && supabase.auth) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user && user.user_metadata && user.user_metadata.business_id) {
-          businessId = user.user_metadata.business_id;
+      } catch (e) {
+        console.error('Error reading business_id from localStorage:', e);
+      }
+      try {
+        // Fallback: try to get from supabase.auth.getUser()
+        if (!businessId && supabase.auth) {
+          const { data: { user }, error: userError } = await supabase.auth.getUser();
+          if (userError) {
+            console.error('Error fetching user from supabase:', userError);
+          }
+          if (user && user.user_metadata && user.user_metadata.business_id) {
+            businessId = user.user_metadata.business_id;
+          }
         }
+        let query = supabase.from('employees').select('id, name, code, business_id');
+        if (businessId) query = query.eq('business_id', businessId);
+        const { data, error } = await query;
+        if (error) {
+          console.error('Error fetching employees:', error);
+          Alert.alert('Error', 'Could not fetch employees. Please check your connection.');
+        }
+        if (data) {
+          setEmployees(data);
+        }
+      } catch (e) {
+        console.error('Unexpected error fetching employees:', e);
+        Alert.alert('Error', 'Unexpected error fetching employees.');
+      } finally {
+        setLoadingEmployees(false);
       }
-      // If still not found, fetch all (should not happen in production)
-      let query = supabase.from('employees').select('id, name, code, business_id');
-      if (businessId) query = query.eq('business_id', businessId);
-      const { data, error } = await query;
-      if (!error && data) {
-        setEmployees(data);
-      }
-      setLoadingEmployees(false);
     };
     fetchEmployees();
   }, []);
