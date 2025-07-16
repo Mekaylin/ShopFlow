@@ -1,5 +1,5 @@
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useRouter, usePathname } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
@@ -19,10 +19,12 @@ type LoginScreenProps = {
 
 
 
+
 function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   const pathname = usePathname();
   const [checkingSession, setCheckingSession] = useState(true);
-  const [redirecting, setRedirecting] = useState(false); // Prevent multiple redirects
+  // Remove redirecting state, use a ref instead
+  const hasNavigatedRef = React.useRef(false);
   // Error state for auto-login fallback
   const [autoLoginError, setAutoLoginError] = useState('');
   // State for role selection
@@ -85,13 +87,13 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
     return () => clearInterval(timer);
   }, [loginLocked, lockTimer]);
 
-
-  // Listen to auth state changes and only redirect if not already on dashboard
+  // Single effect for session check and navigation, no legacy/duplicate logic
   useEffect(() => {
     let isMounted = true;
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!isMounted || redirecting) return;
-      if (session && session.user) {
+    (async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+      if (session && session.user && !hasNavigatedRef.current) {
         const { data: userRow } = await supabase
           .from('users')
           .select('role')
@@ -99,47 +101,22 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
           .single();
         if (userRow?.role === 'admin') {
           if (pathname !== '/admin-dashboard') {
-            setRedirecting(true);
+            hasNavigatedRef.current = true;
             router.replace('/admin-dashboard');
           }
         } else if (userRow?.role === 'employee') {
           if (pathname !== '/employee-dashboard') {
-            setRedirecting(true);
+            hasNavigatedRef.current = true;
             router.replace('/employee-dashboard');
           }
         } else {
           setAutoLoginError('User role not found. Please contact support.');
         }
       }
-      setCheckingSession(false);
-    });
-    // Initial session check (run only once on mount)
-    (async () => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const session = sessionData?.session;
-      if (session && session.user && !redirecting) {
-        const { data: userRow } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        if (userRow?.role === 'admin') {
-          if (pathname !== '/admin-dashboard') {
-            setRedirecting(true);
-            router.replace('/admin-dashboard');
-          }
-        } else if (userRow?.role === 'employee') {
-          if (pathname !== '/employee-dashboard') {
-            setRedirecting(true);
-            router.replace('/employee-dashboard');
-          }
-        }
-      }
-      setCheckingSession(false);
+      if (isMounted) setCheckingSession(false);
     })();
     return () => {
       isMounted = false;
-      listener?.subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount
