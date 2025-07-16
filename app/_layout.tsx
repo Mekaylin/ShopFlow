@@ -10,15 +10,15 @@ import { supabase } from '../lib/supabase';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  
   // Load fonts with error handling
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
-  
   const [checking, setChecking] = useState(true);
   const [user, setUser] = useState(null);
   const router = useRouter();
+  // Prevent repeated redirects
+  const hasRedirectedRef = React.useRef(false);
 
   // Add browser back button handler for web
   useEffect(() => {
@@ -41,7 +41,6 @@ export default function RootLayout() {
     
     const fetchUserData = async (authUser: any) => {
       if (!isMounted) return;
-      
       try {
         // Fetch complete user record from users table
         const { data: userRecord, error: userError } = await supabase
@@ -49,27 +48,28 @@ export default function RootLayout() {
           .select('*')
           .eq('id', authUser.id)
           .single();
-          
         if (!isMounted) return;
-        
         if (userError || !userRecord) {
           console.log('User not found in users table, logging out.');
           setUser(null);
           return;
         }
-
-        // Set complete user object with business_id and role
         setUser(userRecord);
-        
         // Route based on user role - only redirect if not already on the correct route
-        const currentPath = Platform.OS === 'web' ? (window?.location?.pathname || '') : '';
-        if (userRecord.role === 'admin' && !currentPath.includes('admin-dashboard')) {
-          router.replace('/admin-dashboard');
-        } else if (userRecord.role === 'employee' && !currentPath.includes('employee-dashboard')) {
-          router.replace('/employee-dashboard');
-        } else if (userRecord.role !== 'admin' && userRecord.role !== 'employee') {
-          console.log('Invalid user role, logging out.');
-          setUser(null);
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          const currentPath = window.location.pathname || '';
+          if (!hasRedirectedRef.current) {
+            if (userRecord.role === 'admin' && !currentPath.includes('admin-dashboard')) {
+              hasRedirectedRef.current = true;
+              router.replace('/admin-dashboard');
+            } else if (userRecord.role === 'employee' && !currentPath.includes('employee-dashboard')) {
+              hasRedirectedRef.current = true;
+              router.replace('/employee-dashboard');
+            } else if (userRecord.role !== 'admin' && userRecord.role !== 'employee') {
+              console.log('Invalid user role, logging out.');
+              setUser(null);
+            }
+          }
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -79,7 +79,8 @@ export default function RootLayout() {
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
-      
+      // Reset redirect guard on auth state change
+      hasRedirectedRef.current = false;
       console.log('Auth state change event:', event, session?.user?.id);
       if (session?.user) {
         await fetchUserData(session.user);
@@ -87,7 +88,10 @@ export default function RootLayout() {
         setUser(null);
         // On logout, force redirect to login page
         if (Platform.OS === 'web' && typeof window !== 'undefined') {
-          router.replace('/');
+          if (window.location.pathname !== '/') {
+            hasRedirectedRef.current = true;
+            router.replace('/');
+          }
         }
       }
       setChecking(false);
@@ -96,16 +100,19 @@ export default function RootLayout() {
     // Initial session check - only do this once
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!isMounted) return;
-      
+      // Reset redirect guard on initial check
+      hasRedirectedRef.current = false;
       console.log('Initial session check:', session?.user?.id || 'No session');
       if (session?.user) {
         await fetchUserData(session.user);
       } else {
         setUser(null);
         // Redirect to login page if not already there
-        const currentPath = Platform.OS === 'web' ? (window?.location?.pathname || '') : '';
-        if (!currentPath.includes('/')) {
-          router.replace('/');
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          if (window.location.pathname !== '/') {
+            hasRedirectedRef.current = true;
+            router.replace('/');
+          }
         }
       }
       setChecking(false);
