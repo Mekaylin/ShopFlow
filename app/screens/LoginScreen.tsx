@@ -1,5 +1,5 @@
 import { FontAwesome5 } from '@expo/vector-icons';
-import { usePathname, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
@@ -20,12 +20,10 @@ type LoginScreenProps = {
 
 
 
+// NOTE: All session/redirect logic has been removed from LoginScreen. This screen is now a pure login/register/reset form.
+// Session/redirect logic should be handled at the top level (e.g., /app/_layout.tsx) to avoid duplicate navigation and infinite loops.
 function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
-  const pathname = usePathname();
-  const [checkingSession, setCheckingSession] = useState(true);
-  // Remove redirecting state, use a ref instead
-  const hasNavigatedRef = React.useRef(false);
-  // Error state for auto-login fallback
+  // Error state for auto-login fallback (used for registration screen only)
   const [autoLoginError, setAutoLoginError] = useState('');
   // State for role selection
   const [role, setRole] = useState<'admin' | 'employee'>('employee');
@@ -87,47 +85,7 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
     return () => clearInterval(timer);
   }, [loginLocked, lockTimer]);
 
-  // Single effect for session check and navigation, no legacy/duplicate logic
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const session = sessionData?.session;
-      if (session && session.user && !hasNavigatedRef.current) {
-        const { data: userRow } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        if (userRow?.role === 'admin') {
-          if (pathname !== '/admin-dashboard') {
-            hasNavigatedRef.current = true;
-            router.replace('/admin-dashboard');
-          }
-        } else if (userRow?.role === 'employee') {
-          if (pathname !== '/employee-dashboard') {
-            hasNavigatedRef.current = true;
-            router.replace('/employee-dashboard');
-          }
-        } else {
-          setAutoLoginError('User role not found. Please contact support.');
-        }
-      }
-      if (isMounted) setCheckingSession(false);
-    })();
-    return () => {
-      isMounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on mount
-
-  if (checkingSession) {
-    return (
-      <View style={styles.bg}>
-        <ActivityIndicator size="large" color="#1976d2" style={{ marginTop: 100 }} />
-      </View>
-    );
-  }
+  // All session/redirect logic removed. If you need to guard this screen, do so in /app/_layout.tsx or a top-level provider.
   if (showRegister) {
     return <RegistrationScreen onBack={() => setShowRegister(false)} isLoggedIn={!!autoLoginError} />;
   }
