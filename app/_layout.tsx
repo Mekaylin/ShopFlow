@@ -98,6 +98,11 @@ export default function RootLayout() {
         await fetchUserData(session.user);
       } else {
         setUser(null);
+        // Redirect to login page if not already there
+        const currentPath = Platform.OS === 'web' ? (window?.location?.pathname || '') : '';
+        if (!currentPath.includes('/')) {
+          router.replace('/');
+        }
       }
       setChecking(false);
     });
