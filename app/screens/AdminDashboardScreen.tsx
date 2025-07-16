@@ -189,7 +189,7 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
           supabase.from('tasks').select('*').eq('business_id', businessId),
           supabase.from('materials').select('*').eq('business_id', businessId),
           supabase.from('departments').select('name').eq('business_id', businessId),
-          supabase.from('performance_settings').select('*').eq('business_id', businessId).single(),
+          supabase.from('performance_settings').select('*').eq('business_id', businessId).maybeSingle(),
           supabase.from('clock_events').select('*').eq('business_id', businessId).order('clock_in', { ascending: false }),
         ]);
         if (!isMounted) return;

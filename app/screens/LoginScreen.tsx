@@ -466,6 +466,12 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
       return;
     }
     setLoading(true);
+    // Timeout failsafe: always reset loading after 15 seconds
+    const loadingTimeout = setTimeout(() => {
+      setLoading(false);
+      setErrorLog('Registration timed out. Please check your connection and try again.');
+      Alert.alert('Timeout', 'Registration timed out. Please check your connection and try again.');
+    }, 15000);
     try {
       // 1. Check for duplicate business code
       const { data: existingBiz, error: bizCheckError } = await supabase
@@ -645,14 +651,17 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
       setErrorLog('');
       setShowCodeAfter(true);
       setLoading(false);
+      clearTimeout(loadingTimeout);
       console.log('[Step 6] Registration successful!');
       return;
     } catch (err: any) {
       setErrorLog('Registration failed: ' + (err?.message || JSON.stringify(err)));
       console.error('[Catch] Registration failed:', err);
       Alert.alert('Registration failed', err.message || 'Unknown error');
+      clearTimeout(loadingTimeout);
     } finally {
       setLoading(false);
+      clearTimeout(loadingTimeout);
     }
   };
 

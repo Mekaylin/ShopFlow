@@ -1,5 +1,5 @@
 import { FontAwesome5 } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
+// Removed native DateTimePicker for Expo Go compatibility
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { FlatList, Image, Platform, SafeAreaView, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -49,7 +49,7 @@ const TasksTab: React.FC<TasksTabProps> = ({
     const today = new Date();
     return today.toISOString().slice(0, 10); // Initialize new task date
   });
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  // Removed showDatePicker state for Expo Go compatibility
   const [newTaskStart, setNewTaskStart] = useState('');
   const [newTaskDeadline, setNewTaskDeadline] = useState('');
   const [selectedMaterialForTask, setSelectedMaterialForTask] = useState<string>('');
@@ -311,30 +311,22 @@ const TasksTab: React.FC<TasksTabProps> = ({
         ) : (
           <View>
             <TextInput style={adminStyles.inputText} placeholder="Task Title" value={newTaskName} onChangeText={setNewTaskName} />
-            <TouchableOpacity
-              style={[adminStyles.inputText, { justifyContent: 'center' }]}
-              onPress={() => setShowDatePicker(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={{ color: '#333', fontSize: 16 }}>
-                {newTaskDate}
-              </Text>
-            </TouchableOpacity>
-            {showDatePicker && (
-              <DateTimePicker
-                value={new Date(newTaskDate)}
-                mode="date"
-                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                onChange={(event, selectedDate) => {
-                  setShowDatePicker(Platform.OS === 'ios');
-                  if (selectedDate) {
-                    setNewTaskDate(selectedDate.toISOString().slice(0, 10));
-                  }
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+              <FontAwesome5 name="calendar" size={16} color="#1976d2" style={{ marginRight: 8 }} />
+              <TextInput
+                style={[adminStyles.inputText, { flex: 1 }]}
+                placeholder="YYYY-MM-DD"
+                value={newTaskDate}
+                onChangeText={text => {
+                  // Only allow valid date format
+                  if (/^\d{0,4}-?\d{0,2}-?\d{0,2}$/.test(text)) setNewTaskDate(text);
                 }}
-                maximumDate={new Date(2100, 11, 31)}
-                minimumDate={new Date(2000, 0, 1)}
+                keyboardType="numbers-and-punctuation"
+                maxLength={10}
+                autoCapitalize="none"
+                autoCorrect={false}
               />
-            )}
+            </View>
             <TextInput style={adminStyles.inputText} placeholder="Start Time (e.g. 09:00)" value={newTaskStart} onChangeText={setNewTaskStart} />
             <TextInput style={adminStyles.inputText} placeholder="Deadline (e.g. 17:00)" value={newTaskDeadline} onChangeText={setNewTaskDeadline} />
             {/* Materials selection (reuse existing logic) */}
