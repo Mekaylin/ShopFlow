@@ -1,5 +1,5 @@
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
@@ -19,6 +19,7 @@ type LoginScreenProps = {
 
 
 function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
+  const pathname = usePathname();
   const [checkingSession, setCheckingSession] = useState(true);
   // Error state for auto-login fallback
   const [autoLoginError, setAutoLoginError] = useState('');
@@ -94,9 +95,9 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
           .eq('id', session.user.id)
           .single();
         if (userRow?.role === 'admin') {
-          if (!window.location.pathname.includes('admin-dashboard')) router.replace('/admin-dashboard');
+          if (pathname !== '/admin-dashboard') router.replace('/admin-dashboard');
         } else if (userRow?.role === 'employee') {
-          if (!window.location.pathname.includes('employee-dashboard')) router.replace('/employee-dashboard');
+          if (pathname !== '/employee-dashboard') router.replace('/employee-dashboard');
         } else {
           setAutoLoginError('User role not found. Please contact support.');
         }
@@ -114,9 +115,9 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
           .eq('id', session.user.id)
           .single();
         if (userRow?.role === 'admin') {
-          if (!window.location.pathname.includes('admin-dashboard')) router.replace('/admin-dashboard');
+          if (pathname !== '/admin-dashboard') router.replace('/admin-dashboard');
         } else if (userRow?.role === 'employee') {
-          if (!window.location.pathname.includes('employee-dashboard')) router.replace('/employee-dashboard');
+          if (pathname !== '/employee-dashboard') router.replace('/employee-dashboard');
         }
       }
       setCheckingSession(false);
@@ -125,7 +126,7 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
       isMounted = false;
       listener?.subscription.unsubscribe();
     };
-  }, []);
+  }, [pathname, router]);
 
   if (checkingSession) {
     return (
