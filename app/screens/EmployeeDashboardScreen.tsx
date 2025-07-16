@@ -648,9 +648,20 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
           setOnLunch(false);
           setSelectedEmployee(null);
           setEnteredCode('');
-          // Optionally, allow logging out of business session
           await AsyncStorage.removeItem('business_id');
           setBusinessId(null);
+          // Sign out from Supabase to clear session
+          const { error } = await supabase.auth.signOut();
+          if (error) {
+            Alert.alert('Logout Error', error.message);
+            return;
+          }
+          // Optionally clear all AsyncStorage (uncomment if needed)
+          // await AsyncStorage.clear();
+          // Redirect to login page
+          if (typeof window !== 'undefined') {
+            window.location.href = '/';
+          }
         }}
       >
         <Text style={styles.closeBtnText}>Logout</Text>

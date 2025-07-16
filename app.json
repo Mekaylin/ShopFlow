@@ -4,7 +4,7 @@
     "slug": "ShopFlowFinal",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/ShopLogo.jpeg",
     "scheme": "shopflowfinal",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -23,7 +23,13 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "meta": [
+        {
+          "name": "mobile-web-app-capable",
+          "content": "yes"
+        }
+      ]
     },
     "plugins": [
       "expo-router",

@@ -8,19 +8,19 @@
   "description": "ShopFlow: Cloud-based business management for teams.",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/ShopLogo.jpeg",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/jpeg"
     },
     {
-      "src": "/icon.png",
+      "src": "/ShopLogo.jpeg",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/jpeg"
     },
     {
-      "src": "/icon.png",
+      "src": "/ShopLogo.jpeg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "maskable"
     }
   ]
