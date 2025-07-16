@@ -1,6 +1,6 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View, Image } from 'react-native';
 import { PerformanceMetrics } from '../../components/utility/types';
 import { supabase } from '../../lib/supabase';
 
@@ -56,10 +56,22 @@ const PerformanceMetricsScreen: React.FC = () => {
         </View>
       ) : error ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Image
+            source={require('../../assets/images/ShopLogo.jpeg')}
+            style={{ width: 120, height: 120, marginBottom: 20 }}
+            resizeMode="contain"
+          />
           <Text style={{ color: '#c62828', fontSize: 16 }}>{error}</Text>
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16 }}>
+          <View style={{ alignItems: 'center', marginBottom: 24 }}>
+            <Image
+              source={require('../../assets/images/ShopLogo.jpeg')}
+              style={{ width: 120, height: 120 }}
+              resizeMode="contain"
+            />
+          </View>
           {metrics.length === 0 ? (
             (() => { alert('No performance metrics found for this business.'); return <Text style={{ color: '#888', fontSize: 16 }}>No performance metrics found.</Text>; })()
           ) : (
