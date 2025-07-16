@@ -20,6 +20,8 @@ type LoginScreenProps = {
 function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   // Error state for auto-login fallback
   const [autoLoginError, setAutoLoginError] = useState('');
+  // State for role selection
+  const [role, setRole] = useState<'admin' | 'employee'>('employee');
   // Reset error/loading state on role switch
   useEffect(() => {
     setAdminError('');
@@ -27,8 +29,6 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
     setAdminLoading(false);
     setEmpLoading(false);
   }, [role]);
-  // State for role selection
-  const [role, setRole] = useState<'admin' | 'employee'>('employee');
   // Admin login state
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
