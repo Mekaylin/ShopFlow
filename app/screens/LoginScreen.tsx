@@ -19,6 +19,7 @@ type LoginScreenProps = {
 
 
 function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
+  const [checkingSession, setCheckingSession] = useState(true);
   // Error state for auto-login fallback
   const [autoLoginError, setAutoLoginError] = useState('');
   // State for role selection
@@ -81,36 +82,58 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
     return () => clearInterval(timer);
   }, [loginLocked, lockTimer]);
 
-  // Auto-login: check for existing session on mount
+  // Improved: Listen to auth state changes and only redirect if not already on dashboard
   useEffect(() => {
     let isMounted = true;
-    const checkSession = async () => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const session = sessionData?.session;
-      if (session && isMounted) {
-        const userId = session.user?.id;
-        if (userId) {
-          const { data: userRow } = await supabase
-            .from('users')
-            .select('role')
-            .eq('id', userId)
-            .single();
-          if (userRow?.role === 'admin') {
-            router.replace('/admin-dashboard');
-          } else if (userRow?.role === 'employee') {
-            router.replace('/employee-dashboard');
-          } else {
-            setAutoLoginError('User role not found. Please contact support.');
-          }
+    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!isMounted) return;
+      if (session && session.user) {
+        const { data: userRow } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        if (userRow?.role === 'admin') {
+          if (!window.location.pathname.includes('admin-dashboard')) router.replace('/admin-dashboard');
+        } else if (userRow?.role === 'employee') {
+          if (!window.location.pathname.includes('employee-dashboard')) router.replace('/employee-dashboard');
         } else {
-          setAutoLoginError('User not found. Please log in again.');
+          setAutoLoginError('User role not found. Please contact support.');
         }
       }
+      setCheckingSession(false);
+    });
+    // Initial session check
+    (async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+      if (session && session.user) {
+        const { data: userRow } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        if (userRow?.role === 'admin') {
+          if (!window.location.pathname.includes('admin-dashboard')) router.replace('/admin-dashboard');
+        } else if (userRow?.role === 'employee') {
+          if (!window.location.pathname.includes('employee-dashboard')) router.replace('/employee-dashboard');
+        }
+      }
+      setCheckingSession(false);
+    })();
+    return () => {
+      isMounted = false;
+      listener?.subscription.unsubscribe();
     };
-    checkSession();
-    return () => { isMounted = false; };
   }, []);
 
+  if (checkingSession) {
+    return (
+      <View style={styles.bg}>
+        <ActivityIndicator size="large" color="#1976d2" style={{ marginTop: 100 }} />
+      </View>
+    );
+  }
   if (showRegister) {
     return <RegistrationScreen onBack={() => setShowRegister(false)} isLoggedIn={!!autoLoginError} />;
   }
