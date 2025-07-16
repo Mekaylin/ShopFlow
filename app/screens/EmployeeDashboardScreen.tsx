@@ -148,6 +148,8 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
     const fetchEmployees = async () => {
       setLoadingEmployees(true);
       try {
+  const [businessIdError, setBusinessIdError] = useState('');
+  const businessIdTimeoutRef = useRef<any>(null); // Use 'any' for cross-platform compatibility
         let query = supabase.from('employees').select('id, name, code, business_id');
         query = query.eq('business_id', businessId);
         const { data, error } = await query;
@@ -158,6 +160,27 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
         if (data) {
           setEmployees(data);
         }
+  // On mount, check if businessId is stored in AsyncStorage
+  useEffect(() => {
+    (async () => {
+      try {
+        const stored = await AsyncStorage.getItem('business_id');
+        console.log('[EmployeeDashboard] Loaded business_id from AsyncStorage:', stored);
+        if (stored) setBusinessId(stored);
+        else setBusinessIdError('No business ID found. Please log in again.');
+      } catch (err) {
+        console.error('[EmployeeDashboard] Error loading business_id from AsyncStorage:', err);
+        setBusinessIdError('Error loading business ID.');
+      }
+    })();
+    // Add a timeout failsafe: if businessId is not set after 5 seconds, show error
+    businessIdTimeoutRef.current = setTimeout(() => {
+      setBusinessIdError('Business ID not found. Please log in again.');
+    }, 5000);
+    return () => {
+      if (businessIdTimeoutRef.current) clearTimeout(businessIdTimeoutRef.current);
+    };
+  }, []);
       } catch (e) {
         console.error('Unexpected error fetching employees:', e);
         Alert.alert('Error', 'Unexpected error fetching employees.');
