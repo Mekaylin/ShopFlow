@@ -284,9 +284,16 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
         return;
       }
       setLoginAttempts(0);
+      // Store business id in AsyncStorage for dashboard access
+      try {
+        const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
+        await AsyncStorage.setItem('business_id', business.id);
+        console.log('[EmployeeLogin] Stored business_id in AsyncStorage:', business.id);
+      } catch (storageErr) {
+        console.error('[EmployeeLogin] Failed to store business_id:', storageErr);
+      }
       if (onLogin) onLogin('employee');
       console.log('[EmployeeLogin] Login successful, navigating to dashboard.');
-      // You may want to store business.id in session for later use
       router.replace('/employee-dashboard');
     } catch (e: any) {
       console.error('[EmployeeLogin] Exception:', e);
@@ -314,10 +321,10 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   };
 
   return (
-    <View style={styles.bg}>
+    <View style={[styles.bg, { paddingHorizontal: 16 }]}> 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-        <View style={styles.centered}>
-          <Animated.View style={[styles.card, { transform: [{ translateX: shakeAnim }] }]}> 
+        <View style={[styles.centered, { paddingHorizontal: 8 }]}> 
+          <Animated.View style={[styles.card, { transform: [{ translateX: shakeAnim }], paddingHorizontal: 8 }]}> 
             <FontAwesome5 name="tools" size={54} color="#1976d2" style={{ marginBottom: 18 }} />
             <Text style={styles.title}>ShopFlow</Text>
             <Text style={styles.subtitle}>Sign in to continue</Text>

@@ -42,7 +42,7 @@ export default function TestSupabaseScreen({ onBack }: { onBack?: () => void }) 
   }
 
   return (
-    <View style={{ flex: 1, padding: 20, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafd' }}>
+    <View style={{ flex: 1, padding: 20, paddingHorizontal: 16, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f8fafd' }}>
       <Text style={{ fontWeight: 'bold', fontSize: 20, marginBottom: 16 }}>Supabase Test Screen</Text>
       <Button title="Test Supabase Connection" onPress={testSupabaseConnection} />
       <View style={{ marginTop: 32, width: '100%' }}>

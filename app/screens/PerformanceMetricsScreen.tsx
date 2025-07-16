@@ -42,41 +42,41 @@ const PerformanceMetricsScreen: React.FC = () => {
   }, [businessId]);
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#f5faff' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#e3f2fd' }}>
+    <View style={{ flex: 1, backgroundColor: '#f5faff', paddingHorizontal: 16 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: '#e3f2fd', paddingHorizontal: 0 }}>
         <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 12 }}>
           <Text style={{ color: '#1976d2', fontWeight: 'bold', fontSize: 16 }}>{'< Back'}</Text>
         </TouchableOpacity>
         <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1976d2' }}>Performance Metrics</Text>
       </View>
       {loading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 }}>
           <ActivityIndicator size="large" color="#1976d2" />
           <Text style={{ marginTop: 12, color: '#1976d2' }}>Loading metrics...</Text>
         </View>
       ) : error ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 }}>
           <Image
-            source={require('../../assets/images/ShopLogo.jpeg')}
+            source={require('../../assets/ShopLogo.jpeg')}
             style={{ width: 120, height: 120, marginBottom: 20 }}
             resizeMode="contain"
           />
-          <Text style={{ color: '#c62828', fontSize: 16 }}>{error}</Text>
+          <Text style={{ color: '#c62828', fontSize: 16, textAlign: 'center' }}>{error}</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={{ padding: 16 }}>
+        <ScrollView contentContainerStyle={{ paddingVertical: 16, paddingHorizontal: 0 }}>
           <View style={{ alignItems: 'center', marginBottom: 24 }}>
             <Image
-              source={require('../../assets/images/ShopLogo.jpeg')}
+              source={require('../../assets/ShopLogo.jpeg')}
               style={{ width: 120, height: 120 }}
               resizeMode="contain"
             />
           </View>
           {metrics.length === 0 ? (
-            (() => { alert('No performance metrics found for this business.'); return <Text style={{ color: '#888', fontSize: 16 }}>No performance metrics found.</Text>; })()
+            (() => { alert('No performance metrics found for this business.'); return <Text style={{ color: '#888', fontSize: 16, textAlign: 'center' }}>No performance metrics found.</Text>; })()
           ) : (
             metrics.map((m, idx) => (
-              <View key={m.employee_id || idx} style={{ backgroundColor: '#fff', borderRadius: 10, padding: 16, marginBottom: 14, shadowColor: '#1976d2', shadowOpacity: 0.06, shadowRadius: 6, elevation: 1 }}>
+              <View key={m.employee_id || idx} style={{ backgroundColor: '#fff', borderRadius: 10, padding: 16, marginBottom: 14, shadowColor: '#1976d2', shadowOpacity: 0.06, shadowRadius: 6, elevation: 1, paddingHorizontal: 8 }}>
                 <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#1976d2', marginBottom: 4 }}>{m.employee_name}</Text>
                 <Text style={{ fontSize: 15, color: '#333', marginBottom: 2 }}>Total Tasks: {m.total_tasks}</Text>
                 <Text style={{ fontSize: 15, color: '#333', marginBottom: 2 }}>Completed Tasks: {m.completed_tasks}</Text>

@@ -33,7 +33,7 @@ class DashboardErrorBoundary extends React.Component<{ children: React.ReactNode
   render() {
     if (this.state.hasError) {
       return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32, paddingHorizontal: 16 }}>
           <FontAwesome5 name="exclamation-triangle" size={48} color="#c62828" style={{ marginBottom: 18 }} />
           <Text style={{ fontSize: 20, color: '#c62828', marginBottom: 12 }}>Something went wrong.</Text>
           <Text style={{ color: '#c62828', marginBottom: 12 }}>{String(this.state.error)}</Text>
@@ -299,7 +299,7 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
   // Main dashboard render with error boundary and Suspense fallback
   return (
     <DashboardErrorBoundary>
-      <SafeAreaView style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff', paddingHorizontal: 16 }}>
         {/* Header with centered title and notification bell */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: darkMode ? '#333950' : '#e3f2fd', position: 'relative' }}>
           {/* Left: Notification bell */}

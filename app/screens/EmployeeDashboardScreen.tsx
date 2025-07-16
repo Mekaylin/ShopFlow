@@ -602,7 +602,7 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
 
   // After successful code entry, show the dashboard for the current employee
   return (
-    <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 16 }]}> 
+    <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 16, paddingHorizontal: 8 }]}> 
       {/* Header with notification bell */}
       <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8, position: 'relative' }}>
         <TouchableOpacity onPress={() => setNotificationPanelVisible(true)} style={{ position: 'absolute', left: 0, padding: 8 }}>
