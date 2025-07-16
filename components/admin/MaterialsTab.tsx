@@ -30,10 +30,7 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
   const [newMaterialUnit, setNewMaterialUnit] = useState('');
   const [newMaterialTypeLabel, setNewMaterialTypeLabel] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const params = useLocalSearchParams();
-  // Modal state from navigation
-  const addMaterialModal = params.addMaterial === '1';
+  const [showAddMaterialModal, setShowAddMaterialModal] = useState(false);
   const [addTypeModal, setAddTypeModal] = useState<string | null>(null);
 
   // Material CRUD handlers
@@ -247,20 +244,24 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
       }}>
         <TouchableOpacity 
           style={adminStyles.addBtn} 
-          onPress={() => router.push({ pathname: '/admin-dashboard', params: { ...params, addMaterial: '1' } })}
+          onPress={() => setShowAddMaterialModal(true)}
         >
           <Text style={[adminStyles.addBtnText, { color: '#fff' }]}>Add New Material</Text>
         </TouchableOpacity>
       </View>
-      {/* Add Material Modal */}
-      <AdminModal visible={!!addMaterialModal} onClose={() => router.back()} title="Add New Material">
+      {/* Add Material Modal (deduplicated) */}
+      <AdminModal visible={showAddMaterialModal} onClose={() => setShowAddMaterialModal(false)} title="Add New Material">
         <TextInput 
+          accessibilityLabel="Material Name"
+          testID="material-name-input"
           style={adminStyles.inputText} 
           placeholder="Material Name" 
           value={newMaterialName} 
           onChangeText={setNewMaterialName} 
         />
         <TextInput 
+          accessibilityLabel="Material Quantity"
+          testID="material-quantity-input"
           style={[adminStyles.inputText, { marginTop: 12 }]} 
           placeholder="Unit (e.g., kg, pieces, liters)" 
           value={newMaterialUnit} 
@@ -272,7 +273,14 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
       </AdminModal>
       {/* Add Material Type Modal */}
       <AdminModal visible={!!addTypeModal} onClose={() => setAddTypeModal(null)} title="Add Material Type">
-        <TextInput style={adminStyles.inputText} placeholder="Type Label" value={newMaterialTypeLabel} onChangeText={setNewMaterialTypeLabel} />
+        <TextInput
+          style={adminStyles.inputText}
+          placeholder="Type Label"
+          value={newMaterialTypeLabel}
+          onChangeText={setNewMaterialTypeLabel}
+          accessibilityLabel="Material Type Label"
+          testID="material-type-label-input"
+        />
         <TouchableOpacity style={adminStyles.addBtn} onPress={() => addTypeModal && handleAddMaterialType(addTypeModal)}>
           <Text style={[adminStyles.addBtnText, { color: '#fff' }]}>Add</Text>
         </TouchableOpacity>
@@ -284,12 +292,16 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
         setNewMaterialUnit('');
       }} title={editMaterial ? `Edit Material: ${editMaterial.name}` : 'Edit Material'}>
         <TextInput
+          accessibilityLabel="Material Type Name"
+          testID="material-type-name-input"
           style={adminStyles.inputText}
           placeholder="Material Name"
           value={newMaterialName}
           onChangeText={setNewMaterialName}
         />
         <TextInput
+          accessibilityLabel="Material Type Quantity"
+          testID="material-type-quantity-input"
           style={[adminStyles.inputText, { marginTop: 12 }]}
           placeholder="Unit (e.g., kg, pieces, liters)"
           value={newMaterialUnit}

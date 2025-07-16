@@ -85,6 +85,10 @@ export default function RootLayout() {
         await fetchUserData(session.user);
       } else {
         setUser(null);
+        // On logout, force redirect to login page
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          router.replace('/');
+        }
       }
       setChecking(false);
     });

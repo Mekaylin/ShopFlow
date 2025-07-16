@@ -14,7 +14,8 @@ type LoginScreenProps = {
 };
 
 
-// ...existing code...
+
+// No duplicated functions: all login, registration, and reset handlers are defined only once and used in one place.
 
 
 function LoginScreen({ onLogin, setSession }: LoginScreenProps) {

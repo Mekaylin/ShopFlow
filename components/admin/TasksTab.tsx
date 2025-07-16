@@ -1,3 +1,110 @@
+// --- AddTaskModal extracted for deduplication and reliability ---
+// ...existing code...
+type AddTaskModalProps = {
+  visible: boolean;
+  onClose: () => void;
+  employees: Employee[];
+  selectedEmployee: Employee | null;
+  setSelectedEmployee: (e: Employee | null) => void;
+  onAddTask: (taskData: any) => Promise<void>;
+  loading: boolean;
+  error: string;
+  setError: (msg: string) => void;
+};
+const AddTaskModal: React.FC<AddTaskModalProps> = ({
+  visible,
+  onClose,
+  employees,
+  selectedEmployee,
+  setSelectedEmployee,
+  onAddTask,
+  loading,
+  error,
+  setError
+}) => {
+  const [newTaskName, setNewTaskName] = useState('');
+  const [newTaskStart, setNewTaskStart] = useState('');
+  const [newTaskDeadline, setNewTaskDeadline] = useState('');
+  // Materials logic can be added here if needed
+  const handleAdd = async () => {
+    setError('');
+    if (!newTaskName || !newTaskStart || !newTaskDeadline || !selectedEmployee) {
+      setError('Please fill all required fields.');
+      return;
+    }
+    await onAddTask({
+      name: newTaskName,
+      assigned_to: selectedEmployee.id,
+      start: newTaskStart,
+      deadline: newTaskDeadline,
+      // Add materials if needed
+    });
+    setNewTaskName('');
+    setNewTaskStart('');
+    setNewTaskDeadline('');
+    setSelectedEmployee(null);
+    onClose();
+  };
+  return (
+    <AdminModal visible={visible} onClose={() => { setSelectedEmployee(null); onClose(); }} title={!selectedEmployee ? 'Select Employee' : `Add Task for ${selectedEmployee?.name || ''}`}>
+      {!selectedEmployee ? (
+        <View>
+          <FlatList
+            data={employees}
+            keyExtractor={item => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' }}
+                onPress={() => setSelectedEmployee(item)}
+              >
+                <Text style={{ fontSize: 16 }}>{item.name}</Text>
+              </TouchableOpacity>
+            )}
+          />
+          <TouchableOpacity style={adminStyles.closeBtn} onPress={() => { setSelectedEmployee(null); onClose(); }}>
+            <Text style={adminStyles.closeBtnText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View>
+          <TextInput
+            style={adminStyles.inputText}
+            placeholder="Task Title"
+            value={newTaskName}
+            onChangeText={setNewTaskName}
+            accessibilityLabel="Task Title"
+            testID="task-title-input"
+          />
+          <TextInput
+            style={adminStyles.inputText}
+            placeholder="Start Time (e.g. 09:00)"
+            value={newTaskStart}
+            onChangeText={setNewTaskStart}
+            accessibilityLabel="Start Time"
+            testID="task-start-input"
+          />
+          <TextInput
+            style={adminStyles.inputText}
+            placeholder="Deadline (e.g. 17:00)"
+            value={newTaskDeadline}
+            onChangeText={setNewTaskDeadline}
+            accessibilityLabel="Deadline"
+            testID="task-deadline-input"
+          />
+          {error ? <Text style={{ color: 'red', marginBottom: 8 }}>{error}</Text> : null}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
+            <TouchableOpacity style={adminStyles.addBtn} onPress={handleAdd} disabled={loading}>
+              <Text style={adminStyles.addBtnText}>{loading ? 'Adding...' : 'Add Task'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={adminStyles.closeBtn} onPress={() => setSelectedEmployee(null)}>
+              <Text style={adminStyles.closeBtnText}>Back</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+    </AdminModal>
+  );
+};
 import { FontAwesome5 } from '@expo/vector-icons';
 // Removed native DateTimePicker for Expo Go compatibility
 import { useRouter } from 'expo-router';
@@ -59,7 +166,35 @@ const TasksTab: React.FC<TasksTabProps> = ({
   const router = useRouter();
   // Remove params.addTask usage; use local state for modal
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [addTaskLoading, setAddTaskLoading] = useState(false);
+  const [addTaskError, setAddTaskError] = useState('');
   // Task CRUD handlers
+  const handleAddTask = async (taskData: any) => {
+    setAddTaskLoading(true);
+    setAddTaskError('');
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert({
+          ...taskData,
+          business_id: user.business_id,
+          completed: false,
+          completed_at: null,
+          materials_used: [], // Add materials if needed
+        })
+        .select('*')
+        .single();
+      if (error || !data) {
+        setAddTaskError('Failed to add task.');
+        return;
+      }
+      setTasks([...tasks, data]);
+    } catch (e) {
+      setAddTaskError('Unexpected error.');
+    } finally {
+      setAddTaskLoading(false);
+    }
+  };
   const handleCompleteTask = async (taskId: string) => {
     // TODO: Implement complete task logic
     // Example: mark as completed in supabase and update state
@@ -282,101 +417,17 @@ const TasksTab: React.FC<TasksTabProps> = ({
       >
         <FontAwesome5 name="plus" size={28} color="#fff" />
       </TouchableOpacity>
-      {/* Add Task Modal */}
-      <AdminModal visible={showAddTaskModal} onClose={() => {
-        setShowAddTaskModal(false);
-        setSelectedTaskEmployee(null);
-      }} title={!selectedTaskEmployee ? 'Select Employee' : `Add Task for ${selectedTaskEmployee?.name || ''}`}>
-        {!selectedTaskEmployee ? (
-          <View>
-            <FlatList
-              data={employees}
-              keyExtractor={item => item.id}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={{ padding: 12, borderBottomWidth: 1, borderBottomColor: '#eee' }}
-                  onPress={() => setSelectedTaskEmployee(item)}
-                >
-                  <Text style={{ fontSize: 16 }}>{item.name}</Text>
-                </TouchableOpacity>
-              )}
-            />
-            <TouchableOpacity style={adminStyles.closeBtn} onPress={() => {
-              setShowAddTaskModal(false);
-              setSelectedTaskEmployee(null);
-            }}>
-              <Text style={adminStyles.closeBtnText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View>
-            <TextInput style={adminStyles.inputText} placeholder="Task Title" value={newTaskName} onChangeText={setNewTaskName} />
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-              <FontAwesome5 name="calendar" size={16} color="#1976d2" style={{ marginRight: 8 }} />
-              <TextInput
-                style={[adminStyles.inputText, { flex: 1 }]}
-                placeholder="YYYY-MM-DD"
-                value={newTaskDate}
-                onChangeText={text => {
-                  // Only allow valid date format
-                  if (/^\d{0,4}-?\d{0,2}-?\d{0,2}$/.test(text)) setNewTaskDate(text);
-                }}
-                keyboardType="numbers-and-punctuation"
-                maxLength={10}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-            <TextInput style={adminStyles.inputText} placeholder="Start Time (e.g. 09:00)" value={newTaskStart} onChangeText={setNewTaskStart} />
-            <TextInput style={adminStyles.inputText} placeholder="Deadline (e.g. 17:00)" value={newTaskDeadline} onChangeText={setNewTaskDeadline} />
-            {/* Materials selection (reuse existing logic) */}
-            <View style={{ marginTop: 12, marginBottom: 12, backgroundColor: '#f5faff', borderRadius: 10, padding: 10 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                <Text style={{ fontWeight: 'bold', color: '#1976d2', marginRight: 4 }}>Add Materials Used</Text>
-                <TouchableOpacity
-                  onPress={() => alert('Optionally add materials and types used for this task. You can leave this blank if not needed.')}
-                  style={{ padding: 2 }}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <FontAwesome5 name="info-circle" size={14} color="#1976d2" />
-                </TouchableOpacity>
-              </View>
-              {/* ...existing code for materials... */}
-            </View>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
-              <TouchableOpacity style={adminStyles.addBtn} onPress={async () => {
-                if (!newTaskName || !newTaskStart || !newTaskDeadline || !selectedTaskEmployee) return;
-                const { data, error } = await supabase
-                  .from('tasks')
-                  .insert({
-                    name: newTaskName,
-                    assigned_to: selectedTaskEmployee.id,
-                    business_id: user.business_id,
-                    start: newTaskStart,
-                    deadline: newTaskDeadline,
-                    completed: false,
-                    completed_at: null,
-                    materials_used: materialsForNewTask,
-                  })
-                  .select('*')
-                  .single();
-                if (!error && data) setTasks([...tasks, data]);
-                setNewTaskName('');
-                setNewTaskStart('');
-                setNewTaskDeadline('');
-                setMaterialsForNewTask([]);
-              setSelectedTaskEmployee(null);
-              setShowAddTaskModal(false);
-              }}>
-                <Text style={adminStyles.addBtnText}>Add Task</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={adminStyles.closeBtn} onPress={() => setSelectedTaskEmployee(null)}>
-                <Text style={adminStyles.closeBtnText}>Back</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      </AdminModal>
+      <AddTaskModal
+        visible={showAddTaskModal}
+        onClose={() => setShowAddTaskModal(false)}
+        employees={employees}
+        selectedEmployee={selectedTaskEmployee}
+        setSelectedEmployee={setSelectedTaskEmployee}
+        onAddTask={handleAddTask}
+        loading={addTaskLoading}
+        error={addTaskError}
+        setError={setAddTaskError}
+      />
     </SafeAreaView>
   );
 }

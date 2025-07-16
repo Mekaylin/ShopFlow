@@ -70,5 +70,16 @@ export default function AdminDashboard() {
     return null;
   }
 
-  return <AdminDashboardScreen onLogout={() => router.replace('/')} user={user} />;
+  return <AdminDashboardScreen onLogout={async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('[Logout] Error signing out:', error);
+      }
+    } catch (e) {
+      console.error('[Logout] Exception during signOut:', e);
+    } finally {
+      router.replace('/');
+    }
+  }} user={user} />;
 }

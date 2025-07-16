@@ -484,6 +484,8 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
                   <View key={mat.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                     <Text style={{ flex: 1 }}>{mat.name} ({mat.unit}):</Text>
                     <TextInput
+                      accessibilityLabel="Employee Code Entry"
+                      testID="employee-code-entry-input"
                       style={{ borderWidth: 1, borderColor: '#bbb', borderRadius: 6, padding: 6, width: 60, marginLeft: 8, backgroundColor: '#fff' }}
                       placeholder="0"
                       keyboardType="numeric"
@@ -549,6 +551,8 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
       <View style={[styles.container, { backgroundColor: '#f8fafd', justifyContent: 'center', alignItems: 'center' }]}> 
         <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#1976d2', textAlign: 'center', marginBottom: 18 }}>Enter Business Code</Text>
         <TextInput
+          accessibilityLabel="Employee Dashboard Search"
+          testID="employee-dashboard-search-input"
           style={[styles.codeInput, { marginBottom: 10, width: 260 }]}
           placeholder="Business code"
           value={businessCode}
@@ -597,6 +601,8 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
             <View style={styles.codeModalContent}>
               <Text style={styles.modalTitle}>Enter Your Employee Code</Text>
               <TextInput
+                accessibilityLabel="Employee Dashboard Task Input"
+                testID="employee-dashboard-task-input"
                 style={styles.codeInput}
                 placeholder="Employee code"
                 value={enteredCode}
@@ -656,11 +662,10 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
             Alert.alert('Logout Error', error.message);
             return;
           }
-          // Optionally clear all AsyncStorage (uncomment if needed)
-          // await AsyncStorage.clear();
-          // Redirect to login page
+          // Force a full reload to clear all cached state and session
           if (typeof window !== 'undefined') {
-            window.location.href = '/';
+            window.location.replace('/');
+            window.location.reload();
           }
         }}
       >

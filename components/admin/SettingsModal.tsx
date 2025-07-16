@@ -127,6 +127,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <TextInput
+                    accessibilityLabel="SettingsModal Name"
+                    testID="settingsmodal-name-input"
                     style={[adminStyles.inputText, { marginBottom: 0 }]}
                     value={newLateThreshold}
                     onChangeText={setNewLateThreshold}
@@ -147,6 +149,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Text style={adminStyles.timeLabel}>Start:</Text>
                 <TextInput
+                  accessibilityLabel="SettingsModal Email"
+                  testID="settingsmodal-email-input"
                   style={adminStyles.inputText}
                   value={newWorkStart}
                   onChangeText={setNewWorkStart}
@@ -154,6 +158,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 />
                 <Text style={adminStyles.timeLabel}>End:</Text>
                 <TextInput
+                  accessibilityLabel="SettingsModal Old Password"
+                  testID="settingsmodal-old-password-input"
                   style={adminStyles.inputText}
                   value={newWorkEnd}
                   onChangeText={setNewWorkEnd}
@@ -164,6 +170,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Text style={adminStyles.timeLabel}>Lunch Start:</Text>
                 <TextInput
+                  accessibilityLabel="SettingsModal New Password"
+                  testID="settingsmodal-new-password-input"
                   style={adminStyles.inputText}
                   value={newLunchStart}
                   onChangeText={setNewLunchStart}
@@ -171,6 +179,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 />
                 <Text style={adminStyles.timeLabel}>Lunch End:</Text>
                 <TextInput
+                  accessibilityLabel="SettingsModal Confirm Password"
+                  testID="settingsmodal-confirm-password-input"
                   style={adminStyles.inputText}
                   value={newLunchEnd}
                   onChangeText={setNewLunchEnd}

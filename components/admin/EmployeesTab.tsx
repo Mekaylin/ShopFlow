@@ -206,37 +206,28 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
 
   const handleSaveEmployee = async () => {
     if (!editEmployee) return;
-    console.log('handleSaveEmployee called');
-    console.log('User:', user);
-    console.log('EditEmployee:', editEmployee);
-    console.log('Payload:', {
-      name: newEmployeeName,
-      code: newEmployeeCode,
-      lunch_start: newEmployeeLunchStart,
-      lunch_end: newEmployeeLunchEnd,
-      photo_url: newEmployeePhotoUri,
-      department: newEmployeeDepartment,
-    });
-
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('employees')
-        .update({
-          name: newEmployeeName,
-          code: newEmployeeCode,
-          lunch_start: newEmployeeLunchStart,
-          lunch_end: newEmployeeLunchEnd,
-          photo_url: newEmployeePhotoUri,
-          department: newEmployeeDepartment,
-        })
-        .eq('id', editEmployee.id)
-        .select('*')
-        .single();
-
-      console.log('Save employee response:', { data, error });
+      const result = await Promise.race([
+        supabase
+          .from('employees')
+          .update({
+            name: newEmployeeName,
+            code: newEmployeeCode,
+            lunch_start: newEmployeeLunchStart,
+            lunch_end: newEmployeeLunchEnd,
+            photo_url: newEmployeePhotoUri,
+            department: newEmployeeDepartment,
+          })
+          .eq('id', editEmployee.id)
+          .select('*')
+          .single(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), 8000)),
+      ]);
+      const { data, error } = result as any;
       if (error) {
         setError(error.message || 'Failed to save employee.');
+        Alert.alert('Error', error.message || 'Failed to save employee.');
       } else if (data) {
         setEmployees(employees.map(e => e.id === editEmployee.id ? data : e));
         setEditEmployee(null);
@@ -249,6 +240,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       }
     } catch (err) {
       setError('Unexpected error saving employee.');
+      Alert.alert('Error', err instanceof Error ? err.message : 'Unexpected error');
     } finally {
       setLoading(false);
     }
@@ -440,9 +432,23 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       <AdminModal visible={!!showAddEmployeeModal} onClose={() => setShowAddEmployeeModal(false)} title="Add New Employee">
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
           <View style={adminStyles.addEmployeeInputsRow}>
-            <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Name" value={newEmployeeName} onChangeText={setNewEmployeeName} />
+            <TextInput
+              style={[adminStyles.inputText, { flex: 1 }]}
+              placeholder="Name"
+              value={newEmployeeName}
+              onChangeText={setNewEmployeeName}
+              accessibilityLabel="Employee Name"
+              testID="employee-name-input"
+            />
             <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-              <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Code" value={newEmployeeCode} onChangeText={setNewEmployeeCode} />
+              <TextInput
+                style={[adminStyles.inputText, { flex: 1 }]}
+                placeholder="Code"
+                value={newEmployeeCode}
+                onChangeText={setNewEmployeeCode}
+                accessibilityLabel="Employee Code"
+                testID="employee-code-input"
+              />
               {biometricEnabled && (
                 <TouchableOpacity
                   style={{ marginLeft: 8, backgroundColor: biometricLoggedIn ? '#388e3c' : '#1976d2', borderRadius: 8, padding: 8, alignItems: 'center', justifyContent: 'center' }}
@@ -456,11 +462,32 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
             </View>
           </View>
           <View style={adminStyles.addEmployeeInputsRow}>
-            <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Lunch Start" value={newEmployeeLunchStart} onChangeText={setNewEmployeeLunchStart} />
-            <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Lunch End" value={newEmployeeLunchEnd} onChangeText={setNewEmployeeLunchEnd} />
+            <TextInput
+              style={[adminStyles.inputText, { flex: 1 }]}
+              placeholder="Lunch Start"
+              value={newEmployeeLunchStart}
+              onChangeText={setNewEmployeeLunchStart}
+              accessibilityLabel="Lunch Start"
+              testID="employee-lunch-start-input"
+            />
+            <TextInput
+              style={[adminStyles.inputText, { flex: 1 }]}
+              placeholder="Lunch End"
+              value={newEmployeeLunchEnd}
+              onChangeText={setNewEmployeeLunchEnd}
+              accessibilityLabel="Lunch End"
+              testID="employee-lunch-end-input"
+            />
           </View>
           <View style={adminStyles.addEmployeeInputsRow}>
-            <TextInput style={[adminStyles.inputText, { flex: 1 }]} placeholder="Department" value={newEmployeeDepartment} onChangeText={setNewEmployeeDepartment} />
+            <TextInput
+              style={[adminStyles.inputText, { flex: 1 }]}
+              placeholder="Department"
+              value={newEmployeeDepartment}
+              onChangeText={setNewEmployeeDepartment}
+              accessibilityLabel="Employee Department"
+              testID="employee-department-input"
+            />
           </View>
           <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }} onPress={pickEmployeePhoto}>
             {newEmployeePhotoUri ? (
@@ -496,7 +523,14 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       {/* Add Department Modal */}
       <AdminModal visible={!!showAddDeptModal} onClose={() => setShowAddDeptModal(false)} title="Add Department">
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
-          <TextInput style={adminStyles.inputText} placeholder="Department Name" value={newDepartment} onChangeText={setNewDepartment} />
+          <TextInput
+            style={adminStyles.inputText}
+            placeholder="Department Name"
+            value={newDepartment}
+            onChangeText={setNewDepartment}
+            accessibilityLabel="Department Name"
+            testID="department-name-input"
+          />
           <TouchableOpacity
             style={[adminStyles.addBtn, !newDepartment && { opacity: 0.5 }]}
             onPress={async () => {
@@ -515,15 +549,50 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       <AdminModal visible={!!editEmployee} onClose={() => setEditEmployee(null)} title="Edit Employee">
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
           <View style={adminStyles.addEmployeeInputsRow}>
-            <TextInput style={adminStyles.inputText} placeholder="Name" value={newEmployeeName} onChangeText={setNewEmployeeName} />
-            <TextInput style={adminStyles.inputText} placeholder="Code" value={newEmployeeCode} onChangeText={setNewEmployeeCode} />
+            <TextInput
+              style={adminStyles.inputText}
+              placeholder="Name"
+              value={newEmployeeName}
+              onChangeText={setNewEmployeeName}
+              accessibilityLabel="Modal Employee Name"
+              testID="modal-employee-name-input"
+            />
+            <TextInput
+              style={adminStyles.inputText}
+              placeholder="Code"
+              value={newEmployeeCode}
+              onChangeText={setNewEmployeeCode}
+              accessibilityLabel="Modal Employee Code"
+              testID="modal-employee-code-input"
+            />
           </View>
           <View style={adminStyles.addEmployeeInputsRow}>
-            <TextInput style={adminStyles.inputText} placeholder="Lunch Start" value={newEmployeeLunchStart} onChangeText={setNewEmployeeLunchStart} />
-            <TextInput style={adminStyles.inputText} placeholder="Lunch End" value={newEmployeeLunchEnd} onChangeText={setNewEmployeeLunchEnd} />
+            <TextInput
+              style={adminStyles.inputText}
+              placeholder="Lunch Start"
+              value={newEmployeeLunchStart}
+              onChangeText={setNewEmployeeLunchStart}
+              accessibilityLabel="Modal Lunch Start"
+              testID="modal-employee-lunch-start-input"
+            />
+            <TextInput
+              style={adminStyles.inputText}
+              placeholder="Lunch End"
+              value={newEmployeeLunchEnd}
+              onChangeText={setNewEmployeeLunchEnd}
+              accessibilityLabel="Modal Lunch End"
+              testID="modal-employee-lunch-end-input"
+            />
           </View>
           <View style={adminStyles.addEmployeeInputsRow}>
-            <TextInput style={adminStyles.inputText} placeholder="Department" value={newEmployeeDepartment} onChangeText={setNewEmployeeDepartment} />
+            <TextInput
+              style={adminStyles.inputText}
+              placeholder="Department"
+              value={newEmployeeDepartment}
+              onChangeText={setNewEmployeeDepartment}
+              accessibilityLabel="Modal Employee Department"
+              testID="modal-employee-department-input"
+            />
           </View>
           <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }} onPress={pickEmployeePhoto}>
             {newEmployeePhotoUri ? (

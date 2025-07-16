@@ -503,6 +503,8 @@ const HomeTab: React.FC<HomeTabProps> = ({
                'Choose any date in the month'}
             </Text>
             <TextInput
+              accessibilityLabel="HomeTab Search"
+              testID="hometab-search-input"
               style={{
                 borderWidth: 1,
                 borderColor: '#ddd',
