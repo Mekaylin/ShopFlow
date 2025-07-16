@@ -50,17 +50,31 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleGetBusinessCode = async () => {
     setBusinessCodeLoading(true);
     try {
+      if (!user || !user.business_id) {
+        setBusinessCode(null);
+        Alert.alert('Error', 'No business ID found for this user.');
+        setBusinessCodeLoading(false);
+        return;
+      }
       const code = await getBusinessCode(user.business_id);
       if (!code) {
         setBusinessCode(null);
-        Alert.alert('Error', 'No business code found. Please contact support.');
+        Alert.alert('Error', `No business code found for business_id: ${user.business_id}. Please contact support.`);
       } else {
         setBusinessCode(code);
       }
     } catch (error) {
-      console.error('Error getting business code:', error);
+      console.error('Error getting business code:', error, 'user:', user);
       setBusinessCode(null);
-      Alert.alert('Error', 'Failed to get business code.');
+      let errorMsg = 'Unknown error';
+      if (typeof error === 'string') {
+        errorMsg = error;
+      } else if (error && typeof error === 'object' && 'message' in error && typeof (error as any).message === 'string') {
+        errorMsg = (error as any).message;
+      } else if (error) {
+        errorMsg = JSON.stringify(error);
+      }
+      Alert.alert('Error', `Failed to get business code. ${errorMsg}`);
     } finally {
       setBusinessCodeLoading(false);
     }
@@ -175,7 +189,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 <Text style={adminStyles.settingsTitle}>Business Code</Text>
                 
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                  <TouchableOpacity style={[adminStyles.addBtn, { flex: 1, marginRight: 8 }]} onPress={handleGetBusinessCode}>
+                  <TouchableOpacity
+                    style={[adminStyles.addBtn, { flex: 1, marginRight: 8, opacity: businessCodeLoading ? 0.6 : 1 }]}
+                    onPress={handleGetBusinessCode}
+                    disabled={businessCodeLoading}
+                  >
                     <Text style={adminStyles.addBtnText}>
                       {businessCodeLoading ? 'Loading...' : 'Get Code'}
                     </Text>

@@ -2,7 +2,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 // Removed native DateTimePicker for Expo Go compatibility
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { FlatList, Image, Platform, SafeAreaView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, SafeAreaView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
 import { Employee, Material, MaterialType, Task } from '../utility/types';

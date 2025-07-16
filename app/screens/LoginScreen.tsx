@@ -1,5 +1,3 @@
-
-
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -72,6 +70,33 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
     }
     return () => clearInterval(timer);
   }, [loginLocked, lockTimer]);
+
+  // Auto-login: check for existing session on mount
+  useEffect(() => {
+    let isMounted = true;
+    const checkSession = async () => {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const session = sessionData?.session;
+      if (session && isMounted) {
+        // Fetch user row to determine role
+        const userId = session.user?.id;
+        if (userId) {
+          const { data: userRow, error: userFetchError } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', userId)
+            .single();
+          if (userRow?.role === 'admin') {
+            router.replace('/admin-dashboard');
+          } else if (userRow?.role === 'employee') {
+            router.replace('/employee-dashboard');
+          }
+        }
+      }
+    };
+    checkSession();
+    return () => { isMounted = false; };
+  }, []);
 
   if (showRegister) {
     return <RegistrationScreen onBack={() => setShowRegister(false)} />;

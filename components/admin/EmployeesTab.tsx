@@ -295,31 +295,34 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   const handleAddDepartment = async () => {
     console.log('handleAddDepartment called');
     console.log('Current user:', user);
-
-    // Defensive: check for valid session/user
-    if (!user || !user.business_id || !user.id) {
-      setError('User session missing. Please log in again.');
-      return;
-    }
-
-    // Sanitize payload (snake_case)
-    const payload = {
-      name: newDepartment,
-      business_id: user.business_id,
-    };
-    console.log('Payload:', payload);
-
-    if (!newDepartment) {
-      setError('Please enter a department name.');
-      return;
-    }
-
-    if (departments.includes(newDepartment)) {
-      setError('This department already exists.');
-      return;
-    }
-
+    setLoading(true);
     try {
+      // Defensive: check for valid session/user
+      if (!user || !user.business_id || !user.id) {
+        setError('User session missing. Please log in again.');
+        setLoading(false);
+        return;
+      }
+
+      // Sanitize payload (snake_case)
+      const payload = {
+        name: newDepartment,
+        business_id: user.business_id,
+      };
+      console.log('Payload:', payload);
+
+      if (!newDepartment) {
+        setError('Please enter a department name.');
+        setLoading(false);
+        return;
+      }
+
+      if (departments.includes(newDepartment)) {
+        setError('This department already exists.');
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase
         .from('departments')
         .insert(payload);
@@ -328,6 +331,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       if (error) {
         console.error('Add department error (full object):', error);
         setError(`Code: ${error?.code || 'N/A'}\nMessage: ${error?.message || 'Failed to add department.'}\nHint: ${error?.hint || ''}`);
+        setLoading(false);
         return;
       }
 
@@ -338,6 +342,8 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
     } catch (err) {
       console.error('handleAddDepartment exception:', err);
       setError('Unexpected error adding department.');
+    } finally {
+      setLoading(false);
     }
   };
 
