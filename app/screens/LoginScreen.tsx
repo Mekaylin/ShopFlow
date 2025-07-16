@@ -18,6 +18,15 @@ type LoginScreenProps = {
 
 
 function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
+  // Error state for auto-login fallback
+  const [autoLoginError, setAutoLoginError] = useState('');
+  // Reset error/loading state on role switch
+  useEffect(() => {
+    setAdminError('');
+    setEmpError('');
+    setAdminLoading(false);
+    setEmpLoading(false);
+  }, [role]);
   // State for role selection
   const [role, setRole] = useState<'admin' | 'employee'>('employee');
   // Admin login state
@@ -75,13 +84,12 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   useEffect(() => {
     let isMounted = true;
     const checkSession = async () => {
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData?.session;
       if (session && isMounted) {
-        // Fetch user row to determine role
         const userId = session.user?.id;
         if (userId) {
-          const { data: userRow, error: userFetchError } = await supabase
+          const { data: userRow } = await supabase
             .from('users')
             .select('role')
             .eq('id', userId)
@@ -90,7 +98,11 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
             router.replace('/admin-dashboard');
           } else if (userRow?.role === 'employee') {
             router.replace('/employee-dashboard');
+          } else {
+            setAutoLoginError('User role not found. Please contact support.');
           }
+        } else {
+          setAutoLoginError('User not found. Please log in again.');
         }
       }
     };
@@ -99,7 +111,7 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   }, []);
 
   if (showRegister) {
-    return <RegistrationScreen onBack={() => setShowRegister(false)} />;
+    return <RegistrationScreen onBack={() => setShowRegister(false)} isLoggedIn={!!autoLoginError} />;
   }
   if (showReset) {
     return (
@@ -110,6 +122,8 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
               <Text style={styles.title}>Reset Password</Text>
               <Text style={styles.subtitle}>Enter your email to receive a password reset link.</Text>
               <TextInput
+                accessibilityLabel="Login Email"
+                testID="login-email-input"
                 style={styles.input}
                 placeholder="Email"
                 value={resetEmail}
@@ -347,6 +361,8 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
             {role === 'admin' ? (
               <>
                 <TextInput
+                  accessibilityLabel="Admin Email"
+                  testID="admin-email-input"
                   style={styles.input}
                   placeholder="Email"
                   value={adminEmail}
@@ -359,6 +375,8 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
                 />
                 <View style={styles.passwordContainer}>
                   <TextInput
+                    accessibilityLabel="Admin Password"
+                    testID="admin-password-input"
                     style={[styles.input, { flex: 1, marginBottom: 0 }]}
                     placeholder="Password"
                     value={adminPassword}
@@ -386,16 +404,18 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
               </>
             ) : (
               <>
-            <Text style={styles.inputLabel}>Business Code</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Business Code"
-              value={empBusinessCode}
-              onChangeText={setEmpBusinessCode}
-              autoCapitalize="characters"
-              editable={!empLoading}
-              maxLength={12}
-            />
+                <Text style={styles.inputLabel}>Business Code</Text>
+                <TextInput
+                  accessibilityLabel="Employee Business Code"
+                  testID="employee-business-code-input"
+                  style={styles.input}
+                  placeholder="Business Code"
+                  value={empBusinessCode}
+                  onChangeText={setEmpBusinessCode}
+                  autoCapitalize="characters"
+                  editable={!empLoading}
+                  maxLength={12}
+                />
                 {empError ? <Text style={{ color: 'red', marginBottom: 8 }}>{empError}</Text> : null}
                 <TouchableOpacity style={styles.loginBtn} onPress={handleEmployeeLogin} disabled={empLoading}>
                   {empLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginBtnText}>Login</Text>}
@@ -416,7 +436,7 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
 
 
 
-function RegistrationScreen({ onBack }: { onBack: () => void }) {
+function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void; isLoggedIn?: boolean }) {
   const [role] = useState<'admin'>('admin');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -452,6 +472,11 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
   }
 
   const handleRegister = async () => {
+    if (isLoggedIn) {
+      setErrorLog('You are already logged in. Please log out before registering a new account.');
+      Alert.alert('Already logged in', 'Please log out before registering a new account.');
+      return;
+    }
     setErrorLog('');
     console.log('Registration attempt:', { name, email, businessName, businessCode });
     // Early validation
@@ -726,6 +751,8 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
           </View>
         ) : null}
         <TextInput
+          accessibilityLabel="Register Name"
+          testID="register-name-input"
           style={styles.input}
           placeholder="Name"
           value={name}
@@ -735,6 +762,8 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
           placeholderTextColor="#b0b8c1"
         />
         <TextInput
+          accessibilityLabel="Register Email"
+          testID="register-email-input"
           style={styles.input}
           placeholder="Email"
           value={email}
@@ -746,6 +775,8 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
         />
         <View style={styles.passwordContainer}>
           <TextInput
+            accessibilityLabel="Register Password"
+            testID="register-password-input"
             style={[styles.input, { flex: 1, marginBottom: 0 }]}
             placeholder="Password"
             value={password}
@@ -779,6 +810,8 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
         </View>
         <Text style={styles.inputLabel}>Business Name</Text>
         <TextInput
+          accessibilityLabel="Register Business Name"
+          testID="register-business-name-input"
           style={styles.input}
           placeholder="Business Name"
           value={businessName}
@@ -789,6 +822,8 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
         />
         <Text style={styles.inputLabel}>Business Code (optional, will be created)</Text>
         <TextInput
+          accessibilityLabel="Register Business Code"
+          testID="register-business-code-input"
           style={styles.input}
           placeholder="Leave blank to auto-generate"
           value={businessCode}
