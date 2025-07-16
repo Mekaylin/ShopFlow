@@ -57,7 +57,7 @@ const PerformanceMetricsScreen: React.FC = () => {
       ) : error ? (
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 }}>
           <Image
-            source={require('../../assets/ShopLogo.jpeg')}
+            source={require('../../assets/images/ShopLogo.jpeg')}
             style={{ width: 120, height: 120, marginBottom: 20 }}
             resizeMode="contain"
           />
@@ -67,7 +67,7 @@ const PerformanceMetricsScreen: React.FC = () => {
         <ScrollView contentContainerStyle={{ paddingVertical: 16, paddingHorizontal: 0 }}>
           <View style={{ alignItems: 'center', marginBottom: 24 }}>
             <Image
-              source={require('../../assets/ShopLogo.jpeg')}
+              source={require('../../assets/images/ShopLogo.jpeg')}
               style={{ width: 120, height: 120 }}
               resizeMode="contain"
             />
