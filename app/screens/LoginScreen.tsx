@@ -584,11 +584,42 @@ function RegistrationScreen({ onBack }: { onBack: () => void }) {
             setLoading(false);
             return;
           }
+          // Log the upsert payload for debugging
+          const upsertPayload = { id: sessionUserId, name, role, business_id, business_code: codeToUse, email };
+          console.log('[Step 5] Upsert payload:', upsertPayload);
           const userUpsertResult = await supabase
             .from('users')
-            .upsert({ id: sessionUserId, name, role, business_id, business_code: codeToUse, email }, { onConflict: 'id' });
+            .upsert(upsertPayload, { onConflict: 'id' });
           userError = userUpsertResult.error;
-          console.log('[Step 5] User upsert result:', { userId: sessionUserId, business_id, email, userError, data: userUpsertResult.data });
+          // Log the full Supabase response
+          console.log('[Step 5] User upsert result:', {
+            userId: sessionUserId,
+            business_id,
+            email,
+            userError,
+            data: userUpsertResult.data,
+            status: userUpsertResult.status,
+            statusText: userUpsertResult.statusText,
+            fullResponse: userUpsertResult
+          });
+          if (userUpsertResult.data) {
+            console.log('[Step 5] User upsert returned data:', userUpsertResult.data);
+          }
+          // Immediately fetch the user row after upsert for debugging
+          try {
+            const { data: userRow, error: fetchError } = await supabase
+              .from('users')
+              .select('*')
+              .eq('id', sessionUserId)
+              .single();
+            if (fetchError) {
+              console.error('[Step 5] Error fetching user after upsert:', fetchError);
+            } else {
+              console.log('[Step 5] User row after upsert:', userRow);
+            }
+          } catch (fetchEx) {
+            console.error('[Step 5] Exception fetching user after upsert:', fetchEx);
+          }
         } catch (err) {
           setErrorLog('[Step 5] Exception during user upsert: ' + (err instanceof Error ? err.message : JSON.stringify(err)));
           console.error('[Step 5] Exception during user upsert:', err);
