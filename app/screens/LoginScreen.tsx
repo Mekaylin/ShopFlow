@@ -125,6 +125,13 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
           return;
         }
       }
+      // For legacy users with role 'user', allow login but warn and treat as employee
+      if (userRow.role === 'user') {
+        setError('Your account is using a legacy role (user). Please contact support or re-register.');
+        console.warn('[Login] Legacy user role detected', { user: userRow });
+        setLoading(false);
+        return;
+      }
       setLoginAttempts(0);
       if (onLogin) onLogin(userRow.role);
       if (userRow.role === 'admin') {
@@ -317,21 +324,34 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
           }
           business_id = business.id;
         }
-        // Upsert user
+        // Upsert user (ensure session.user.id is present)
+        if (!session.user?.id) {
+          setRegError("Registration failed: No user ID found in session after sign up. This is likely a Supabase Auth/session issue. Please try again or contact support.");
+          setRegLoading(false);
+          clearTimeout(loadingTimeout);
+          console.error("[Signup] No user ID in session after sign up", { session });
+          didError = true;
+          return;
+        }
+        // For admin, allow business_code to be null (legacy compatible)
         const upsertPayload = {
           id: session.user.id,
           name,
           role: regRole,
           business_id,
-          business_code: regRole === "admin" ? codeToUse : regBusinessCode.trim(),
+          business_code: regRole === "admin" ? (codeToUse || null) : regBusinessCode.trim(),
           email: regEmail,
         };
         const userUpsertResult = await supabase
           .from("users")
           .upsert(upsertPayload, { onConflict: "id" });
         if (userUpsertResult.error) {
-          setRegError("User upsert error: " + (userUpsertResult.error?.message || "Unknown error") +
-            (userUpsertResult.error?.details ? "\n" + userUpsertResult.error.details : ""));
+          let errorMsg = "User upsert error: " + (userUpsertResult.error?.message || "Unknown error");
+          if (userUpsertResult.error?.code === '42501' || userUpsertResult.error?.code === 'PGRST301' || userUpsertResult.error?.message?.includes('406')) {
+            errorMsg += "\nThis is likely a Row Level Security (RLS) or permissions issue. Please ensure your RLS policies allow authenticated users to insert their own row (id = auth.uid()).";
+          }
+          if (userUpsertResult.error?.details) errorMsg += "\n" + userUpsertResult.error.details;
+          setRegError(errorMsg);
           setRegLoading(false);
           clearTimeout(loadingTimeout);
           console.error("[Signup] User upsert error", userUpsertResult.error, upsertPayload);
