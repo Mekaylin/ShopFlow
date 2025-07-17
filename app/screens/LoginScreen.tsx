@@ -324,36 +324,46 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
           }
           business_id = business.id;
         }
-        // Upsert user (ensure session.user.id is present)
-        if (!session.user?.id) {
-          setRegError("Registration failed: No user ID found in session after sign up. This is likely a Supabase Auth/session issue. Please try again or contact support.");
+        // Upsert user (ensure all required fields are present and valid)
+        if (!session.user?.id || !regEmail) {
+          setRegError("Registration failed: Missing user ID or email after sign up. This is likely a Supabase Auth/session issue. Please try again or contact support.");
           setRegLoading(false);
           clearTimeout(loadingTimeout);
-          console.error("[Signup] No user ID in session after sign up", { session });
+          console.error("[Signup] No user ID or email in session after sign up", { session, regEmail });
           didError = true;
           return;
         }
-        // For admin, allow business_code to be null (legacy compatible)
+        // Defensive: ensure all NOT NULL columns are filled (no nulls for NOT NULL columns)
+        // If your users table has more NOT NULL columns, add them here with default values if not provided
+        // Example: phone is unique but nullable, but if you want to always fill it, set to '' if not provided
         const upsertPayload = {
           id: session.user.id,
-          name,
-          role: regRole,
-          business_id,
-          business_code: regRole === "admin" ? (codeToUse || null) : regBusinessCode.trim(),
           email: regEmail,
+          name: name || '',
+          role: regRole,
+          business_id: business_id || '', // If business_id is NOT NULL, use '' as fallback
+          business_code: regRole === "admin" ? (codeToUse || '') : (regBusinessCode.trim() || ''),
+          phone: '', // Always provide phone, even if empty string (adjust if you want to collect phone)
         };
+        // Log payload for debugging
+        console.log("[Signup] Upserting user with payload:", upsertPayload);
         const userUpsertResult = await supabase
           .from("users")
           .upsert(upsertPayload, { onConflict: "id" });
         if (userUpsertResult.error) {
           let errorMsg = "User upsert error: " + (userUpsertResult.error?.message || "Unknown error");
+          // Add more details for common constraint/RLS errors
           if (userUpsertResult.error?.code === '42501' || userUpsertResult.error?.code === 'PGRST301' || userUpsertResult.error?.message?.includes('406')) {
             errorMsg += "\nThis is likely a Row Level Security (RLS) or permissions issue. Please ensure your RLS policies allow authenticated users to insert their own row (id = auth.uid()).";
+          }
+          if (userUpsertResult.error?.message?.includes('null value in column') || userUpsertResult.error?.message?.includes('violates not-null constraint')) {
+            errorMsg += "\nA required field is missing or null. Please check that all required fields (id, email) are present.";
           }
           if (userUpsertResult.error?.details) errorMsg += "\n" + userUpsertResult.error.details;
           setRegError(errorMsg);
           setRegLoading(false);
           clearTimeout(loadingTimeout);
+          // Log full error and payload for debugging
           console.error("[Signup] User upsert error", userUpsertResult.error, upsertPayload);
           didError = true;
           return;
