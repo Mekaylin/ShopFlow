@@ -24,169 +24,179 @@ type LoginScreenProps = {
 // Session/redirect logic should be handled at the top level (e.g., /app/_layout.tsx) to avoid duplicate navigation and infinite loops.
 function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   // Error state for auto-login fallback (used for registration screen only)
-  const [autoLoginError, setAutoLoginError] = useState('');
-  // State for role selection
-  const [role, setRole] = useState<'admin' | 'employee'>('employee');
-  // Reset error/loading state on role switch
-  useEffect(() => {
-    setError('');
-    setLoading(false);
-  }, [role]);
-  // Shared login state
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  // For employee login, require business code
-  const [businessCode, setBusinessCode] = useState('');
-  // Shared
-  const [shakeAnim] = useState(new Animated.Value(0));
-  const [showRegister, setShowRegister] = useState(false);
-  const [showRegistrationSuccess, setShowRegistrationSuccess] = useState(false);
-  const [showReset, setShowReset] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
-  const [resetLoading, setResetLoading] = useState(false);
-  const [loginAttempts, setLoginAttempts] = useState(0);
-  const [loginLocked, setLoginLocked] = useState(false);
-  const [lockTimer, setLockTimer] = useState(0);
-  const router = useRouter();
-
-  // Default setSession function if none provided
-  const defaultSetSession = async (key: string, value: string) => {
-    if (Platform.OS === 'web') {
-      localStorage.setItem(key, value);
-    } else {
-      const SecureStore = await import('expo-secure-store');
-      await SecureStore.setItemAsync(key, value);
-    }
-  };
-
-  const sessionSetter = setSession || defaultSetSession;
-
-  useEffect(() => {
-    let timer: ReturnType<typeof setInterval>;
-    if (loginLocked && lockTimer > 0) {
-      timer = setInterval(() => {
-        setLockTimer((t) => {
-          if (t <= 1) {
-            setLoginLocked(false);
-            clearInterval(timer);
-            return 0;
-          }
-          return t - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timer);
-  }, [loginLocked, lockTimer]);
-
-  // All session/redirect logic removed. If you need to guard this screen, do so in /app/_layout.tsx or a top-level provider.
-  if (showRegister) {
-    return <RegistrationScreen onBack={() => setShowRegister(false)} isLoggedIn={!!autoLoginError} />;
-  }
-  if (showReset) {
-    return (
-      <View style={styles.bg}>
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
-          <View style={styles.centered}>
-            <View style={styles.card}>
-              <Text style={styles.title}>Reset Password</Text>
-              <Text style={styles.subtitle}>Enter your email to receive a password reset link.</Text>
-              <TextInput
-                accessibilityLabel="Login Email"
-                testID="login-email-input"
-                style={styles.input}
-                placeholder="Email"
-                value={resetEmail}
-                onChangeText={setResetEmail}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="email-address"
-                placeholderTextColor="#b0b8c1"
-                editable={!resetLoading}
-              />
-              <TouchableOpacity
-                style={styles.loginBtn}
-                onPress={async () => {
-                  setResetLoading(true);
-                  try {
-                    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail);
-                    if (error) {
-                      Alert.alert('Error', error.message);
-                    } else {
-                      Alert.alert('Success', 'Check your email for a password reset link.');
-                      setShowReset(false);
-                    }
-                  } catch (e) {
-                    Alert.alert('Error', e instanceof Error ? e.message : JSON.stringify(e) || 'Unknown error');
-                  } finally {
-                    setResetLoading(false);
-                  }
-                }}
-                disabled={resetLoading}
-              >
-                <Text style={styles.loginBtnText}>{resetLoading ? 'Sending...' : 'Send Reset Email'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => setShowReset(false)} style={{ marginTop: 16 }}>
-                <Text style={{ color: '#1976d2', textAlign: 'center' }}>Back to Login</Text>
-              </TouchableOpacity>
-            </View>
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#e3f2fd' }}>
+      <View style={[styles.card, { width: 340 }]}> 
+        <Text style={styles.title}>Sign Up</Text>
+        {/* Role selector */}
+        <View style={{ flexDirection: 'row', marginBottom: 18 }}>
+          <TouchableOpacity
+            style={[styles.roleBtn, role === 'admin' && styles.roleBtnActive]}
+            onPress={() => setRole('admin')}
+            disabled={loading}
+          >
+            <Text style={{ color: role === 'admin' ? '#fff' : '#1976d2', fontWeight: 'bold' }}>Admin</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.roleBtn, role === 'employee' && styles.roleBtnActive]}
+            onPress={() => setRole('employee')}
+            disabled={loading}
+          >
+            <Text style={{ color: role === 'employee' ? '#fff' : '#1976d2', fontWeight: 'bold' }}>Employee</Text>
+          </TouchableOpacity>
+        </View>
+        {errorLog ? (
+          <View style={{ backgroundColor: '#ffeaea', borderRadius: 8, padding: 8, marginBottom: 10, width: 260 }}>
+            <Text style={{ color: '#c62828', fontSize: 14 }}>{errorLog}</Text>
           </View>
-        </KeyboardAvoidingView>
+        ) : null}
+        <TextInput
+          accessibilityLabel="Register Name"
+          testID="register-name-input"
+          style={styles.input}
+          placeholder="Name"
+          value={name}
+          onChangeText={setName}
+          autoCapitalize="words"
+          editable={!loading}
+          placeholderTextColor="#b0b8c1"
+        />
+        <TextInput
+          accessibilityLabel="Register Email"
+          testID="register-email-input"
+          style={styles.input}
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          editable={!loading}
+          placeholderTextColor="#b0b8c1"
+        />
+        <View style={styles.passwordContainer}>
+          <TextInput
+            accessibilityLabel="Register Password"
+            testID="register-password-input"
+            style={[styles.input, { flex: 1, marginBottom: 0 }]}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+            editable={!loading}
+            placeholderTextColor="#b0b8c1"
+          />
+          <TouchableOpacity
+            onPress={() => setShowPassword((v) => !v)}
+            style={styles.eyeBtn}
+            accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+          >
+            <FontAwesome5 name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#1976d2" />
+          </TouchableOpacity>
+        </View>
+        <View style={{ width: 260, marginBottom: 8 }}>
+          <Text style={{
+            color:
+              password.length === 0 ? '#888' :
+              passwordStrength === 'strong' ? '#388e3c' :
+              passwordStrength === 'medium' ? '#ff9800' : '#c62828',
+            fontWeight: 'bold',
+            fontSize: 14,
+            textAlign: 'left',
+          }}>
+            {password.length === 0 ? '' :
+              passwordStrength === 'strong' ? 'Strong password' :
+              passwordStrength === 'medium' ? 'Medium password' : 'Weak password'}
+          </Text>
+        </View>
+        {role === 'admin' && (
+          <>
+            <Text style={styles.inputLabel}>Business Name</Text>
+            <TextInput
+              accessibilityLabel="Register Business Name"
+              testID="register-business-name-input"
+              style={styles.input}
+              placeholder="Business Name"
+              value={businessName}
+              onChangeText={setBusinessName}
+              autoCapitalize="words"
+              editable={!loading}
+              placeholderTextColor="#b0b8c1"
+            />
+            <Text style={styles.inputLabel}>Business Code (optional, will be created)</Text>
+            <TextInput
+              accessibilityLabel="Register Business Code"
+              testID="register-business-code-input"
+              style={styles.input}
+              placeholder="Leave blank to auto-generate"
+              value={businessCode}
+              onChangeText={setBusinessCode}
+              autoCapitalize="characters"
+              editable={!loading}
+              maxLength={12}
+              placeholderTextColor="#b0b8c1"
+            />
+          </>
+        )}
+        {role === 'employee' && (
+          <>
+            <Text style={styles.inputLabel}>Business Code</Text>
+            <TextInput
+              accessibilityLabel="Register Business Code"
+              testID="register-business-code-input"
+              style={styles.input}
+              placeholder="Enter your business code"
+              value={businessCode}
+              onChangeText={setBusinessCode}
+              autoCapitalize="characters"
+              editable={!loading}
+              maxLength={12}
+              placeholderTextColor="#b0b8c1"
+            />
+          </>
+        )}
+        <TouchableOpacity style={styles.loginBtn} onPress={handleRegister} disabled={loading || signupCooldown > 0}>
+          {loading || signupCooldown > 0 ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <ActivityIndicator color="#fff" />
+              <Text style={{ color: '#fff', marginLeft: 8 }}>
+                {loading ? 'Signing Up...' : `Signing Up in ${signupCooldown}s`}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.loginBtnText}>Sign Up</Text>
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity onPress={onBack} style={{ marginTop: 16 }}>
+          <Text style={{ color: '#1976d2', textAlign: 'center', fontWeight: 'bold' }}>Back to Login</Text>
+        </TouchableOpacity>
       </View>
-    );
-  }
-
-
-  // Unified login handler for both admin and employee
-  const handleLogin = async () => {
-    setError('');
-    if (loginLocked) {
-      Alert.alert('Too Many Attempts', `Please wait ${lockTimer} seconds before trying again.`);
-      return;
-    }
-    if (!email || !password) {
-      setError('Please enter both email and password.');
-      return;
-    }
-    if (role === 'employee' && !businessCode) {
-      setError('Please enter your business code.');
-      return;
-    }
-    setLoading(true);
-    try {
-      // Sign in with Supabase
-      const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-      if (loginError || !data.session) {
-        setError('Invalid email or password.');
-        setLoginAttempts((a) => a + 1);
-        if (loginAttempts + 1 >= 5) {
-          setLoginLocked(true);
-          setLockTimer(30);
+    </View>
+  );
+}
+        }, 15000);
+      });
+      // Registration logic
+      const registerPromise = (async () => {
+        try {
+          console.log('[Registration] Registering user with Supabase...');
+          // ...existing registration logic...
+        } catch (innerErr) {
+          console.error('[Registration] Error during registration logic:', innerErr);
+          throw innerErr;
         }
-        Animated.sequence([
-          Animated.timing(shakeAnim, { toValue: 10, duration: 100, useNativeDriver: Platform.OS !== 'web' }),
-          Animated.timing(shakeAnim, { toValue: -10, duration: 100, useNativeDriver: Platform.OS !== 'web' }),
-          Animated.timing(shakeAnim, { toValue: 0, duration: 100, useNativeDriver: Platform.OS !== 'web' }),
-        ]).start();
-        setLoading(false);
-        return;
-      }
-      // Fetch user details
-      const userId = data.user?.id;
-      if (!userId) {
-        setError('Could not get user id after login.');
-        setLoading(false);
-        return;
-      }
-      const { data: userRow, error: userFetchError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      if (userFetchError || !userRow) {
-        setError('Could not fetch user details.');
+      })();
+      await Promise.race([registerPromise, timeoutPromise]);
+      console.log('[Registration] Registration process completed successfully');
+    } catch (err: any) {
+      setErrorLog(err.message || 'Registration failed.');
+      console.error('[Registration] Registration error:', err, { role, name, email, businessName, businessCode });
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
+      setLoading(false);
+      setSignupCooldown(10);
+      setTimeout(() => setSignupCooldown(0), 10000);
+      console.log('[Registration] Registration process finished (finally block)');
+    }
         setLoading(false);
         return;
       }
@@ -426,6 +436,65 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
           password,
           options: { data: { name, role } }
         });
+    try {
+      let business_id: string | null = null;
+      let codeToUse = businessCode.trim();
+      let business;
+      if (role === 'admin') {
+        // Admin: must provide business name, can provide or auto-generate business code
+        if (!businessName) {
+          setErrorLog('Please enter a business name.');
+          Alert.alert('Missing Fields', 'Please enter a business name.');
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+          console.warn('[Registration] Missing business name');
+          return;
+        }
+        if (!codeToUse) {
+          // Generate unique business code
+          let attempts = 0;
+          let unique = false;
+          while (attempts < 5 && !unique) {
+            codeToUse = generateBusinessCode();
+            const { data: existingBiz, error: bizCheckError } = await supabase
+              .from('businesses')
+              .select('id')
+              .eq('code', codeToUse)
+              .maybeSingle();
+            if (!existingBiz && !bizCheckError) unique = true;
+            else attempts++;
+          }
+          if (!unique) {
+            setErrorLog('Failed to generate a unique business code. Please try again.');
+            Alert.alert('Error', 'Failed to generate a unique business code. Please try again.');
+            setLoading(false);
+            clearTimeout(loadingTimeout);
+            console.error('[Registration] Failed to generate unique business code');
+            return;
+          }
+        } else {
+          // Check for duplicate business code
+          const { data: existingBiz, error: bizCheckError } = await supabase
+            .from('businesses')
+            .select('id')
+            .eq('code', codeToUse)
+            .maybeSingle();
+          if (existingBiz) {
+            setErrorLog('Business code already in use. Please choose a different code.');
+            Alert.alert('Business code already in use. Please choose a different code.');
+            setLoading(false);
+            clearTimeout(loadingTimeout);
+            console.warn('[Registration] Business code already in use', { codeToUse });
+            return;
+          }
+        }
+        // Sign up admin user
+        console.log('[Registration] Signing up admin user...');
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { name, role } }
+        });
         if (signUpError) {
           setErrorLog('Supabase signUp error: ' + (signUpError.message || JSON.stringify(signUpError)));
           if (signUpError.message.toLowerCase().includes('rate limit exceeded')) {
@@ -433,11 +502,13 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
             Alert.alert('Too many sign-up attempts. Please try again in a few seconds.');
             setLoading(false);
             clearTimeout(loadingTimeout);
+            console.warn('[Registration] Rate limit exceeded');
             return;
           }
           Alert.alert('Auth sign up failed', signUpError.message);
           setLoading(false);
           clearTimeout(loadingTimeout);
+          console.error('[Registration] Supabase signUp error', signUpError);
           return;
         }
         if (!authData.user) {
@@ -445,6 +516,7 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
           Alert.alert('Registration failed', 'User not returned from sign up.');
           setLoading(false);
           clearTimeout(loadingTimeout);
+          console.error('[Registration] No user returned from signUp');
           return;
         }
         // Wait for session
@@ -460,56 +532,76 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
           Alert.alert('Registration failed', 'Session not established after sign up. Please check your email to confirm your account, then log in.');
           setLoading(false);
           clearTimeout(loadingTimeout);
+          console.error('[Registration] Session not established after sign up');
           return;
         }
-        // Create business
-        const businessResult = await supabase
+        // Insert business row
+        console.log('[Registration] Inserting business row...');
+        const { data: businessRow, error: businessInsertError } = await supabase
           .from('businesses')
-          .insert({ name: businessName, code: codeToUse })
-          .select('id,code')
+          .insert({ name: businessName, code: codeToUse, owner_id: session.user.id })
+          .select()
           .single();
-        business = businessResult.data;
-        if (businessResult.error || !business) {
-          setErrorLog('Failed to create business: ' + (businessResult.error?.message || 'Unknown error'));
-          Alert.alert('Failed to create business', businessResult.error?.message || 'Unknown error');
+        if (businessInsertError) {
+          setErrorLog('Business insert error: ' + (businessInsertError.message || 'Unknown error'));
+          Alert.alert('Business creation failed', businessInsertError.message || 'Unknown error');
           setLoading(false);
           clearTimeout(loadingTimeout);
+          console.error('[Registration] Business insert error', businessInsertError);
           return;
         }
-        business_id = business.id;
-        setGeneratedBusinessCode(business.code);
-        // Upsert user
-        const { data: sessionData } = await supabase.auth.getSession();
-        const sessionUserId = sessionData?.session?.user?.id;
-        if (!sessionUserId) {
-          setErrorLog('No session user id found for upsert.');
-          Alert.alert('User update failed', 'No session user id found.');
-          setLoading(false);
-          clearTimeout(loadingTimeout);
-          return;
-        }
-        const upsertPayload = { id: sessionUserId, name, role, business_id, business_code: codeToUse, email };
+        business_id = businessRow.id;
+        setGeneratedBusinessCode(codeToUse);
+        setShowCodeAfter(true);
+        // Upsert user with business_id and code
+        const upsertPayload = {
+          id: session.user.id,
+          name,
+          role: 'admin',
+          business_id,
+          business_code: codeToUse,
+          email
+        };
+        console.log('[Admin Registration] Upsert payload:', upsertPayload);
         const userUpsertResult = await supabase
           .from('users')
           .upsert(upsertPayload, { onConflict: 'id' });
         if (userUpsertResult.error) {
           setErrorLog('User upsert error: ' + (userUpsertResult.error?.message || 'Unknown error'));
+          console.error('[Admin Registration] User upsert error:', userUpsertResult.error, 'Payload:', upsertPayload);
           Alert.alert('User update failed', userUpsertResult.error?.message || 'Unknown error');
           setLoading(false);
           clearTimeout(loadingTimeout);
           return;
         }
-        setShowCodeAfter(true);
+        // Fetch and log the user row after upsert for verification
+        try {
+          const { data: userRow, error: fetchError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          if (fetchError) {
+            console.error('[Admin Registration] Error fetching user after upsert:', fetchError);
+          } else {
+            console.log('[Admin Registration] User row after upsert:', userRow);
+          }
+        } catch (fetchEx) {
+          console.error('[Admin Registration] Exception fetching user after upsert:', fetchEx);
+        }
         setLoading(false);
         clearTimeout(loadingTimeout);
+        Alert.alert('Registration successful', `Your business code is: ${codeToUse}`);
+        console.log('[Registration] Registration process completed successfully (admin)');
         return;
       } else {
-        // Employee registration: must provide valid business code
-        if (!businessCode) {
+        // Employee registration
+        if (!businessCode.trim()) {
           setErrorLog('Please enter your business code.');
           Alert.alert('Missing Fields', 'Please enter your business code.');
           setLoading(false);
           clearTimeout(loadingTimeout);
+          console.warn('[Registration] Missing business code');
           return;
         }
         // Validate business code
@@ -523,10 +615,12 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
           Alert.alert('Invalid business code', 'Please check with your admin.');
           setLoading(false);
           clearTimeout(loadingTimeout);
+          console.warn('[Registration] Invalid business code', { businessCode });
           return;
         }
         business_id = business.id;
         // Sign up employee user
+        console.log('[Registration] Signing up employee user...');
         const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -539,11 +633,13 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
             Alert.alert('Too many sign-up attempts. Please try again in a few seconds.');
             setLoading(false);
             clearTimeout(loadingTimeout);
+            console.warn('[Registration] Rate limit exceeded');
             return;
           }
           Alert.alert('Auth sign up failed', signUpError.message);
           setLoading(false);
           clearTimeout(loadingTimeout);
+          console.error('[Registration] Supabase signUp error', signUpError);
           return;
         }
         if (!authData.user) {
@@ -551,6 +647,7 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
           Alert.alert('Registration failed', 'User not returned from sign up.');
           setLoading(false);
           clearTimeout(loadingTimeout);
+          console.error('[Registration] No user returned from signUp');
           return;
         }
         // Wait for session
@@ -566,6 +663,7 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
           Alert.alert('Registration failed', 'Session not established after sign up. Please check your email to confirm your account, then log in.');
           setLoading(false);
           clearTimeout(loadingTimeout);
+          console.error('[Registration] Session not established after sign up');
           return;
         }
         // Upsert user with robust logging
@@ -576,6 +674,7 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
           Alert.alert('User update failed', 'No session user id found.');
           setLoading(false);
           clearTimeout(loadingTimeout);
+          console.error('[Registration] No session user id found for upsert');
           return;
         }
         const upsertPayload = {
@@ -618,107 +717,19 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
         clearTimeout(loadingTimeout);
         Alert.alert('Registration successful', 'You can now log in.');
         onBack();
+        console.log('[Registration] Registration process completed successfully (employee)');
         return;
       }
     } catch (err: any) {
       setErrorLog('Registration failed: ' + (err?.message || JSON.stringify(err)));
       Alert.alert('Registration failed', err.message || 'Unknown error');
       clearTimeout(loadingTimeout);
+      console.error('[Registration] Registration error:', err, { role, name, email, businessName, businessCode });
     } finally {
       setLoading(false);
       clearTimeout(loadingTimeout);
+      console.log('[Registration] Registration process finished (finally block)');
     }
-  };
-
-  if (showCodeAfter && generatedBusinessCode) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#e3f2fd' }}>
-        <View style={[styles.card, { width: 340 }]}> 
-          <Text style={styles.title}>Business Created!</Text>
-          <Text style={{ fontSize: 16, color: '#333', marginVertical: 16, textAlign: 'center' }}>
-            Your business code is:
-          </Text>
-          <Text selectable style={{ fontSize: 28, color: '#1976d2', fontWeight: 'bold', marginBottom: 16 }}>{generatedBusinessCode}</Text>
-          <Text style={{ fontSize: 15, color: '#555', marginBottom: 20, textAlign: 'center' }}>
-            Share this code with your employees so they can log in.
-          </Text>
-          <TouchableOpacity onPress={onBack} style={styles.loginBtn}>
-            <Text style={styles.loginBtnText}>Back to Login</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#e3f2fd' }}>
-      <View style={[styles.card, { width: 340 }]}> 
-        <Text style={styles.title}>Sign Up</Text>
-        {/* Role selector */}
-        <View style={{ flexDirection: 'row', marginBottom: 18 }}>
-          <TouchableOpacity
-            style={[styles.roleBtn, role === 'admin' && styles.roleBtnActive]}
-            onPress={() => setRole('admin')}
-            disabled={loading}
-          >
-            <Text style={{ color: role === 'admin' ? '#fff' : '#1976d2', fontWeight: 'bold' }}>Admin</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.roleBtn, role === 'employee' && styles.roleBtnActive]}
-            onPress={() => setRole('employee')}
-            disabled={loading}
-          >
-            <Text style={{ color: role === 'employee' ? '#fff' : '#1976d2', fontWeight: 'bold' }}>Employee</Text>
-          </TouchableOpacity>
-        </View>
-        {errorLog ? (
-          <View style={{ backgroundColor: '#ffeaea', borderRadius: 8, padding: 8, marginBottom: 10, width: 260 }}>
-            <Text style={{ color: '#c62828', fontSize: 14 }}>{errorLog}</Text>
-          </View>
-        ) : null}
-        <TextInput
-          accessibilityLabel="Register Name"
-          testID="register-name-input"
-          style={styles.input}
-          placeholder="Name"
-          value={name}
-          onChangeText={setName}
-          autoCapitalize="words"
-          editable={!loading}
-          placeholderTextColor="#b0b8c1"
-        />
-        <TextInput
-          accessibilityLabel="Register Email"
-          testID="register-email-input"
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          editable={!loading}
-          placeholderTextColor="#b0b8c1"
-        />
-        <View style={styles.passwordContainer}>
-          <TextInput
-            accessibilityLabel="Register Password"
-            testID="register-password-input"
-            style={[styles.input, { flex: 1, marginBottom: 0 }]}
-            placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry={!showPassword}
-            editable={!loading}
-            placeholderTextColor="#b0b8c1"
-          />
-          <TouchableOpacity
-            onPress={() => setShowPassword((v) => !v)}
-            style={styles.eyeBtn}
-            accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-          >
-            <FontAwesome5 name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#1976d2" />
-          </TouchableOpacity>
-        </View>
-        <View style={{ width: 260, marginBottom: 8 }}>
           <Text style={{
             color:
               password.length === 0 ? '#888' :
@@ -797,7 +808,6 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
       </View>
     </View>
   );
-}
 }
 
 const styles = StyleSheet.create({
