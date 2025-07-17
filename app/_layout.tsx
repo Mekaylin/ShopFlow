@@ -35,22 +35,37 @@ export default function RootLayout() {
     return () => window.removeEventListener('popstate', onPopState);
   }, [router]);
 
-  // Bulletproof session restore with complete user data
+  // Bulletproof session restore with complete user data, with detailed error handling
   useEffect(() => {
     let isMounted = true;
-    
+
     const fetchUserData = async (authUser: any) => {
       if (!isMounted) return;
       try {
+        if (!authUser || !authUser.id) {
+          console.error('[fetchUserData] No authUser or authUser.id provided:', authUser);
+          setUser(null);
+          return;
+        }
         // Fetch complete user record from users table
-        const { data: userRecord, error: userError } = await supabase
+        const { data: userRecord, error: userError, status, statusText } = await supabase
           .from('users')
           .select('*')
           .eq('id', authUser.id)
           .single();
         if (!isMounted) return;
-        if (userError || !userRecord) {
-          console.log('User not found in users table, logging out.');
+        if (userError) {
+          console.error('[fetchUserData] Supabase error fetching user:', {
+            userError,
+            status,
+            statusText,
+            authUserId: authUser.id
+          });
+          setUser(null);
+          return;
+        }
+        if (!userRecord) {
+          console.warn('[fetchUserData] No user record found for id:', authUser.id);
           setUser(null);
           return;
         }
@@ -66,55 +81,73 @@ export default function RootLayout() {
               hasRedirectedRef.current = true;
               router.replace('/employee-dashboard');
             } else if (userRecord.role !== 'admin' && userRecord.role !== 'employee') {
-              console.log('Invalid user role, logging out.');
+              console.error('[fetchUserData] Invalid user role:', userRecord.role);
               setUser(null);
             }
           }
         }
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('[fetchUserData] Exception thrown:', error, 'for authUser:', authUser);
         if (isMounted) setUser(null);
       }
     };
 
+    // Auth state change listener
     const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
       // Reset redirect guard on auth state change
       hasRedirectedRef.current = false;
-      console.log('Auth state change event:', event, session?.user?.id);
-      if (session?.user) {
-        await fetchUserData(session.user);
-      } else {
-        setUser(null);
-        // On logout, force redirect to login page
-        if (Platform.OS === 'web' && typeof window !== 'undefined') {
-          if (window.location.pathname !== '/') {
-            hasRedirectedRef.current = true;
-            router.replace('/');
+      try {
+        console.log('[onAuthStateChange] Event:', event, 'Session user:', session?.user?.id);
+        if (session?.user) {
+          await fetchUserData(session.user);
+        } else {
+          setUser(null);
+          // On logout, force redirect to login page
+          if (Platform.OS === 'web' && typeof window !== 'undefined') {
+            if (window.location.pathname !== '/') {
+              hasRedirectedRef.current = true;
+              router.replace('/');
+            }
           }
         }
+      } catch (err) {
+        console.error('[onAuthStateChange] Exception:', err, 'Event:', event, 'Session:', session);
+        setUser(null);
       }
       setChecking(false);
     });
 
     // Initial session check - only do this once
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error: sessionError }) => {
       if (!isMounted) return;
       // Reset redirect guard on initial check
       hasRedirectedRef.current = false;
-      console.log('Initial session check:', session?.user?.id || 'No session');
-      if (session?.user) {
-        await fetchUserData(session.user);
-      } else {
-        setUser(null);
-        // Redirect to login page if not already there
-        if (Platform.OS === 'web' && typeof window !== 'undefined') {
-          if (window.location.pathname !== '/') {
-            hasRedirectedRef.current = true;
-            router.replace('/');
+      try {
+        if (sessionError) {
+          console.error('[getSession] Error fetching session:', sessionError);
+        }
+        console.log('[getSession] Initial session check:', session?.user?.id || 'No session');
+        if (session?.user) {
+          await fetchUserData(session.user);
+        } else {
+          setUser(null);
+          // Redirect to login page if not already there
+          if (Platform.OS === 'web' && typeof window !== 'undefined') {
+            if (window.location.pathname !== '/') {
+              hasRedirectedRef.current = true;
+              router.replace('/');
+            }
           }
         }
+      } catch (err) {
+        console.error('[getSession] Exception:', err, 'Session:', session);
+        setUser(null);
       }
+      setChecking(false);
+    }).catch((err) => {
+      console.error('[getSession] Promise rejection:', err);
+      setUser(null);
       setChecking(false);
     });
 
