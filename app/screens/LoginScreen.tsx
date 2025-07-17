@@ -110,40 +110,346 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   };
 
   if (showRegister) {
-    // Example registration logic with robust error logging
-    // Replace this with your actual registration form and logic
-    const handleRegister = async (email: string, password: string, role: 'admin' | 'employee', businessCode?: string) => {
+    // --- Registration Screen State ---
+    const [regRole, setRegRole] = useState<'admin' | 'employee'>('employee');
+    const [name, setName] = useState('');
+    const [regEmail, setRegEmail] = useState('');
+    const [regPassword, setRegPassword] = useState('');
+    const [showRegPassword, setShowRegPassword] = useState(false);
+    const [businessName, setBusinessName] = useState('');
+    const [regBusinessCode, setRegBusinessCode] = useState('');
+    const [regLoading, setRegLoading] = useState(false);
+    const [regError, setRegError] = useState('');
+    const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong'>('weak');
+    const [signupCooldown, setSignupCooldown] = useState(0);
+    const [showCodeAfter, setShowCodeAfter] = useState(false);
+    const [generatedBusinessCode, setGeneratedBusinessCode] = useState('');
+
+    // Password strength checker
+    function checkPasswordStrength(pw: string): 'weak' | 'medium' | 'strong' {
+      if (!pw || pw.length < 6) return 'weak';
+      if (pw.match(/[A-Z]/) && pw.match(/[0-9]/) && pw.match(/[^A-Za-z0-9]/) && pw.length >= 10) return 'strong';
+      if (pw.match(/[A-Z]/) && pw.match(/[0-9]/) && pw.length >= 8) return 'medium';
+      return 'weak';
+    }
+    React.useEffect(() => {
+      setPasswordStrength(checkPasswordStrength(regPassword));
+    }, [regPassword]);
+
+    // Utility: generate random business code (7 chars, no ambiguous chars)
+    function generateBusinessCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 7; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+      return code;
+    }
+
+    // Registration handler
+    const handleRegister = async () => {
+      setRegError('');
+      if (!regEmail || !regPassword || !name) {
+        setRegError('Please enter your name, email, and password.');
+        console.error('[Signup] Missing fields', { name, regEmail, regPassword });
+        return;
+      }
+      if (passwordStrength === 'weak') {
+        setRegError('Please choose a stronger password.');
+        return;
+      }
+      setRegLoading(true);
+      const loadingTimeout = setTimeout(() => {
+        setRegLoading(false);
+        setRegError('Registration timed out. Please check your connection and try again.');
+        console.error('[Signup] Registration timed out', { regEmail });
+      }, 15000);
       try {
-        if (!email || !password) {
-          console.error('[Signup] Missing email or password', { email, password });
-          return;
+        let business_id: string | null = null;
+        let codeToUse = regBusinessCode.trim();
+        if (regRole === 'admin') {
+          if (!businessName) {
+            setRegError('Please enter a business name.');
+            setRegLoading(false);
+            clearTimeout(loadingTimeout);
+            console.error('[Signup] Missing business name');
+            return;
+          }
+          if (!codeToUse) {
+            // Generate unique business code
+            let attempts = 0;
+            let unique = false;
+            while (attempts < 5 && !unique) {
+              codeToUse = generateBusinessCode();
+              const { data: existingBiz, error: bizCheckError } = await supabase
+                .from('businesses')
+                .select('id')
+                .eq('code', codeToUse)
+                .maybeSingle();
+              if (!existingBiz && !bizCheckError) unique = true;
+              else attempts++;
+            }
+            if (!unique) {
+              setRegError('Failed to generate a unique business code. Please try again.');
+              setRegLoading(false);
+              clearTimeout(loadingTimeout);
+              console.error('[Signup] Failed to generate unique business code');
+              return;
+            }
+          } else {
+            // Check for duplicate business code
+            const { data: existingBiz, error: bizCheckError } = await supabase
+              .from('businesses')
+              .select('id')
+              .eq('code', codeToUse)
+              .maybeSingle();
+            if (existingBiz) {
+              setRegError('Business code already in use. Please choose a different code.');
+              setRegLoading(false);
+              clearTimeout(loadingTimeout);
+              console.error('[Signup] Business code already in use', { codeToUse });
+              return;
+            }
+          }
         }
-        // Example: sign up with Supabase
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
+        // Sign up user
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email: regEmail,
+          password: regPassword,
+          options: { data: { name, role: regRole } }
+        });
         if (signUpError) {
-          console.error('[Signup] Supabase signUp error:', signUpError, { email });
+          setRegError('Supabase signUp error: ' + (signUpError.message || JSON.stringify(signUpError)));
+          setRegLoading(false);
+          clearTimeout(loadingTimeout);
+          console.error('[Signup] Supabase signUp error', signUpError);
           return;
         }
-        // Example: upsert user profile
-        const userId = signUpData.user?.id;
-        if (!userId) {
-          console.error('[Signup] No user returned from signUp', { signUpData });
+        if (!authData.user) {
+          setRegError('No user returned from signUp.');
+          setRegLoading(false);
+          clearTimeout(loadingTimeout);
+          console.error('[Signup] No user returned from signUp');
           return;
         }
-        const { error: upsertError } = await supabase.from('users').upsert({ id: userId, role, business_code: businessCode || null, email });
-        if (upsertError) {
-          console.error('[Signup] User upsert error:', upsertError, { userId, role, businessCode });
+        // Wait for session
+        let session = null;
+        for (let i = 0; i < 10; i++) {
+          const { data: sessionData } = await supabase.auth.getSession();
+          session = sessionData?.session;
+          if (session) break;
+          await new Promise(res => setTimeout(res, 400));
+        }
+        if (!session) {
+          setRegError('Session not established after sign up.');
+          setRegLoading(false);
+          clearTimeout(loadingTimeout);
+          console.error('[Signup] Session not established after sign up');
           return;
         }
-        // Success
-        console.log('[Signup] Registration successful', { userId, role, businessCode });
-      } catch (e: any) {
-        console.error('[Signup] Unexpected error:', e, { email, role, businessCode });
+        if (regRole === 'admin') {
+          // Insert business row
+          const { data: businessRow, error: businessInsertError } = await supabase
+            .from('businesses')
+            .insert({ name: businessName, code: codeToUse, owner_id: session.user.id })
+            .select()
+            .single();
+          if (businessInsertError) {
+            setRegError('Business insert error: ' + (businessInsertError.message || 'Unknown error'));
+            setRegLoading(false);
+            clearTimeout(loadingTimeout);
+            console.error('[Signup] Business insert error', businessInsertError);
+            return;
+          }
+          business_id = businessRow.id;
+          setGeneratedBusinessCode(codeToUse);
+          setShowCodeAfter(true);
+        } else {
+          // Validate business code for employee
+          const { data: business, error: businessError } = await supabase
+            .from('businesses')
+            .select('id,code')
+            .eq('code', regBusinessCode.trim())
+            .single();
+          if (businessError || !business) {
+            setRegError('Invalid business code.');
+            setRegLoading(false);
+            clearTimeout(loadingTimeout);
+            console.error('[Signup] Invalid business code', { regBusinessCode });
+            return;
+          }
+          business_id = business.id;
+        }
+        // Upsert user
+        const upsertPayload = {
+          id: session.user.id,
+          name,
+          role: regRole,
+          business_id,
+          business_code: regRole === 'admin' ? codeToUse : regBusinessCode.trim(),
+          email: regEmail
+        };
+        const userUpsertResult = await supabase
+          .from('users')
+          .upsert(upsertPayload, { onConflict: 'id' });
+        if (userUpsertResult.error) {
+          setRegError('User upsert error: ' + (userUpsertResult.error?.message || 'Unknown error'));
+          setRegLoading(false);
+          clearTimeout(loadingTimeout);
+          console.error('[Signup] User upsert error', userUpsertResult.error, upsertPayload);
+          return;
+        }
+        setRegLoading(false);
+        clearTimeout(loadingTimeout);
+        setShowRegister(false);
+        setShowCodeAfter(false);
+        setRegError('');
+        alert('Registration successful! You can now log in.');
+        console.log('[Signup] Registration successful', upsertPayload);
+      } catch (err: any) {
+        setRegError('Registration failed: ' + (err?.message || JSON.stringify(err)));
+        setRegLoading(false);
+        clearTimeout(loadingTimeout);
+        console.error('[Signup] Registration error:', err, { regRole, name, regEmail, businessName, regBusinessCode });
       }
     };
-    // Placeholder UI
     return (
-      <View style={styles.bg}><Text>Registration screen placeholder (logging enabled)</Text></View>
+      <View style={[styles.bg, { paddingHorizontal: 16 }]}> 
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+          <View style={[styles.centered, { paddingHorizontal: 8 }]}> 
+            <View style={[styles.card, { paddingHorizontal: 8 }]}> 
+              <FontAwesome5 name="user-plus" size={54} color="#1976d2" style={{ marginBottom: 18 }} />
+              <Text style={styles.title}>Sign Up</Text>
+              <Text style={styles.subtitle}>Create your account</Text>
+              <View style={{ flexDirection: 'row', marginBottom: 18 }}>
+                <TouchableOpacity
+                  style={[styles.roleBtn, regRole === 'admin' && styles.roleBtnActive]}
+                  onPress={() => setRegRole('admin')}
+                  disabled={regLoading}
+                >
+                  <Text style={{ color: regRole === 'admin' ? '#fff' : '#1976d2', fontWeight: 'bold' }}>Admin</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.roleBtn, regRole === 'employee' && styles.roleBtnActive]}
+                  onPress={() => setRegRole('employee')}
+                  disabled={regLoading}
+                >
+                  <Text style={{ color: regRole === 'employee' ? '#fff' : '#1976d2', fontWeight: 'bold' }}>Employee</Text>
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                style={styles.input}
+                placeholder="Name"
+                value={name}
+                onChangeText={setName}
+                autoCapitalize="words"
+                editable={!regLoading}
+                placeholderTextColor="#b0b8c1"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                value={regEmail}
+                onChangeText={setRegEmail}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="email-address"
+                placeholderTextColor="#b0b8c1"
+                editable={!regLoading}
+              />
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                  placeholder="Password"
+                  value={regPassword}
+                  onChangeText={setRegPassword}
+                  secureTextEntry={!showRegPassword}
+                  placeholderTextColor="#b0b8c1"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  editable={!regLoading}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowRegPassword((v) => !v)}
+                  style={styles.eyeBtn}
+                  accessibilityLabel={showRegPassword ? 'Hide password' : 'Show password'}
+                >
+                  <FontAwesome5 name={showRegPassword ? 'eye-slash' : 'eye'} size={20} color="#1976d2" />
+                </TouchableOpacity>
+              </View>
+              <Text style={{
+                color:
+                  regPassword.length === 0 ? '#888' :
+                  passwordStrength === 'strong' ? '#388e3c' :
+                  passwordStrength === 'medium' ? '#ff9800' : '#c62828',
+                fontWeight: 'bold',
+                fontSize: 14,
+                textAlign: 'left',
+                marginBottom: 8
+              }}>
+                {regPassword.length === 0 ? '' :
+                  passwordStrength === 'strong' ? 'Strong password' :
+                  passwordStrength === 'medium' ? 'Medium password' : 'Weak password'}
+              </Text>
+              {regRole === 'admin' && (
+                <>
+                  <Text style={styles.inputLabel}>Business Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Business Name"
+                    value={businessName}
+                    onChangeText={setBusinessName}
+                    autoCapitalize="words"
+                    editable={!regLoading}
+                    placeholderTextColor="#b0b8c1"
+                  />
+                  <Text style={styles.inputLabel}>Business Code (optional, will be created)</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Leave blank to auto-generate"
+                    value={regBusinessCode}
+                    onChangeText={setRegBusinessCode}
+                    autoCapitalize="characters"
+                    editable={!regLoading}
+                    maxLength={12}
+                    placeholderTextColor="#b0b8c1"
+                  />
+                </>
+              )}
+              {regRole === 'employee' && (
+                <>
+                  <Text style={styles.inputLabel}>Business Code</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your business code"
+                    value={regBusinessCode}
+                    onChangeText={setRegBusinessCode}
+                    autoCapitalize="characters"
+                    editable={!regLoading}
+                    maxLength={12}
+                    placeholderTextColor="#b0b8c1"
+                  />
+                </>
+              )}
+              {regError ? <Text style={{ color: 'red', marginBottom: 8 }}>{regError}</Text> : null}
+              <TouchableOpacity style={styles.loginBtn} onPress={handleRegister} disabled={regLoading || signupCooldown > 0}>
+                {regLoading || signupCooldown > 0 ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <ActivityIndicator color="#fff" />
+                    <Text style={{ color: '#fff', marginLeft: 8 }}>
+                      {regLoading ? 'Signing Up...' : `Signing Up in ${signupCooldown}s`}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={styles.loginBtnText}>Sign Up</Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowRegister(false)} style={{ marginTop: 16 }}>
+                <Text style={{ color: '#1976d2', textAlign: 'center', fontWeight: 'bold' }}>Back to Login</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
     );
   }
   if (showReset) {
