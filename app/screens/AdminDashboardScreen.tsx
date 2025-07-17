@@ -442,8 +442,14 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
               onUpdateLateThreshold={setLateThreshold}
               onSwitchDashboard={() => {
                 setSettingsModalVisible(false);
-                if (typeof window !== 'undefined') {
-                  window.location.replace('/employee-dashboard');
+                // Use expo-router navigation for both web and native
+                if (typeof window !== 'undefined' && window.location.pathname === '/employee-dashboard') return;
+                if (typeof window !== 'undefined' && window.location.pathname === '/admin-dashboard') {
+                  // On web, use router.replace
+                  require('expo-router').useRouter().replace('/employee-dashboard');
+                } else {
+                  // On native, use router.replace
+                  require('expo-router').useRouter().replace('/employee-dashboard');
                 }
               }}
             />

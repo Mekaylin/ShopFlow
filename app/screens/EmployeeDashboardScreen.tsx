@@ -681,8 +681,12 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
             <Text style={styles.modalTitle}>Settings</Text>
             <TouchableOpacity style={[styles.codeBtn, { marginBottom: 16 }]} onPress={() => {
               setSettingsVisible(false);
-              if (typeof window !== 'undefined') {
-                window.location.replace('/admin-dashboard');
+              // Use expo-router navigation for both web and native
+              if (typeof window !== 'undefined' && window.location.pathname === '/admin-dashboard') return;
+              if (typeof window !== 'undefined' && window.location.pathname === '/employee-dashboard') {
+                require('expo-router').useRouter().replace('/admin-dashboard');
+              } else {
+                require('expo-router').useRouter().replace('/admin-dashboard');
               }
             }}>
               <Text style={styles.closeBtnText}>Switch to Admin Dashboard</Text>
