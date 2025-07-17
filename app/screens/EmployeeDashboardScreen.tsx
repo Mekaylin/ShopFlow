@@ -14,6 +14,8 @@ type ClockEvent = {
   timestamp: string;
 };
 
+
+
 async function queueClockEvent(event: ClockEvent) {
   const key = 'offline_clock_events';
   try {
@@ -90,11 +92,12 @@ interface EmployeeDashboardScreenProps {
   onLogout: () => void;
 }
 
-export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
+function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
   // Business code entry state
   const [businessCode, setBusinessCode] = useState('');
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [businessCodeError, setBusinessCodeError] = useState('');
+  const [user, setUser] = useState<any | null>(null);
   // Notification panel state
   const [notificationPanelVisible, setNotificationPanelVisible] = useState(false);
   // Notifications: show clock events as notifications (demo)
@@ -160,16 +163,39 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
         if (data) {
           setEmployees(data);
         }
-  // On mount, check if businessId is stored in AsyncStorage
+  // On mount, check if businessId is stored in AsyncStorage or set from admin user
   useEffect(() => {
     (async () => {
       try {
+        // Fetch current user
+        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+        if (authError || !authUser) {
+          setBusinessIdError('No authenticated user. Please log in again.');
+          return;
+        }
+        setUser(authUser);
+        // Fetch user record from users table
+        const { data: userRecord, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authUser.id)
+          .single();
+        if (userError || !userRecord) {
+          setBusinessIdError('User not found. Please log in again.');
+          return;
+        }
+        // If admin, set businessId from user record
+        if (userRecord.role === 'admin' && userRecord.business_id) {
+          setBusinessId(userRecord.business_id);
+          await AsyncStorage.setItem('business_id', userRecord.business_id);
+          return;
+        }
+        // Otherwise, check AsyncStorage as before
         const stored = await AsyncStorage.getItem('business_id');
-        console.log('[EmployeeDashboard] Loaded business_id from AsyncStorage:', stored);
         if (stored) setBusinessId(stored);
         else setBusinessIdError('No business ID found. Please log in again.');
       } catch (err) {
-        console.error('[EmployeeDashboard] Error loading business_id from AsyncStorage:', err);
+        console.error('[EmployeeDashboard] Error loading business_id from AsyncStorage or user:', err);
         setBusinessIdError('Error loading business ID.');
       }
     })();
@@ -201,7 +227,7 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
     })();
   }, []);
 
-  // Handler for business code submit
+  // Handler for business code submit (unchanged)
   const handleBusinessCodeSubmit = async () => {
     setBusinessCodeError('');
     if (!businessCode.trim()) {
@@ -704,6 +730,7 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
     </View>
   );
 }
+export default EmployeeDashboardScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
