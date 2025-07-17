@@ -24,6 +24,7 @@ type LoginScreenProps = {
 // Session/redirect logic should be handled at the top level (e.g., /app/_layout.tsx) to avoid duplicate navigation and infinite loops.
 function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   const router = useRouter();
+  // Login state
   const [role, setRole] = useState<'admin' | 'employee'>('employee');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,6 +36,41 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   const [showRegister, setShowRegister] = useState(false);
   const [showReset, setShowReset] = useState(false);
   const shakeAnim = React.useRef(new Animated.Value(0)).current;
+
+  // Registration state (must be declared unconditionally)
+  const [regRole, setRegRole] = useState<'admin' | 'employee'>('employee');
+  const [name, setName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [businessName, setBusinessName] = useState('');
+  const [regBusinessCode, setRegBusinessCode] = useState('');
+  const [regLoading, setRegLoading] = useState(false);
+  const [regError, setRegError] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong'>('weak');
+  const [signupCooldown, setSignupCooldown] = useState(0);
+  const [showCodeAfter, setShowCodeAfter] = useState(false);
+  const [generatedBusinessCode, setGeneratedBusinessCode] = useState('');
+
+  React.useEffect(() => {
+    setPasswordStrength(checkPasswordStrength(regPassword));
+  }, [regPassword]);
+
+  // Password strength checker (move to top level)
+  function checkPasswordStrength(pw: string): 'weak' | 'medium' | 'strong' {
+    if (!pw || pw.length < 6) return 'weak';
+    if (pw.match(/[A-Z]/) && pw.match(/[0-9]/) && pw.match(/[^A-Za-z0-9]/) && pw.length >= 10) return 'strong';
+    if (pw.match(/[A-Z]/) && pw.match(/[0-9]/) && pw.length >= 8) return 'medium';
+    return 'weak';
+  }
+
+  // Utility: generate random business code (move to top level)
+  function generateBusinessCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 7; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
+    return code;
+  }
 
   // Handler for login
   const handleLogin = async () => {
@@ -110,67 +146,36 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   };
 
   if (showRegister) {
-    // --- Registration Screen State ---
-    const [regRole, setRegRole] = useState<'admin' | 'employee'>('employee');
-    const [name, setName] = useState('');
-    const [regEmail, setRegEmail] = useState('');
-    const [regPassword, setRegPassword] = useState('');
-    const [showRegPassword, setShowRegPassword] = useState(false);
-    const [businessName, setBusinessName] = useState('');
-    const [regBusinessCode, setRegBusinessCode] = useState('');
-    const [regLoading, setRegLoading] = useState(false);
-    const [regError, setRegError] = useState('');
-    const [passwordStrength, setPasswordStrength] = useState<'weak' | 'medium' | 'strong'>('weak');
-    const [signupCooldown, setSignupCooldown] = useState(0);
-    const [showCodeAfter, setShowCodeAfter] = useState(false);
-    const [generatedBusinessCode, setGeneratedBusinessCode] = useState('');
-
-    // Password strength checker
-    function checkPasswordStrength(pw: string): 'weak' | 'medium' | 'strong' {
-      if (!pw || pw.length < 6) return 'weak';
-      if (pw.match(/[A-Z]/) && pw.match(/[0-9]/) && pw.match(/[^A-Za-z0-9]/) && pw.length >= 10) return 'strong';
-      if (pw.match(/[A-Z]/) && pw.match(/[0-9]/) && pw.length >= 8) return 'medium';
-      return 'weak';
-    }
-    React.useEffect(() => {
-      setPasswordStrength(checkPasswordStrength(regPassword));
-    }, [regPassword]);
-
-    // Utility: generate random business code (7 chars, no ambiguous chars)
-    function generateBusinessCode() {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      let code = '';
-      for (let i = 0; i < 7; i++) code += chars.charAt(Math.floor(Math.random() * chars.length));
-      return code;
-    }
-
-    // Registration handler
+    // Registration handler (remains inside block)
     const handleRegister = async () => {
-      setRegError('');
+      setRegError("");
       if (!regEmail || !regPassword || !name) {
-        setRegError('Please enter your name, email, and password.');
-        console.error('[Signup] Missing fields', { name, regEmail, regPassword });
+        setRegError("Please enter your name, email, and password.");
+        console.error("[Signup] Missing fields", { name, regEmail, regPassword });
         return;
       }
-      if (passwordStrength === 'weak') {
-        setRegError('Please choose a stronger password.');
+      if (passwordStrength === "weak") {
+        setRegError("Please choose a stronger password.");
         return;
       }
       setRegLoading(true);
+      let didError = false;
       const loadingTimeout = setTimeout(() => {
         setRegLoading(false);
-        setRegError('Registration timed out. Please check your connection and try again.');
-        console.error('[Signup] Registration timed out', { regEmail });
+        setRegError("Registration timed out. Please check your connection and try again.");
+        console.error("[Signup] Registration timed out", { regEmail });
+        didError = true;
       }, 15000);
       try {
         let business_id: string | null = null;
         let codeToUse = regBusinessCode.trim();
-        if (regRole === 'admin') {
+        if (regRole === "admin") {
           if (!businessName) {
-            setRegError('Please enter a business name.');
+            setRegError("Please enter a business name.");
             setRegLoading(false);
             clearTimeout(loadingTimeout);
-            console.error('[Signup] Missing business name');
+            console.error("[Signup] Missing business name");
+            didError = true;
             return;
           }
           if (!codeToUse) {
@@ -180,83 +185,116 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
             while (attempts < 5 && !unique) {
               codeToUse = generateBusinessCode();
               const { data: existingBiz, error: bizCheckError } = await supabase
-                .from('businesses')
-                .select('id')
-                .eq('code', codeToUse)
+                .from("businesses")
+                .select("id")
+                .eq("code", codeToUse)
                 .maybeSingle();
               if (!existingBiz && !bizCheckError) unique = true;
               else attempts++;
             }
             if (!unique) {
-              setRegError('Failed to generate a unique business code. Please try again.');
+              setRegError("Failed to generate a unique business code. Please try again.");
               setRegLoading(false);
               clearTimeout(loadingTimeout);
-              console.error('[Signup] Failed to generate unique business code');
+              console.error("[Signup] Failed to generate unique business code");
+              didError = true;
               return;
             }
           } else {
             // Check for duplicate business code
             const { data: existingBiz, error: bizCheckError } = await supabase
-              .from('businesses')
-              .select('id')
-              .eq('code', codeToUse)
+              .from("businesses")
+              .select("id")
+              .eq("code", codeToUse)
               .maybeSingle();
             if (existingBiz) {
-              setRegError('Business code already in use. Please choose a different code.');
+              setRegError("Business code already in use. Please choose a different code.");
               setRegLoading(false);
               clearTimeout(loadingTimeout);
-              console.error('[Signup] Business code already in use', { codeToUse });
+              console.error("[Signup] Business code already in use", { codeToUse });
+              didError = true;
               return;
             }
           }
         }
         // Sign up user
-        const { data: authData, error: signUpError } = await supabase.auth.signUp({
-          email: regEmail,
-          password: regPassword,
-          options: { data: { name, role: regRole } }
-        });
-        if (signUpError) {
-          setRegError('Supabase signUp error: ' + (signUpError.message || JSON.stringify(signUpError)));
+        let authData, signUpError;
+        try {
+          const result = await supabase.auth.signUp({
+            email: regEmail,
+            password: regPassword,
+            options: { data: { name, role: regRole } },
+          });
+          authData = result.data;
+          signUpError = result.error;
+        } catch (err) {
+          // Network or CORS error
+          setRegError("Network error: Unable to reach authentication server. Please check your connection, VPN, or CORS settings.\n" + ((err as any)?.message || JSON.stringify(err)));
           setRegLoading(false);
           clearTimeout(loadingTimeout);
-          console.error('[Signup] Supabase signUp error', signUpError);
+          console.error("[Signup] Network/CORS error during signUp", err);
+          didError = true;
           return;
         }
-        if (!authData.user) {
-          setRegError('No user returned from signUp.');
+        if (signUpError) {
+          let errorMsg = "Supabase signUp error: " + (signUpError.message || JSON.stringify(signUpError));
+          // Add more details for common errors
+          if (signUpError.status === 429) errorMsg += "\nToo many requests. Please wait and try again.";
+          if (signUpError.status === 400 && signUpError.message?.includes('email')) errorMsg += "\nCheck if your email is valid and not already registered.";
+          setRegError(errorMsg);
           setRegLoading(false);
           clearTimeout(loadingTimeout);
-          console.error('[Signup] No user returned from signUp');
+          console.error("[Signup] Supabase signUp error", signUpError);
+          didError = true;
+          return;
+        }
+        if (!authData?.user) {
+          setRegError("No user returned from signUp. This may be a network or CORS issue.\nCheck your Supabase project and network connection.");
+          setRegLoading(false);
+          clearTimeout(loadingTimeout);
+          console.error("[Signup] No user returned from signUp", { authData });
+          didError = true;
           return;
         }
         // Wait for session
         let session = null;
         for (let i = 0; i < 10; i++) {
-          const { data: sessionData } = await supabase.auth.getSession();
-          session = sessionData?.session;
-          if (session) break;
-          await new Promise(res => setTimeout(res, 400));
+          try {
+            const { data: sessionData } = await supabase.auth.getSession();
+            session = sessionData?.session;
+            if (session) break;
+            await new Promise((res) => setTimeout(res, 400));
+          } catch (err) {
+            setRegError("Error fetching session after sign up.\n" + ((err as any)?.message || JSON.stringify(err)));
+            setRegLoading(false);
+            clearTimeout(loadingTimeout);
+            console.error("[Signup] Error fetching session after sign up", err);
+            didError = true;
+            return;
+          }
         }
         if (!session) {
-          setRegError('Session not established after sign up.');
+          setRegError("Session not established after sign up. This may be a network, CORS, or Supabase Auth config issue.\nTry refreshing or check your Supabase project settings.");
           setRegLoading(false);
           clearTimeout(loadingTimeout);
-          console.error('[Signup] Session not established after sign up');
+          console.error("[Signup] Session not established after sign up");
+          didError = true;
           return;
         }
-        if (regRole === 'admin') {
+        if (regRole === "admin") {
           // Insert business row
           const { data: businessRow, error: businessInsertError } = await supabase
-            .from('businesses')
+            .from("businesses")
             .insert({ name: businessName, code: codeToUse, owner_id: session.user.id })
             .select()
             .single();
           if (businessInsertError) {
-            setRegError('Business insert error: ' + (businessInsertError.message || 'Unknown error'));
+            setRegError("Business insert error: " + (businessInsertError.message || "Unknown error") +
+              (businessInsertError.details ? "\n" + businessInsertError.details : ""));
             setRegLoading(false);
             clearTimeout(loadingTimeout);
-            console.error('[Signup] Business insert error', businessInsertError);
+            console.error("[Signup] Business insert error", businessInsertError);
+            didError = true;
             return;
           }
           business_id = businessRow.id;
@@ -265,15 +303,16 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
         } else {
           // Validate business code for employee
           const { data: business, error: businessError } = await supabase
-            .from('businesses')
-            .select('id,code')
-            .eq('code', regBusinessCode.trim())
+            .from("businesses")
+            .select("id,code")
+            .eq("code", regBusinessCode.trim())
             .single();
           if (businessError || !business) {
-            setRegError('Invalid business code.');
+            setRegError("Invalid business code.\n" + (businessError?.message || ""));
             setRegLoading(false);
             clearTimeout(loadingTimeout);
-            console.error('[Signup] Invalid business code', { regBusinessCode });
+            console.error("[Signup] Invalid business code", { regBusinessCode, businessError });
+            didError = true;
             return;
           }
           business_id = business.id;
@@ -284,31 +323,37 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
           name,
           role: regRole,
           business_id,
-          business_code: regRole === 'admin' ? codeToUse : regBusinessCode.trim(),
-          email: regEmail
+          business_code: regRole === "admin" ? codeToUse : regBusinessCode.trim(),
+          email: regEmail,
         };
         const userUpsertResult = await supabase
-          .from('users')
-          .upsert(upsertPayload, { onConflict: 'id' });
+          .from("users")
+          .upsert(upsertPayload, { onConflict: "id" });
         if (userUpsertResult.error) {
-          setRegError('User upsert error: ' + (userUpsertResult.error?.message || 'Unknown error'));
+          setRegError("User upsert error: " + (userUpsertResult.error?.message || "Unknown error") +
+            (userUpsertResult.error?.details ? "\n" + userUpsertResult.error.details : ""));
           setRegLoading(false);
           clearTimeout(loadingTimeout);
-          console.error('[Signup] User upsert error', userUpsertResult.error, upsertPayload);
+          console.error("[Signup] User upsert error", userUpsertResult.error, upsertPayload);
+          didError = true;
           return;
         }
         setRegLoading(false);
         clearTimeout(loadingTimeout);
         setShowRegister(false);
         setShowCodeAfter(false);
-        setRegError('');
-        alert('Registration successful! You can now log in.');
-        console.log('[Signup] Registration successful', upsertPayload);
+        setRegError("");
+        alert("Registration successful! You can now log in.");
+        console.log("[Signup] Registration successful", upsertPayload);
       } catch (err: any) {
-        setRegError('Registration failed: ' + (err?.message || JSON.stringify(err)));
+        let errorMsg = "Registration failed: " + (err?.message || JSON.stringify(err));
+        if (err?.status === 406) errorMsg += "\nSupabase returned 406 Not Acceptable. This may be an RLS or permissions issue.";
+        if (err?.name === 'TypeError' && err?.message?.includes('Failed to fetch')) errorMsg += "\nNetwork error: Could not reach Supabase. Check your connection and CORS.";
+        setRegError(errorMsg);
         setRegLoading(false);
         clearTimeout(loadingTimeout);
-        console.error('[Signup] Registration error:', err, { regRole, name, regEmail, businessName, regBusinessCode });
+        console.error("[Signup] Registration error:", err, { regRole, name, regEmail, businessName, regBusinessCode });
+        didError = true;
       }
     };
     return (
@@ -319,6 +364,11 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
               <FontAwesome5 name="user-plus" size={54} color="#1976d2" style={{ marginBottom: 18 }} />
               <Text style={styles.title}>Sign Up</Text>
               <Text style={styles.subtitle}>Create your account</Text>
+              {regError ? (
+                <View style={{ backgroundColor: '#ffebee', borderRadius: 8, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: '#c62828' }}>
+                  <Text style={{ color: '#c62828', fontWeight: 'bold', textAlign: 'center' }}>{regError}</Text>
+                </View>
+              ) : null}
               <View style={{ flexDirection: 'row', marginBottom: 18 }}>
                 <TouchableOpacity
                   style={[styles.roleBtn, regRole === 'admin' && styles.roleBtnActive]}
@@ -430,7 +480,6 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
                   />
                 </>
               )}
-              {regError ? <Text style={{ color: 'red', marginBottom: 8 }}>{regError}</Text> : null}
               <TouchableOpacity style={styles.loginBtn} onPress={handleRegister} disabled={regLoading || signupCooldown > 0}>
                 {regLoading || signupCooldown > 0 ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
