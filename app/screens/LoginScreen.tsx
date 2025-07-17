@@ -29,21 +29,17 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
   const [role, setRole] = useState<'admin' | 'employee'>('employee');
   // Reset error/loading state on role switch
   useEffect(() => {
-    setAdminError('');
-    setEmpError('');
-    setAdminLoading(false);
-    setEmpLoading(false);
+    setError('');
+    setLoading(false);
   }, [role]);
-  // Admin login state
-  const [adminEmail, setAdminEmail] = useState('');
-  const [adminPassword, setAdminPassword] = useState('');
+  // Shared login state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [adminLoading, setAdminLoading] = useState(false);
-  const [adminError, setAdminError] = useState('');
-  // Employee login state (shared tablet: only business code required)
-  const [empBusinessCode, setEmpBusinessCode] = useState('');
-  const [empLoading, setEmpLoading] = useState(false);
-  const [empError, setEmpError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  // For employee login, require business code
+  const [businessCode, setBusinessCode] = useState('');
   // Shared
   const [shakeAnim] = useState(new Animated.Value(0));
   const [showRegister, setShowRegister] = useState(false);
@@ -142,60 +138,46 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
     );
   }
 
-  // Admin login handler
-  // SAFEGUARD: Never generate or mutate business code in login! Business code generation is for registration only.
-  const handleAdminLogin = async () => {
-    console.log('[AdminLogin] Handler called.');
+
+  // Unified login handler for both admin and employee
+  const handleLogin = async () => {
+    setError('');
     if (loginLocked) {
-      console.warn('[AdminLogin] Login attempt blocked: too many attempts.');
       Alert.alert('Too Many Attempts', `Please wait ${lockTimer} seconds before trying again.`);
       return;
     }
-    if (!adminEmail || !adminPassword) {
-      console.warn('[AdminLogin] Login failed: missing email or password.');
-      setAdminError('Please enter both email and password.');
+    if (!email || !password) {
+      setError('Please enter both email and password.');
       return;
     }
-    setAdminLoading(true);
-    setAdminError('');
+    if (role === 'employee' && !businessCode) {
+      setError('Please enter your business code.');
+      return;
+    }
+    setLoading(true);
     try {
-      console.log('[AdminLogin] Attempting admin login:', { email: adminEmail });
-      // SAFEGUARD: Do not generate or assign business code here
-      const { data, error } = await supabase.auth.signInWithPassword({ email: adminEmail, password: adminPassword });
-      console.log('[AdminLogin] signInWithPassword result:', { data, error });
-      if (error || !data.session) {
-        console.error('[AdminLogin] Admin login failed:', error, data);
-        setAdminError('Invalid email or password.');
+      // Sign in with Supabase
+      const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+      if (loginError || !data.session) {
+        setError('Invalid email or password.');
         setLoginAttempts((a) => a + 1);
         if (loginAttempts + 1 >= 5) {
           setLoginLocked(true);
           setLockTimer(30);
         }
         Animated.sequence([
-          Animated.timing(shakeAnim, {
-            toValue: 10,
-            duration: 100,
-            useNativeDriver: Platform.OS !== 'web',
-          }),
-          Animated.timing(shakeAnim, {
-            toValue: -10,
-            duration: 100,
-            useNativeDriver: Platform.OS !== 'web',
-          }),
-          Animated.timing(shakeAnim, {
-            toValue: 0,
-            duration: 100,
-            useNativeDriver: Platform.OS !== 'web',
-          }),
+          Animated.timing(shakeAnim, { toValue: 10, duration: 100, useNativeDriver: Platform.OS !== 'web' }),
+          Animated.timing(shakeAnim, { toValue: -10, duration: 100, useNativeDriver: Platform.OS !== 'web' }),
+          Animated.timing(shakeAnim, { toValue: 0, duration: 100, useNativeDriver: Platform.OS !== 'web' }),
         ]).start();
+        setLoading(false);
         return;
       }
-      // Fetch user details from users table after login
+      // Fetch user details
       const userId = data.user?.id;
-      console.log('[AdminLogin] User id after login:', userId);
       if (!userId) {
-        setAdminError('Could not get user id after login.');
-        setAdminLoading(false);
+        setError('Could not get user id after login.');
+        setLoading(false);
         return;
       }
       const { data: userRow, error: userFetchError } = await supabase
@@ -203,110 +185,35 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
         .select('*')
         .eq('id', userId)
         .single();
-      console.log('[AdminLogin] User row fetch result:', { userRow, userFetchError });
       if (userFetchError || !userRow) {
-        console.error('[AdminLogin] Failed to fetch user details after login:', userFetchError);
-        setAdminError('Could not fetch user details.');
-        setAdminLoading(false);
+        setError('Could not fetch user details.');
+        setLoading(false);
         return;
       }
-      setLoginAttempts(0);
-      if (onLogin) onLogin('admin');
-      // Optionally, store userRow in context or session here
-      console.log('[AdminLogin] Admin login successful, user details:', userRow);
-      router.replace('/admin-dashboard');
-    } catch (e: any) {
-      console.error('[AdminLogin] Exception:', e);
-      setAdminError(e.message || 'Login failed.');
-      Animated.sequence([
-        Animated.timing(shakeAnim, {
-          toValue: 10,
-          duration: 100,
-          useNativeDriver: Platform.OS !== 'web',
-        }),
-        Animated.timing(shakeAnim, {
-          toValue: -10,
-          duration: 100,
-          useNativeDriver: Platform.OS !== 'web',
-        }),
-        Animated.timing(shakeAnim, {
-          toValue: 0,
-          duration: 100,
-          useNativeDriver: Platform.OS !== 'web',
-        }),
-      ]).start();
-      setAdminError(e.message || 'Login failed.');
-    } finally {
-      setAdminLoading(false);
-    }
-  };
-
-  // Employee login handler (shared tablet: only business code required)
-  // SAFEGUARD: Never generate or mutate business code in login! Business code generation is for registration only.
-  const handleEmployeeLogin = async () => {
-    console.log('[EmployeeLogin] Handler called.');
-    if (loginLocked) {
-      console.warn('[EmployeeLogin] Login blocked: too many attempts.');
-      Alert.alert('Too Many Attempts', `Please wait ${lockTimer} seconds before trying again.`);
-      return;
-    }
-    if (!empBusinessCode) {
-      console.warn('[EmployeeLogin] Login failed: missing business code.');
-      setEmpError('Please enter the business code.');
-      return;
-    }
-    setEmpLoading(true);
-    setEmpError('');
-    try {
-      console.log('[EmployeeLogin] Attempting login with business code:', empBusinessCode);
-      // SAFEGUARD: Do not generate or assign business code here
-      // Find business
-      const { data: business, error: businessError } = await supabase
-        .from('businesses')
-        .select('id')
-        .eq('code', empBusinessCode)
-        .single();
-      console.log('[EmployeeLogin] Business fetch result:', { business, businessError });
-      if (businessError || !business) {
-        console.error('[EmployeeLogin] Business not found', businessError, business);
-        setEmpError('Business not found.');
-        setEmpLoading(false);
-        return;
+      // For employees, check business code matches
+      if (role === 'employee') {
+        if (!userRow.business_code || userRow.business_code !== businessCode.trim()) {
+          setError('Business code does not match.');
+          setLoading(false);
+          return;
+        }
       }
       setLoginAttempts(0);
-      // Store business id in AsyncStorage for dashboard access
-      try {
-        const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default;
-        await AsyncStorage.setItem('business_id', business.id);
-        console.log('[EmployeeLogin] Stored business_id in AsyncStorage:', business.id);
-      } catch (storageErr) {
-        console.error('[EmployeeLogin] Failed to store business_id:', storageErr);
+      if (onLogin) onLogin(role);
+      if (role === 'admin') {
+        router.replace('/admin-dashboard');
+      } else {
+        router.replace('/employee-dashboard');
       }
-      if (onLogin) onLogin('employee');
-      console.log('[EmployeeLogin] Login successful, navigating to dashboard.');
-      router.replace('/employee-dashboard');
     } catch (e: any) {
-      console.error('[EmployeeLogin] Exception:', e);
-      setEmpError(e.message || 'Login failed.');
+      setError(e.message || 'Login failed.');
       Animated.sequence([
-        Animated.timing(shakeAnim, {
-          toValue: 10,
-          duration: 100,
-          useNativeDriver: Platform.OS !== 'web',
-        }),
-        Animated.timing(shakeAnim, {
-          toValue: -10,
-          duration: 100,
-          useNativeDriver: Platform.OS !== 'web',
-        }),
-        Animated.timing(shakeAnim, {
-          toValue: 0,
-          duration: 100,
-          useNativeDriver: Platform.OS !== 'web',
-        }),
+        Animated.timing(shakeAnim, { toValue: 10, duration: 100, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(shakeAnim, { toValue: -10, duration: 100, useNativeDriver: Platform.OS !== 'web' }),
+        Animated.timing(shakeAnim, { toValue: 0, duration: 100, useNativeDriver: Platform.OS !== 'web' }),
       ]).start();
     } finally {
-      setEmpLoading(false);
+      setLoading(false);
     }
   };
 
@@ -322,63 +229,57 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
               <TouchableOpacity
                 style={[styles.roleBtn, role === 'admin' && styles.roleBtnActive]}
                 onPress={() => setRole('admin')}
-                disabled={adminLoading || empLoading}
+                disabled={loading}
               >
                 <Text style={{ color: role === 'admin' ? '#fff' : '#1976d2', fontWeight: 'bold' }}>Admin</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.roleBtn, role === 'employee' && styles.roleBtnActive]}
                 onPress={() => setRole('employee')}
-                disabled={adminLoading || empLoading}
+                disabled={loading}
               >
                 <Text style={{ color: role === 'employee' ? '#fff' : '#1976d2', fontWeight: 'bold' }}>Employee</Text>
               </TouchableOpacity>
             </View>
-            {role === 'admin' ? (
-              <>
-                <TextInput
-                  accessibilityLabel="Admin Email"
-                  testID="admin-email-input"
-                  style={styles.input}
-                  placeholder="Email"
-                  value={adminEmail}
-                  onChangeText={setAdminEmail}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  keyboardType="email-address"
-                  placeholderTextColor="#b0b8c1"
-                  editable={!adminLoading}
-                />
-                <View style={styles.passwordContainer}>
-                  <TextInput
-                    accessibilityLabel="Admin Password"
-                    testID="admin-password-input"
-                    style={[styles.input, { flex: 1, marginBottom: 0 }]}
-                    placeholder="Password"
-                    value={adminPassword}
-                    onChangeText={setAdminPassword}
-                    secureTextEntry={!showPassword}
-                    placeholderTextColor="#b0b8c1"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    returnKeyType="done"
-                    onSubmitEditing={handleAdminLogin}
-                    editable={!adminLoading}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword((v) => !v)}
-                    style={styles.eyeBtn}
-                    accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    <FontAwesome5 name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#1976d2" />
-                  </TouchableOpacity>
-                </View>
-                {adminError ? <Text style={{ color: 'red', marginBottom: 8 }}>{adminError}</Text> : null}
-                <TouchableOpacity style={styles.loginBtn} onPress={handleAdminLogin} disabled={adminLoading}>
-                  {adminLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginBtnText}>Login</Text>}
-                </TouchableOpacity>
-              </>
-            ) : (
+            {/* Unified login form for both admin and employee */}
+            <TextInput
+              accessibilityLabel="Email"
+              testID="login-email-input"
+              style={styles.input}
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+              placeholderTextColor="#b0b8c1"
+              editable={!loading}
+            />
+            <View style={styles.passwordContainer}>
+              <TextInput
+                accessibilityLabel="Password"
+                testID="login-password-input"
+                style={[styles.input, { flex: 1, marginBottom: 0 }]}
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                placeholderTextColor="#b0b8c1"
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+                editable={!loading}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword((v) => !v)}
+                style={styles.eyeBtn}
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              >
+                <FontAwesome5 name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#1976d2" />
+              </TouchableOpacity>
+            </View>
+            {role === 'employee' && (
               <>
                 <Text style={styles.inputLabel}>Business Code</Text>
                 <TextInput
@@ -386,18 +287,18 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
                   testID="employee-business-code-input"
                   style={styles.input}
                   placeholder="Business Code"
-                  value={empBusinessCode}
-                  onChangeText={setEmpBusinessCode}
+                  value={businessCode}
+                  onChangeText={setBusinessCode}
                   autoCapitalize="characters"
-                  editable={!empLoading}
+                  editable={!loading}
                   maxLength={12}
                 />
-                {empError ? <Text style={{ color: 'red', marginBottom: 8 }}>{empError}</Text> : null}
-                <TouchableOpacity style={styles.loginBtn} onPress={handleEmployeeLogin} disabled={empLoading}>
-                  {empLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginBtnText}>Login</Text>}
-                </TouchableOpacity>
               </>
             )}
+            {error ? <Text style={{ color: 'red', marginBottom: 8 }}>{error}</Text> : null}
+            <TouchableOpacity style={styles.loginBtn} onPress={handleLogin} disabled={loading}>
+              {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.loginBtnText}>Login</Text>}
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => setShowRegister(true)} style={{ marginTop: 16 }}>
               <Text style={{ color: '#1976d2', textAlign: 'center', fontWeight: 'bold' }}>Don&apos;t have an account? Sign Up</Text>
             </TouchableOpacity>
@@ -413,7 +314,7 @@ function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
 
 
 function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void; isLoggedIn?: boolean }) {
-  const [role] = useState<'admin'>('admin');
+  const [role, setRole] = useState<'admin' | 'employee'>('employee');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -454,44 +355,10 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
       return;
     }
     setErrorLog('');
-    console.log('Registration attempt:', { name, email, businessName, businessCode });
-    // Early validation
     if (!email || !password || !name) {
       setErrorLog('Please enter your name, email, and password.');
       Alert.alert('Missing Fields', 'Please enter your name, email, and password.');
       return;
-    }
-    if (!businessName) {
-      setErrorLog('Please enter a business name.');
-      Alert.alert('Missing Fields', 'Please enter a business name.');
-      return;
-    }
-    let codeToUse = businessCode.trim();
-    if (!codeToUse) {
-      // Try up to 5 times to generate a unique business code
-      let attempts = 0;
-      let unique = false;
-      while (attempts < 5 && !unique) {
-        codeToUse = generateBusinessCode();
-        // Check for duplicate business code
-        const { data: existingBiz, error: bizCheckError } = await supabase
-          .from('businesses')
-          .select('id')
-          .eq('code', codeToUse)
-          .maybeSingle();
-        console.log(`[BusinessCodeGen] Attempt ${attempts + 1}: code=${codeToUse}, existingBiz=`, existingBiz, 'error=', bizCheckError);
-        if (!existingBiz && !bizCheckError) {
-          unique = true;
-        } else {
-          attempts++;
-        }
-      }
-      if (!unique) {
-        setErrorLog('Failed to generate a unique business code. Please try again.');
-        Alert.alert('Error', 'Failed to generate a unique business code. Please try again.');
-        setLoading(false);
-        return;
-      }
     }
     if (passwordStrength === 'weak') {
       setErrorLog('Please choose a stronger password.');
@@ -499,197 +366,238 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
       return;
     }
     setLoading(true);
-    // Timeout failsafe: always reset loading after 15 seconds
     const loadingTimeout = setTimeout(() => {
       setLoading(false);
       setErrorLog('Registration timed out. Please check your connection and try again.');
       Alert.alert('Timeout', 'Registration timed out. Please check your connection and try again.');
     }, 15000);
     try {
-      // 1. Check for duplicate business code
-      const { data: existingBiz, error: bizCheckError } = await supabase
-        .from('businesses')
-        .select('id')
-        .eq('code', codeToUse)
-        .maybeSingle();
-      console.log('[Step 1] Check for duplicate business code:', { codeToUse, existingBiz, bizCheckError });
-      if (bizCheckError) {
-        setErrorLog('Could not check business code: ' + (bizCheckError.message || JSON.stringify(bizCheckError)));
-        console.error('[Step 1] Business code check error:', bizCheckError);
-        Alert.alert('Error', 'Could not check business code. Please try again.');
-        setLoading(false);
-        return;
-      }
-      if (existingBiz) {
-        setErrorLog('Business code already in use. Please choose a different code.');
-        console.warn('[Step 1] Registration failed: business code already in use.');
-        Alert.alert('Business code already in use. Please choose a different code.');
-        setLoading(false);
-        return;
-      }
-
-      // 2. Sign up user
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({ 
-        email, 
-        password,
-        options: {
-          data: { name, role }
-        }
-      });
-      console.log('[Step 2] Supabase signUp result:', { authData, signUpError });
-      if (signUpError) {
-        setErrorLog('Supabase signUp error: ' + (signUpError.message || JSON.stringify(signUpError)));
-        console.error('[Step 2] Supabase signUp error:', signUpError);
-        if (signUpError.message.toLowerCase().includes('rate limit exceeded')) {
-          setSignupCooldown(10);
-          Alert.alert('Too many sign-up attempts. Please try again in a few seconds.');
+      let business_id: string | null = null;
+      let codeToUse = businessCode.trim();
+      let business;
+      if (role === 'admin') {
+        // Admin: must provide business name, can provide or auto-generate business code
+        if (!businessName) {
+          setErrorLog('Please enter a business name.');
+          Alert.alert('Missing Fields', 'Please enter a business name.');
           setLoading(false);
+          clearTimeout(loadingTimeout);
           return;
         }
-        Alert.alert('Auth sign up failed', signUpError.message);
-        setLoading(false);
-        return;
-      }
-      if (!authData.user) {
-        setErrorLog('No user returned from signUp.');
-        console.error('[Step 2] No user returned from signUp:', authData);
-        Alert.alert('Registration failed', 'User not returned from sign up.');
-        setLoading(false);
-        return;
-      }
-
-      // 3. Wait for session to be established (poll for session)
-      let session = null;
-      for (let i = 0; i < 10; i++) {
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-        session = sessionData?.session;
-        console.log(`[Step 3] Session poll ${i + 1}:`, { session, sessionError });
-        if (session) break;
-        await new Promise(res => setTimeout(res, 400));
-      }
-      if (!session) {
-        setErrorLog('Session not established after sign up.');
-        console.error('[Step 3] Session not established after sign up.');
-        Alert.alert('Registration failed', 'Session not established after sign up. Please check your email to confirm your account, then log in.');
-        setLoading(false);
-        return;
-      }
-
-      // 4. Create business
-      let business_id: string | null = null;
-      let business, businessError;
-      try {
+        if (!codeToUse) {
+          // Generate unique business code
+          let attempts = 0;
+          let unique = false;
+          while (attempts < 5 && !unique) {
+            codeToUse = generateBusinessCode();
+            const { data: existingBiz, error: bizCheckError } = await supabase
+              .from('businesses')
+              .select('id')
+              .eq('code', codeToUse)
+              .maybeSingle();
+            if (!existingBiz && !bizCheckError) unique = true;
+            else attempts++;
+          }
+          if (!unique) {
+            setErrorLog('Failed to generate a unique business code. Please try again.');
+            Alert.alert('Error', 'Failed to generate a unique business code. Please try again.');
+            setLoading(false);
+            clearTimeout(loadingTimeout);
+            return;
+          }
+        } else {
+          // Check for duplicate business code
+          const { data: existingBiz, error: bizCheckError } = await supabase
+            .from('businesses')
+            .select('id')
+            .eq('code', codeToUse)
+            .maybeSingle();
+          if (existingBiz) {
+            setErrorLog('Business code already in use. Please choose a different code.');
+            Alert.alert('Business code already in use. Please choose a different code.');
+            setLoading(false);
+            clearTimeout(loadingTimeout);
+            return;
+          }
+        }
+        // Sign up admin user
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { name, role } }
+        });
+        if (signUpError) {
+          setErrorLog('Supabase signUp error: ' + (signUpError.message || JSON.stringify(signUpError)));
+          if (signUpError.message.toLowerCase().includes('rate limit exceeded')) {
+            setSignupCooldown(10);
+            Alert.alert('Too many sign-up attempts. Please try again in a few seconds.');
+            setLoading(false);
+            clearTimeout(loadingTimeout);
+            return;
+          }
+          Alert.alert('Auth sign up failed', signUpError.message);
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+          return;
+        }
+        if (!authData.user) {
+          setErrorLog('No user returned from signUp.');
+          Alert.alert('Registration failed', 'User not returned from sign up.');
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+          return;
+        }
+        // Wait for session
+        let session = null;
+        for (let i = 0; i < 10; i++) {
+          const { data: sessionData } = await supabase.auth.getSession();
+          session = sessionData?.session;
+          if (session) break;
+          await new Promise(res => setTimeout(res, 400));
+        }
+        if (!session) {
+          setErrorLog('Session not established after sign up.');
+          Alert.alert('Registration failed', 'Session not established after sign up. Please check your email to confirm your account, then log in.');
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+          return;
+        }
+        // Create business
         const businessResult = await supabase
           .from('businesses')
           .insert({ name: businessName, code: codeToUse })
           .select('id,code')
           .single();
         business = businessResult.data;
-        businessError = businessResult.error;
-        console.log('[Step 4] Business insert result:', { business, businessError });
-      } catch (err) {
-        setErrorLog('[Step 4] Exception during business insert: ' + (err instanceof Error ? err.message : JSON.stringify(err)));
-        console.error('[Step 4] Exception during business insert:', err);
-        Alert.alert('Failed to create business', err instanceof Error ? err.message : 'Unknown error');
-        setLoading(false);
-        return;
-      }
-      if (businessError || !business) {
-        setErrorLog('[Step 4] Business creation error: ' + (businessError?.message || JSON.stringify(businessError)));
-        console.error('[Step 4] Business creation error:', businessError, business);
-        if (businessError?.message?.toLowerCase().includes('duplicate')) {
-          Alert.alert('This business name or code is already in use. Please choose a different one.');
+        if (businessResult.error || !business) {
+          setErrorLog('Failed to create business: ' + (businessResult.error?.message || 'Unknown error'));
+          Alert.alert('Failed to create business', businessResult.error?.message || 'Unknown error');
           setLoading(false);
+          clearTimeout(loadingTimeout);
           return;
         }
-        Alert.alert('Failed to create business', businessError?.message || 'Unknown error');
+        business_id = business.id;
+        setGeneratedBusinessCode(business.code);
+        // Upsert user
+        const { data: sessionData } = await supabase.auth.getSession();
+        const sessionUserId = sessionData?.session?.user?.id;
+        if (!sessionUserId) {
+          setErrorLog('No session user id found for upsert.');
+          Alert.alert('User update failed', 'No session user id found.');
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+          return;
+        }
+        const upsertPayload = { id: sessionUserId, name, role, business_id, business_code: codeToUse, email };
+        const userUpsertResult = await supabase
+          .from('users')
+          .upsert(upsertPayload, { onConflict: 'id' });
+        if (userUpsertResult.error) {
+          setErrorLog('User upsert error: ' + (userUpsertResult.error?.message || 'Unknown error'));
+          Alert.alert('User update failed', userUpsertResult.error?.message || 'Unknown error');
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+          return;
+        }
+        setShowCodeAfter(true);
         setLoading(false);
+        clearTimeout(loadingTimeout);
         return;
-      }
-      business_id = business?.id ?? null;
-      if (business?.code) setGeneratedBusinessCode(business?.code);
-
-      // 5. Upsert user (in case row does not exist)
-      if (authData.user?.id && business_id) {
-        let userError;
-        try {
-          // Always use the current session user id for upsert to satisfy RLS
-          const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-          const sessionUserId = sessionData?.session?.user?.id;
-          if (!sessionUserId) {
-            setErrorLog('[Step 5] No session user id found for upsert.');
-            console.error('[Step 5] No session user id found for upsert.', sessionData, sessionError);
-            Alert.alert('User update failed', 'No session user id found.');
+      } else {
+        // Employee registration: must provide valid business code
+        if (!businessCode) {
+          setErrorLog('Please enter your business code.');
+          Alert.alert('Missing Fields', 'Please enter your business code.');
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+          return;
+        }
+        // Validate business code
+        const { data: business, error: businessError } = await supabase
+          .from('businesses')
+          .select('id,code')
+          .eq('code', businessCode.trim())
+          .single();
+        if (businessError || !business) {
+          setErrorLog('Invalid business code.');
+          Alert.alert('Invalid business code', 'Please check with your admin.');
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+          return;
+        }
+        business_id = business.id;
+        // Sign up employee user
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { name, role: 'employee' } }
+        });
+        if (signUpError) {
+          setErrorLog('Supabase signUp error: ' + (signUpError.message || JSON.stringify(signUpError)));
+          if (signUpError.message.toLowerCase().includes('rate limit exceeded')) {
+            setSignupCooldown(10);
+            Alert.alert('Too many sign-up attempts. Please try again in a few seconds.');
             setLoading(false);
+            clearTimeout(loadingTimeout);
             return;
           }
-          // Log the upsert payload for debugging
-          const upsertPayload = { id: sessionUserId, name, role, business_id, business_code: codeToUse, email };
-          console.log('[Step 5] Upsert payload:', upsertPayload);
-          const userUpsertResult = await supabase
-            .from('users')
-            .upsert(upsertPayload, { onConflict: 'id' });
-          userError = userUpsertResult.error;
-          // Log the full Supabase response
-          console.log('[Step 5] User upsert result:', {
-            userId: sessionUserId,
-            business_id,
-            email,
-            userError,
-            data: userUpsertResult.data,
-            status: userUpsertResult.status,
-            statusText: userUpsertResult.statusText,
-            fullResponse: userUpsertResult
-          });
-          if (userUpsertResult.data) {
-            console.log('[Step 5] User upsert returned data:', userUpsertResult.data);
-          }
-          // Immediately fetch the user row after upsert for debugging
-          try {
-            const { data: userRow, error: fetchError } = await supabase
-              .from('users')
-              .select('*')
-              .eq('id', sessionUserId)
-              .single();
-            if (fetchError) {
-              console.error('[Step 5] Error fetching user after upsert:', fetchError);
-            } else {
-              console.log('[Step 5] User row after upsert:', userRow);
-            }
-          } catch (fetchEx) {
-            console.error('[Step 5] Exception fetching user after upsert:', fetchEx);
-          }
-        } catch (err) {
-          setErrorLog('[Step 5] Exception during user upsert: ' + (err instanceof Error ? err.message : JSON.stringify(err)));
-          console.error('[Step 5] Exception during user upsert:', err);
-          Alert.alert('User update failed', err instanceof Error ? err.message : 'Unknown error');
+          Alert.alert('Auth sign up failed', signUpError.message);
           setLoading(false);
+          clearTimeout(loadingTimeout);
           return;
         }
-        if (userError ?? false) {
-          setErrorLog('[Step 5] User upsert error: ' + (userError?.message || JSON.stringify(userError)));
-          console.error('[Step 5] User upsert error:', userError);
-          Alert.alert('User update failed', userError?.message ?? 'Unknown error');
+        if (!authData.user) {
+          setErrorLog('No user returned from signUp.');
+          Alert.alert('Registration failed', 'User not returned from sign up.');
           setLoading(false);
+          clearTimeout(loadingTimeout);
           return;
         }
-      } else if (authData.user?.id) {
-        setErrorLog('[Step 5] Business ID missing when upserting user.');
-        console.error('[Step 5] Business ID missing when upserting user.');
-        Alert.alert('Registration failed', 'Business ID missing when saving user.');
+        // Wait for session
+        let session = null;
+        for (let i = 0; i < 10; i++) {
+          const { data: sessionData } = await supabase.auth.getSession();
+          session = sessionData?.session;
+          if (session) break;
+          await new Promise(res => setTimeout(res, 400));
+        }
+        if (!session) {
+          setErrorLog('Session not established after sign up.');
+          Alert.alert('Registration failed', 'Session not established after sign up. Please check your email to confirm your account, then log in.');
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+          return;
+        }
+        // Upsert user
+        const { data: sessionData } = await supabase.auth.getSession();
+        const sessionUserId = sessionData?.session?.user?.id;
+        if (!sessionUserId) {
+          setErrorLog('No session user id found for upsert.');
+          Alert.alert('User update failed', 'No session user id found.');
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+          return;
+        }
+        const upsertPayload = { id: sessionUserId, name, role: 'employee', business_id, business_code: business.code, email };
+        const userUpsertResult = await supabase
+          .from('users')
+          .upsert(upsertPayload, { onConflict: 'id' });
+        if (userUpsertResult.error) {
+          setErrorLog('User upsert error: ' + (userUpsertResult.error?.message || 'Unknown error'));
+          Alert.alert('User update failed', userUpsertResult.error?.message || 'Unknown error');
+          setLoading(false);
+          clearTimeout(loadingTimeout);
+          return;
+        }
+        setShowCodeAfter(false); // No code to show for employees
         setLoading(false);
+        clearTimeout(loadingTimeout);
+        Alert.alert('Registration successful', 'You can now log in.');
+        onBack();
         return;
       }
-
-      setErrorLog('');
-      setShowCodeAfter(true);
-      setLoading(false);
-      clearTimeout(loadingTimeout);
-      console.log('[Step 6] Registration successful!');
-      return;
     } catch (err: any) {
       setErrorLog('Registration failed: ' + (err?.message || JSON.stringify(err)));
-      console.error('[Catch] Registration failed:', err);
       Alert.alert('Registration failed', err.message || 'Unknown error');
       clearTimeout(loadingTimeout);
     } finally {
@@ -720,7 +628,24 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#e3f2fd' }}>
       <View style={[styles.card, { width: 340 }]}> 
-        <Text style={styles.title}>Admin Sign Up</Text>
+        <Text style={styles.title}>Sign Up</Text>
+        {/* Role selector */}
+        <View style={{ flexDirection: 'row', marginBottom: 18 }}>
+          <TouchableOpacity
+            style={[styles.roleBtn, role === 'admin' && styles.roleBtnActive]}
+            onPress={() => setRole('admin')}
+            disabled={loading}
+          >
+            <Text style={{ color: role === 'admin' ? '#fff' : '#1976d2', fontWeight: 'bold' }}>Admin</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.roleBtn, role === 'employee' && styles.roleBtnActive]}
+            onPress={() => setRole('employee')}
+            disabled={loading}
+          >
+            <Text style={{ color: role === 'employee' ? '#fff' : '#1976d2', fontWeight: 'bold' }}>Employee</Text>
+          </TouchableOpacity>
+        </View>
         {errorLog ? (
           <View style={{ backgroundColor: '#ffeaea', borderRadius: 8, padding: 8, marginBottom: 10, width: 260 }}>
             <Text style={{ color: '#c62828', fontSize: 14 }}>{errorLog}</Text>
@@ -784,31 +709,52 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
               passwordStrength === 'medium' ? 'Medium password' : 'Weak password'}
           </Text>
         </View>
-        <Text style={styles.inputLabel}>Business Name</Text>
-        <TextInput
-          accessibilityLabel="Register Business Name"
-          testID="register-business-name-input"
-          style={styles.input}
-          placeholder="Business Name"
-          value={businessName}
-          onChangeText={setBusinessName}
-          autoCapitalize="words"
-          editable={!loading}
-          placeholderTextColor="#b0b8c1"
-        />
-        <Text style={styles.inputLabel}>Business Code (optional, will be created)</Text>
-        <TextInput
-          accessibilityLabel="Register Business Code"
-          testID="register-business-code-input"
-          style={styles.input}
-          placeholder="Leave blank to auto-generate"
-          value={businessCode}
-          onChangeText={setBusinessCode}
-          autoCapitalize="characters"
-          editable={!loading}
-          maxLength={12}
-          placeholderTextColor="#b0b8c1"
-        />
+        {role === 'admin' && (
+          <>
+            <Text style={styles.inputLabel}>Business Name</Text>
+            <TextInput
+              accessibilityLabel="Register Business Name"
+              testID="register-business-name-input"
+              style={styles.input}
+              placeholder="Business Name"
+              value={businessName}
+              onChangeText={setBusinessName}
+              autoCapitalize="words"
+              editable={!loading}
+              placeholderTextColor="#b0b8c1"
+            />
+            <Text style={styles.inputLabel}>Business Code (optional, will be created)</Text>
+            <TextInput
+              accessibilityLabel="Register Business Code"
+              testID="register-business-code-input"
+              style={styles.input}
+              placeholder="Leave blank to auto-generate"
+              value={businessCode}
+              onChangeText={setBusinessCode}
+              autoCapitalize="characters"
+              editable={!loading}
+              maxLength={12}
+              placeholderTextColor="#b0b8c1"
+            />
+          </>
+        )}
+        {role === 'employee' && (
+          <>
+            <Text style={styles.inputLabel}>Business Code</Text>
+            <TextInput
+              accessibilityLabel="Register Business Code"
+              testID="register-business-code-input"
+              style={styles.input}
+              placeholder="Enter your business code"
+              value={businessCode}
+              onChangeText={setBusinessCode}
+              autoCapitalize="characters"
+              editable={!loading}
+              maxLength={12}
+              placeholderTextColor="#b0b8c1"
+            />
+          </>
+        )}
         <TouchableOpacity style={styles.loginBtn} onPress={handleRegister} disabled={loading || signupCooldown > 0}>
           {loading || signupCooldown > 0 ? (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
