@@ -1,4 +1,3 @@
-import { FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as LocalAuthentication from 'expo-local-authentication';
 import React, { useEffect, useRef, useState } from 'react';
@@ -90,14 +89,16 @@ const initialTasks: Task[] = [
 
 interface EmployeeDashboardScreenProps {
   onLogout: () => void;
+  user?: any;
 }
 
-function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
+function EmployeeDashboardScreen({ onLogout, user: passedUser }: EmployeeDashboardScreenProps) {
   // Business code entry state
   const [businessCode, setBusinessCode] = useState('');
   const [businessId, setBusinessId] = useState<string | null>(null);
   const [businessCodeError, setBusinessCodeError] = useState('');
-  const [user, setUser] = useState<any | null>(null);
+  const [businessIdError, setBusinessIdError] = useState('');
+  const [user, setUser] = useState<any | null>(passedUser || null);
   // Notification panel state
   const [notificationPanelVisible, setNotificationPanelVisible] = useState(false);
   // Notifications: show clock events as notifications (demo)
@@ -146,25 +147,29 @@ function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
   const [enteredCode, setEnteredCode] = useState('');
   const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
   // Fetch employees for the current business when businessId is set
-  useEffect(() => {
-    if (!businessId) return;
-    const fetchEmployees = async () => {
-      setLoadingEmployees(true);
-      try {
-  const [businessIdError, setBusinessIdError] = useState('');
-  const businessIdTimeoutRef = useRef<any>(null); // Use 'any' for cross-platform compatibility
-        let query = supabase.from('employees').select('id, name, code, business_id');
-        query = query.eq('business_id', businessId);
-        const { data, error } = await query;
-        if (error) {
-          console.error('Error fetching employees:', error);
-          Alert.alert('Error', 'Could not fetch employees. Please check your connection.');
-        }
-        if (data) {
-          setEmployees(data);
-        }
   // On mount, check if businessId is stored in AsyncStorage or set from admin user
   useEffect(() => {
+    if (passedUser) {
+      // If admin, set businessId and currentEmployee for bypass
+      if (passedUser.role === 'admin' && passedUser.business_id) {
+        setBusinessId(passedUser.business_id);
+        setCurrentEmployee({
+          id: 'admin',
+          name: passedUser.name || 'Admin',
+          code: '',
+          business_id: passedUser.business_id,
+        });
+        return;
+      }
+      // If employee, set businessId but do not bypass selection
+      if (passedUser.role === 'employee' && passedUser.business_id) {
+        setBusinessId(passedUser.business_id);
+      }
+      setUser(passedUser);
+      return;
+    }
+    // Fallback: fetch user as before
+    const businessIdTimeoutRef = { current: null as any };
     (async () => {
       try {
         // Fetch current user
@@ -188,6 +193,12 @@ function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
         if (userRecord.role === 'admin' && userRecord.business_id) {
           setBusinessId(userRecord.business_id);
           await AsyncStorage.setItem('business_id', userRecord.business_id);
+          setCurrentEmployee({
+            id: 'admin',
+            name: userRecord.name || 'Admin',
+            code: '',
+            business_id: userRecord.business_id,
+          });
           return;
         }
         // Otherwise, check AsyncStorage as before
@@ -206,7 +217,23 @@ function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
     return () => {
       if (businessIdTimeoutRef.current) clearTimeout(businessIdTimeoutRef.current);
     };
-  }, []);
+  }, [passedUser]);
+
+  useEffect(() => {
+    if (!businessId) return;
+    const fetchEmployees = async () => {
+      setLoadingEmployees(true);
+      try {
+        let query = supabase.from('employees').select('id, name, code, business_id');
+        query = query.eq('business_id', businessId);
+        const { data, error } = await query;
+        if (error) {
+          console.error('Error fetching employees:', error);
+          Alert.alert('Error', 'Could not fetch employees. Please check your connection.');
+        }
+        if (data) {
+          setEmployees(data);
+        }
       } catch (e) {
         console.error('Unexpected error fetching employees:', e);
         Alert.alert('Error', 'Unexpected error fetching employees.');
@@ -216,16 +243,6 @@ function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
     };
     fetchEmployees();
   }, [businessId]);
-
-  // On mount, check if businessId is stored in AsyncStorage
-  useEffect(() => {
-    (async () => {
-      try {
-        const stored = await AsyncStorage.getItem('business_id');
-        if (stored) setBusinessId(stored);
-      } catch {}
-    })();
-  }, []);
 
   // Handler for business code submit (unchanged)
   const handleBusinessCodeSubmit = async () => {
@@ -658,78 +675,11 @@ function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
   // After successful code entry, show the dashboard for the current employee
   return (
     <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 16, paddingHorizontal: 8 }]}> 
-      {/* Header with notification bell and settings */}
-      <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8, position: 'relative' }}>
-        <TouchableOpacity onPress={() => setNotificationPanelVisible(true)} style={{ position: 'absolute', left: 0, padding: 8 }}>
-          <FontAwesome5 name="bell" size={24} color={theme.primary} />
-          {notifications.length > 0 && (
-            <View style={{ position: 'absolute', top: 2, right: 2, backgroundColor: '#c62828', borderRadius: 8, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{notifications.length}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-        <Text style={{ fontSize: 24, fontWeight: 'bold', color: theme.primary, textAlign: 'center' }}>Employee Dashboard</Text>
-        <TouchableOpacity onPress={() => setSettingsVisible(true)} style={{ position: 'absolute', right: 0, padding: 8 }}>
-          <FontAwesome5 name="cog" size={24} color={theme.primary} />
-        </TouchableOpacity>
-      </View>
       {/* ...existing dashboard code... */}
-      {/* Add a "Logout" button that resets currentEmployee and clockedIn state */}
-      <TouchableOpacity
-        style={[styles.closeBtn, { marginTop: 30, backgroundColor: '#c62828' }]}
-        onPress={async () => {
-          setCurrentEmployee(null);
-          setClockedIn(false);
-          setOnLunch(false);
-          setSelectedEmployee(null);
-          setEnteredCode('');
-          await AsyncStorage.removeItem('business_id');
-          setBusinessId(null);
-          // Sign out from Supabase to clear session
-          const { error } = await supabase.auth.signOut();
-          if (error) {
-            Alert.alert('Logout Error', error.message);
-            return;
-          }
-          // Force a full reload to clear all cached state and session
-          if (typeof window !== 'undefined') {
-            window.location.replace('/');
-            window.location.reload();
-          }
-        }}
-      >
-        <Text style={styles.closeBtnText}>Logout</Text>
-      </TouchableOpacity>
-      {/* Settings Modal */}
-      <Modal visible={settingsVisible} animationType="slide" transparent onRequestClose={() => setSettingsVisible(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Settings</Text>
-            <TouchableOpacity style={[styles.codeBtn, { marginBottom: 16 }]} onPress={() => {
-              setSettingsVisible(false);
-              // Use expo-router navigation for both web and native
-              if (typeof window !== 'undefined' && window.location.pathname === '/admin-dashboard') return;
-              if (typeof window !== 'undefined' && window.location.pathname === '/employee-dashboard') {
-                require('expo-router').useRouter().replace('/admin-dashboard');
-              } else {
-                require('expo-router').useRouter().replace('/admin-dashboard');
-              }
-            }}>
-              <Text style={styles.closeBtnText}>Switch to Admin Dashboard</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.closeBtn} onPress={() => setSettingsVisible(false)}>
-              <Text style={styles.closeBtnText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-      {/* Notification Panel Modal */}
-      <Modal visible={notificationPanelVisible} animationType="slide" transparent onRequestClose={() => setNotificationPanelVisible(false)}>
-        <NotificationPanel notifications={notifications} onClose={() => setNotificationPanelVisible(false)} />
-      </Modal>
     </View>
   );
 }
+
 export default EmployeeDashboardScreen;
 
 const styles = StyleSheet.create({
