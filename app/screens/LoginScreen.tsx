@@ -568,7 +568,7 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
           clearTimeout(loadingTimeout);
           return;
         }
-        // Upsert user
+        // Upsert user with robust logging
         const { data: sessionData } = await supabase.auth.getSession();
         const sessionUserId = sessionData?.session?.user?.id;
         if (!sessionUserId) {
@@ -578,16 +578,40 @@ function RegistrationScreen({ onBack, isLoggedIn = false }: { onBack: () => void
           clearTimeout(loadingTimeout);
           return;
         }
-        const upsertPayload = { id: sessionUserId, name, role: 'employee', business_id, business_code: business.code, email };
+        const upsertPayload = {
+          id: sessionUserId,
+          name,
+          role: 'employee',
+          business_id: business.id,
+          business_code: business.code,
+          email
+        };
+        console.log('[Employee Registration] Upsert payload:', upsertPayload);
         const userUpsertResult = await supabase
           .from('users')
           .upsert(upsertPayload, { onConflict: 'id' });
         if (userUpsertResult.error) {
           setErrorLog('User upsert error: ' + (userUpsertResult.error?.message || 'Unknown error'));
+          console.error('[Employee Registration] User upsert error:', userUpsertResult.error, 'Payload:', upsertPayload);
           Alert.alert('User update failed', userUpsertResult.error?.message || 'Unknown error');
           setLoading(false);
           clearTimeout(loadingTimeout);
           return;
+        }
+        // Fetch and log the user row after upsert for verification
+        try {
+          const { data: userRow, error: fetchError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', sessionUserId)
+            .single();
+          if (fetchError) {
+            console.error('[Employee Registration] Error fetching user after upsert:', fetchError);
+          } else {
+            console.log('[Employee Registration] User row after upsert:', userRow);
+          }
+        } catch (fetchEx) {
+          console.error('[Employee Registration] Exception fetching user after upsert:', fetchEx);
         }
         setShowCodeAfter(false); // No code to show for employees
         setLoading(false);
