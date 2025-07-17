@@ -632,7 +632,7 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
   // After successful code entry, show the dashboard for the current employee
   return (
     <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 16, paddingHorizontal: 8 }]}> 
-      {/* Header with notification bell */}
+      {/* Header with notification bell and settings */}
       <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8, position: 'relative' }}>
         <TouchableOpacity onPress={() => setNotificationPanelVisible(true)} style={{ position: 'absolute', left: 0, padding: 8 }}>
           <FontAwesome5 name="bell" size={24} color={theme.primary} />
@@ -643,6 +643,9 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
           )}
         </TouchableOpacity>
         <Text style={{ fontSize: 24, fontWeight: 'bold', color: theme.primary, textAlign: 'center' }}>Employee Dashboard</Text>
+        <TouchableOpacity onPress={() => setSettingsVisible(true)} style={{ position: 'absolute', right: 0, padding: 8 }}>
+          <FontAwesome5 name="cog" size={24} color={theme.primary} />
+        </TouchableOpacity>
       </View>
       {/* ...existing dashboard code... */}
       {/* Add a "Logout" button that resets currentEmployee and clockedIn state */}
@@ -671,6 +674,25 @@ export default function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardS
       >
         <Text style={styles.closeBtnText}>Logout</Text>
       </TouchableOpacity>
+      {/* Settings Modal */}
+      <Modal visible={settingsVisible} animationType="slide" transparent onRequestClose={() => setSettingsVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Settings</Text>
+            <TouchableOpacity style={[styles.codeBtn, { marginBottom: 16 }]} onPress={() => {
+              setSettingsVisible(false);
+              if (typeof window !== 'undefined') {
+                window.location.replace('/admin-dashboard');
+              }
+            }}>
+              <Text style={styles.closeBtnText}>Switch to Admin Dashboard</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.closeBtn} onPress={() => setSettingsVisible(false)}>
+              <Text style={styles.closeBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       {/* Notification Panel Modal */}
       <Modal visible={notificationPanelVisible} animationType="slide" transparent onRequestClose={() => setNotificationPanelVisible(false)}>
         <NotificationPanel notifications={notifications} onClose={() => setNotificationPanelVisible(false)} />

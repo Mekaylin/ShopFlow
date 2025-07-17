@@ -440,6 +440,12 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
                 setLunchEnd(le);
               }}
               onUpdateLateThreshold={setLateThreshold}
+              onSwitchDashboard={() => {
+                setSettingsModalVisible(false);
+                if (typeof window !== 'undefined') {
+                  window.location.replace('/employee-dashboard');
+                }
+              }}
             />
           )}
         </Suspense>

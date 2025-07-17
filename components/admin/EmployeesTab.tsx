@@ -229,7 +229,18 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
         setError(error.message || 'Failed to save employee.');
         Alert.alert('Error', error.message || 'Failed to save employee.');
       } else if (data) {
-        setEmployees(employees.map(e => e.id === editEmployee.id ? data : e));
+        // Always refetch employees from Supabase after edit to ensure UI is up to date
+        try {
+          const { data: allEmployees, error: fetchError } = await supabase
+            .from('employees')
+            .select('*')
+            .eq('business_id', user.business_id);
+          if (!fetchError && allEmployees) setEmployees(allEmployees);
+        } catch (fetchErr) {
+          const fetchErrMsg = fetchErr instanceof Error ? fetchErr.message : String(fetchErr);
+          console.error('Refetch employees error:', fetchErrMsg, fetchErr);
+          Alert.alert('Refetch Employees Error', `Error: ${fetchErrMsg}`);
+        }
         setEditEmployee(null);
         setNewEmployeeName('');
         setNewEmployeeCode('');

@@ -19,6 +19,7 @@ interface SettingsModalProps {
   onLogout: () => void;
   onUpdateWorkHours: (hours: { start: string; end: string; lunchStart: string; lunchEnd: string }) => void;
   onUpdateLateThreshold: (threshold: number) => void;
+  onSwitchDashboard: () => void; // NEW PROP
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -36,6 +37,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   onLogout,
   onUpdateWorkHours,
   onUpdateLateThreshold,
+  onSwitchDashboard,
 }) => {
   const [businessCode, setBusinessCode] = useState<string | null>(null);
   const [businessCodeLoading, setBusinessCodeLoading] = useState(false);
@@ -225,10 +227,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               </View>
             )}
 
-            {/* Logout Section */}
+            {/* Dashboard Switch Section */}
             <View style={{ marginTop: 16 }}>
               <TouchableOpacity style={adminStyles.logoutBtn} onPress={onLogout}>
                 <Text style={adminStyles.logoutBtnText}>Logout</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[adminStyles.addBtn, { marginTop: 10 }]} onPress={onSwitchDashboard}>
+                <Text style={adminStyles.addBtnText}>Switch to Employee Dashboard</Text>
               </TouchableOpacity>
               <TouchableOpacity style={adminStyles.closeBtn} onPress={onClose}>
                 <Text style={adminStyles.closeBtnText}>Close</Text>

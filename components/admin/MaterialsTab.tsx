@@ -114,23 +114,34 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
   };
 
   const handleDeleteMaterial = async (id: string) => {
-    const { error } = await supabase
-      .from('materials')
-      .delete()
-      .eq('id', id);
-    if (error) {
-      Alert.alert('Error', error?.message || 'Failed to delete material.');
-      return;
-    }
-    // Refetch materials from Supabase
+    setLoading(true);
     try {
-      const { data: allMaterials, error: fetchError } = await supabase
-        .from('materials')
-        .select('*')
-        .eq('business_id', user.business_id);
-      if (!fetchError && allMaterials) setMaterials(allMaterials);
-    } catch (fetchErr) {
-      console.error('Refetch materials error:', fetchErr);
+      const result = await Promise.race([
+        supabase
+          .from('materials')
+          .delete()
+          .eq('id', id),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), 8000)),
+      ]);
+      const { error } = result as any;
+      if (error) {
+        Alert.alert('Error', error?.message || 'Failed to delete material. This may be due to related records.');
+      } else {
+        // Refetch materials from Supabase
+        try {
+          const { data: allMaterials, error: fetchError } = await supabase
+            .from('materials')
+            .select('*')
+            .eq('business_id', user.business_id);
+          if (!fetchError && allMaterials) setMaterials(allMaterials);
+        } catch (fetchErr) {
+          console.error('Refetch materials error:', fetchErr);
+        }
+      }
+    } catch (err) {
+      Alert.alert('Error', err instanceof Error ? err.message : 'Unexpected error');
+    } finally {
+      setLoading(false);
     }
   };
 
