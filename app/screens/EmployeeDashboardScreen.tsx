@@ -1,7 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as LocalAuthentication from 'expo-local-authentication';
-import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import NotificationPanel, { Notification } from '../../components/admin/NotificationPanel';
 import { supabase } from '../../lib/supabase';
@@ -92,7 +91,10 @@ interface EmployeeDashboardScreenProps {
   user?: any;
 }
 
-function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
+import { useRouter } from 'expo-router';
+
+function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProps) {
+  const router = useRouter();
   // Fetch employees, tasks, and materials from Supabase on mount
   useEffect(() => {
     const fetchData = async () => {
@@ -183,20 +185,20 @@ function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
   };
   // Theme/colors
   const colorScheme = useColorScheme();
-  const [darkMode, setDarkMode] = useState(colorScheme === 'dark');
+  const [darkMode, setDarkMode] = useState(false);
   const isDark = darkMode;
   const insets = useSafeAreaInsets();
-  // Match admin dashboard: white background, blue accents
+  // Theme toggles between light and dark
   const theme = {
-    background: '#fff',
-    card: '#fff',
+    background: isDark ? '#181C24' : '#fff',
+    card: isDark ? '#232A36' : '#fff',
     primary: '#1976d2',
     accent: '#388e3c',
     error: '#c62828',
-    text: '#1a237e',
-    subtext: '#263238',
-    border: '#eee',
-    shadow: '#b0b8c1',
+    text: isDark ? '#fff' : '#1a237e',
+    subtext: isDark ? '#b0b8c1' : '#263238',
+    border: isDark ? '#2c3440' : '#eee',
+    shadow: isDark ? '#000' : '#b0b8c1',
   };
 
   // Tabs: 'clock' or 'tasks'
@@ -220,34 +222,94 @@ function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
   const [showEmployeeTasksPage, setShowEmployeeTasksPage] = useState(false);
   // TODO: Fetch employees, tasks, and materials from Supabase on mount
 
+  // Settings modal state
+  const [settingsVisible, setSettingsVisible] = useState(false);
+
   // Tab UI
   return (
     <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 16, paddingHorizontal: 8 }]}> 
-      <View style={{ flexDirection: 'row', marginBottom: 18 }}>
-        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: activeTab === 'clock' ? theme.primary : '#e3e3e3', flex: 1, marginRight: 8 }]} onPress={() => setActiveTab('clock')}>
-          <Text style={{ color: activeTab === 'clock' ? '#fff' : '#1976d2', fontWeight: 'bold', fontSize: 18 }}>Clock In/Out</Text>
+      {/* Settings Button */}
+      <TouchableOpacity
+        style={{ position: 'absolute', top: insets.top + 10, right: 18, zIndex: 10, backgroundColor: theme.card, borderRadius: 20, padding: 10, shadowColor: theme.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 4, elevation: 2 }}
+        onPress={() => setSettingsVisible(true)}
+      >
+        <Text style={{ color: theme.primary, fontWeight: 'bold', fontSize: 18 }}>⚙️</Text>
+      </TouchableOpacity>
+      {/* Settings Modal */}
+      <Modal visible={settingsVisible} animationType="slide" transparent onRequestClose={() => setSettingsVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { alignItems: 'center', padding: 32 }]}> 
+            <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.primary, marginBottom: 18 }}>Settings</Text>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.primary, marginBottom: 18, width: 220 }]} onPress={() => { setSettingsVisible(false); router.replace('/admin-dashboard'); }}>
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>Go to Admin Dashboard</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: isDark ? theme.card : theme.primary, marginBottom: 18, width: 220 }]} onPress={() => setDarkMode(!darkMode)}>
+              <Text style={{ color: isDark ? theme.primary : '#fff', fontWeight: 'bold', fontSize: 18 }}>{isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.closeBtn, { marginTop: 10 }]} onPress={() => setSettingsVisible(false)}>
+              <Text style={styles.closeBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+      {/* Vertical Tabs */}
+      <View style={{ flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginTop: 38, marginBottom: 18, width: '100%' }}>
+        <TouchableOpacity
+          style={[styles.actionBtn, {
+            backgroundColor: activeTab === 'clock' ? theme.primary : '#e3e3e3',
+            width: '90%',
+            marginBottom: 18,
+            alignSelf: 'center',
+            paddingVertical: 36,
+            borderRadius: 18,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.12,
+            shadowRadius: 8,
+            elevation: 6,
+          }]}
+          onPress={() => setActiveTab('clock')}
+        >
+          <Text style={{ color: activeTab === 'clock' ? '#fff' : '#1976d2', fontWeight: 'bold', fontSize: 24, textAlign: 'center' }}>Clock In/Out</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: activeTab === 'tasks' ? theme.primary : '#e3e3e3', flex: 1 }]} onPress={() => setActiveTab('tasks')}>
-          <Text style={{ color: activeTab === 'tasks' ? '#fff' : '#1976d2', fontWeight: 'bold', fontSize: 18 }}>View Tasks</Text>
+        <TouchableOpacity
+          style={[styles.actionBtn, {
+            backgroundColor: activeTab === 'tasks' ? theme.primary : '#e3e3e3',
+            width: '90%',
+            marginBottom: 0,
+            alignSelf: 'center',
+            paddingVertical: 36,
+            borderRadius: 18,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.12,
+            shadowRadius: 8,
+            elevation: 6,
+          }]}
+          onPress={() => setActiveTab('tasks')}
+        >
+          <Text style={{ color: activeTab === 'tasks' ? '#fff' : '#1976d2', fontWeight: 'bold', fontSize: 24, textAlign: 'center' }}>View Tasks</Text>
         </TouchableOpacity>
       </View>
       {activeTab === 'clock' ? (
         // --- CLOCK IN/OUT TAB ---
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.primary, marginBottom: 12 }}>Clock In/Out</Text>
-          <TextInput
-            style={[styles.codeInput, { width: 220, marginBottom: 10 }]}
-            placeholder="Enter Employee Code"
-            value={codePrompt}
-            onChangeText={setCodePrompt}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {clockInError ? <Text style={{ color: theme.error, marginBottom: 10 }}>{clockInError}</Text> : null}
-          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.primary, width: 180, marginBottom: 10 }]} onPress={handleClockInOut}>
-            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>{clockedIn ? (onLunch ? 'End Lunch' : 'Clock Out') : 'Clock In'}</Text>
-          </TouchableOpacity>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: 26, fontWeight: 'bold', color: theme.primary, marginBottom: 18 }}>Clock In/Out</Text>
+            <View style={{ width: 320, backgroundColor: theme.card, borderRadius: 16, padding: 24, shadowColor: theme.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 6, elevation: 3, alignItems: 'center' }}>
+              <TextInput
+                style={[styles.codeInput, { width: '100%', marginBottom: 16, fontSize: 20, textAlign: 'center' }]}
+                placeholder="Enter Employee Code"
+                value={codePrompt}
+                onChangeText={setCodePrompt}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {clockInError ? <Text style={{ color: theme.error, marginBottom: 10 }}>{clockInError}</Text> : null}
+              <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.primary, width: '100%', marginBottom: 0, paddingVertical: 18 }]} onPress={handleClockInOut}>
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>{clockedIn ? (onLunch ? 'End Lunch' : 'Clock Out') : 'Clock In'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       ) : (
         // --- VIEW TASKS TAB ---
