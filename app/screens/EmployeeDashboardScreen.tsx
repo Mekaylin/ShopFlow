@@ -92,420 +92,210 @@ interface EmployeeDashboardScreenProps {
   user?: any;
 }
 
-function EmployeeDashboardScreen({ onLogout, user: passedUser }: EmployeeDashboardScreenProps) {
-  // Business code entry state
-  const [businessCode, setBusinessCode] = useState('');
-  const [businessId, setBusinessId] = useState<string | null>(null);
-  const [businessCodeError, setBusinessCodeError] = useState('');
-  const [businessIdError, setBusinessIdError] = useState('');
-  const [user, setUser] = useState<any | null>(passedUser || null);
-  // Notification panel state
-  const [notificationPanelVisible, setNotificationPanelVisible] = useState(false);
-  // Notifications: show clock events as notifications (demo)
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const colorScheme = useColorScheme();
-  const [darkMode, setDarkMode] = useState(colorScheme === 'dark');
-  const isDark = darkMode;
-  const [settingsVisible, setSettingsVisible] = useState(false);
-  const [biometricSupported, setBiometricSupported] = useState(false);
-  const [biometricEnabled, setBiometricEnabled] = useState(false);
-  const [biometricLoggedIn, setBiometricLoggedIn] = useState(false);
-
-  // Check for biometric support on mount
+function EmployeeDashboardScreen({ onLogout }: EmployeeDashboardScreenProps) {
+  // Fetch employees, tasks, and materials from Supabase on mount
   useEffect(() => {
-    (async () => {
-      const compatible = await LocalAuthentication.hasHardwareAsync();
-      setBiometricSupported(compatible);
-    })();
+    const fetchData = async () => {
+      try {
+        const { data: empData, error: empError } = await supabase.from('employees').select('*');
+        if (empError) throw empError;
+        setEmployees(empData || []);
+        const { data: taskData, error: taskError } = await supabase.from('tasks').select('*');
+        if (taskError) throw taskError;
+        setTasks(taskData || []);
+        const { data: matData, error: matError } = await supabase.from('materials').select('*');
+        if (matError) throw matError;
+        setMaterials(matData || []);
+      } catch (err) {
+        Alert.alert('Error', 'Failed to load data from cloud.');
+      }
+    };
+    fetchData();
   }, []);
 
-  // Biometric login handler
-  const handleBiometricLogin = async () => {
-    const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Authenticate with fingerprint' });
-    if (result.success) {
-      setBiometricLoggedIn(true);
-      Alert.alert('Success', 'Fingerprint authentication successful!');
-      handleClockAction();
-    } else {
-      setBiometricLoggedIn(false);
-      Alert.alert('Failed', 'Fingerprint authentication failed.');
-    }
-  };
-  const handleBiometricLogout = () => {
-    setBiometricLoggedIn(false);
-    Alert.alert('Logged out', 'Fingerprint session ended.');
-  };
-  const insets = useSafeAreaInsets();
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [clockedIn, setClockedIn] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  // Shared-tablet state
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loadingEmployees, setLoadingEmployees] = useState(true);
-  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
-  const [codePromptVisible, setCodePromptVisible] = useState(false);
-  const [enteredCode, setEnteredCode] = useState('');
-  const [currentEmployee, setCurrentEmployee] = useState<Employee | null>(null);
-  // Fetch employees for the current business when businessId is set
-  // On mount, check if businessId is stored in AsyncStorage or set from admin user
-  useEffect(() => {
-    if (passedUser) {
-      // If admin, set businessId and currentEmployee for bypass
-      if (passedUser.role === 'admin' && passedUser.business_id) {
-        setBusinessId(passedUser.business_id);
-        setCurrentEmployee({
-          id: 'admin',
-          name: passedUser.name || 'Admin',
-          code: '',
-          business_id: passedUser.business_id,
-        });
-        return;
-      }
-      // If employee, set businessId but do not bypass selection
-      if (passedUser.role === 'employee' && passedUser.business_id) {
-        setBusinessId(passedUser.business_id);
-      }
-      setUser(passedUser);
+  // --- CLOCK IN/OUT LOGIC ---
+  const handleClockInOut = async () => {
+    setClockInError('');
+    const code = codePrompt.trim();
+    if (!code) {
+      setClockInError('Please enter your employee code.');
       return;
     }
-    // Fallback: fetch user as before
-    const businessIdTimeoutRef = { current: null as any };
-    (async () => {
-      try {
-        // Fetch current user
-        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-        if (authError || !authUser) {
-          setBusinessIdError('No authenticated user. Please log in again.');
-          return;
-        }
-        setUser(authUser);
-        // Fetch user record from users table
-        const { data: userRecord, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', authUser.id)
-          .single();
-        if (userError || !userRecord) {
-          setBusinessIdError('User not found. Please log in again.');
-          return;
-        }
-        // If admin, set businessId from user record
-        if (userRecord.role === 'admin' && userRecord.business_id) {
-          setBusinessId(userRecord.business_id);
-          await AsyncStorage.setItem('business_id', userRecord.business_id);
-          setCurrentEmployee({
-            id: 'admin',
-            name: userRecord.name || 'Admin',
-            code: '',
-            business_id: userRecord.business_id,
-          });
-          return;
-        }
-        // Otherwise, check AsyncStorage as before
-        const stored = await AsyncStorage.getItem('business_id');
-        if (stored) setBusinessId(stored);
-        else setBusinessIdError('No business ID found. Please log in again.');
-      } catch (err) {
-        console.error('[EmployeeDashboard] Error loading business_id from AsyncStorage or user:', err);
-        setBusinessIdError('Error loading business ID.');
-      }
-    })();
-    // Add a timeout failsafe: if businessId is not set after 5 seconds, show error
-    businessIdTimeoutRef.current = setTimeout(() => {
-      setBusinessIdError('Business ID not found. Please log in again.');
-    }, 5000);
-    return () => {
-      if (businessIdTimeoutRef.current) clearTimeout(businessIdTimeoutRef.current);
-    };
-  }, [passedUser]);
-
-  useEffect(() => {
-    if (!businessId) return;
-    const fetchEmployees = async () => {
-      setLoadingEmployees(true);
-      try {
-        let query = supabase.from('employees').select('id, name, code, business_id');
-        query = query.eq('business_id', businessId);
-        const { data, error } = await query;
-        if (error) {
-          console.error('Error fetching employees:', error);
-          Alert.alert('Error', 'Could not fetch employees. Please check your connection.');
-        }
-        if (data) {
-          setEmployees(data);
-        }
-      } catch (e) {
-        console.error('Unexpected error fetching employees:', e);
-        Alert.alert('Error', 'Unexpected error fetching employees.');
-      } finally {
-        setLoadingEmployees(false);
-      }
-    };
-    fetchEmployees();
-  }, [businessId]);
-
-  // Handler for business code submit (unchanged)
-  const handleBusinessCodeSubmit = async () => {
-    setBusinessCodeError('');
-    if (!businessCode.trim()) {
-      setBusinessCodeError('Please enter a business code.');
+    // Find employee by code
+    const employee = employees.find(e => e.code === code);
+    if (!employee) {
+      setClockInError('Invalid code.');
       return;
     }
-    // Look up business by code
-    try {
-      const { data, error } = await supabase.from('businesses').select('id').eq('code', businessCode.trim()).single();
-      if (error || !data) {
-        setBusinessCodeError('Invalid business code.');
-        return;
-      }
-      setBusinessId(data.id);
-      await AsyncStorage.setItem('business_id', data.id);
-    } catch (e) {
-      setBusinessCodeError('Error verifying business code.');
-    }
-  };
-  const [showEmployeeTasksPage, setShowEmployeeTasksPage] = useState(false);
-  const [employeeTasksId, setEmployeeTasksId] = useState<string | null>(null);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [materials, setMaterials] = useState<Material[]>(initialMaterials); // get from admin
-  // taskMaterials: { [taskId]: { materialId, quantity }[] }
-  const [taskMaterials, setTaskMaterials] = useState<{ [taskId: string]: { materialId: string; quantity: string }[] }>({});
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Animation state
-  const [showWelcome, setShowWelcome] = useState(false);
-  const welcomeAnim = useRef(new Animated.Value(0)).current;
-
-  // Removed auto-logout logic for all-day running app
-  const userAction = (fn: () => void) => fn;
-
-  // Working hours and lunch times (should be fetched from admin, here as demo)
-  const [workStart, setWorkStart] = useState('08:00');
-  const [workEnd, setWorkEnd] = useState('17:00');
-  const [lunchStart, setLunchStart] = useState('12:00');
-  const [lunchEnd, setLunchEnd] = useState('12:30');
-  // Auto-detect clock action
-  const [lastAction, setLastAction] = useState<'in' | 'lunch' | 'lunchBack' | 'out' | null>(null);
-  const [onLunch, setOnLunch] = useState(false);
-
-  // Helper to get current time as HH:mm
-  function getCurrentTime() {
-    const now = new Date();
-    return now.toTimeString().slice(0,5);
-  }
-
-  // Determine next action based on time and state
-  function getNextClockAction() {
-    const now = getCurrentTime();
-    if (!clockedIn) return 'in';
-    if (!onLunch && now >= lunchStart && now < lunchEnd) return 'lunch';
-    if (onLunch && now >= lunchEnd) return 'lunchBack';
-    if (clockedIn && now >= workEnd) return 'out';
-    return 'out';
-  }
-
-  // Prompt for code or fingerprint on clock in/out
-  const handleClockInOutPress = userAction(() => {
-    setCodePromptVisible(true);
-    setEnteredCode('');
-  });
-
-  // Log clock event to the database, with offline queue, and add notification
-  const logClockEvent = async (action: 'in' | 'out' | 'lunch' | 'lunchBack') => {
-    if (!currentEmployee) {
-      console.error('logClockEvent: No currentEmployee set');
-      Alert.alert('Error', 'No employee selected for clock event.');
-      return;
-    }
-    const event = {
-      employee_id: currentEmployee.id,
-      business_id: currentEmployee.business_id,
+    // Determine action
+    let action: 'in' | 'out' | 'lunch' | 'lunchBack' = 'in';
+    if (clockedIn && !onLunch) action = 'out';
+    else if (clockedIn && !onLunch) action = 'lunch';
+    else if (clockedIn && onLunch) action = 'lunchBack';
+    // Insert clock event
+    const event: ClockEvent = {
+      employee_id: employee.id,
+      business_id: employee.business_id,
       action,
       timestamp: new Date().toISOString(),
     };
     try {
       const { error } = await supabase.from('clock_events').insert(event);
-      if (error) {
-        console.error('logClockEvent: Supabase insert error:', error);
-        await queueClockEvent(event);
-        Alert.alert('Offline', 'Clock event saved locally and will sync when online.');
-      } else {
-        await syncClockEvents();
-      }
+      if (error) throw error;
+      setNotifications(prev => [
+        { id: Math.random().toString(36).slice(2), message: `Clock ${action} for ${employee.name}`, timestamp: new Date().toISOString(), type: 'info' },
+        ...prev.slice(0, 19),
+      ]);
+      if (action === 'in') { setClockedIn(true); setOnLunch(false); Alert.alert('Clocked In', 'You are clocked in.'); }
+      else if (action === 'out') { setClockedIn(false); setOnLunch(false); Alert.alert('Clocked Out', 'You have clocked out.'); }
+      else if (action === 'lunch') { setOnLunch(true); Alert.alert('Lunch', 'You are on lunch.'); }
+      else if (action === 'lunchBack') { setOnLunch(false); Alert.alert('Back', 'Lunch ended.'); }
+      setCodePrompt('');
     } catch (err) {
-      console.error('logClockEvent: Exception during insert:', err);
-      await queueClockEvent(event);
-      Alert.alert('Offline', 'Clock event saved locally and will sync when online.');
+      setClockInError('Failed to clock event.');
     }
-    // Add notification (demo)
-    setNotifications(prev => [
-      {
-        id: Math.random().toString(36).slice(2),
-        message: `Clock ${action === 'in' ? 'In' : action === 'out' ? 'Out' : action === 'lunch' ? 'Lunch Start' : 'Lunch End'} for ${currentEmployee.name}`,
-        timestamp: new Date().toISOString(),
-        type: action === 'in' || action === 'out' ? 'info' : 'late',
-      },
-      ...prev.slice(0, 19), // keep max 20
-    ]);
   };
-  // On mount, try to sync any offline clock events
-  useEffect(() => {
-    syncClockEvents();
-  }, []);
 
-  // Handle clock action (in, lunch, lunchBack, out) and log event
-  const handleClockAction = async () => {
+  // --- MATERIALS/COMPLETE TASK LOGIC ---
+  const [taskMaterials, setTaskMaterials] = useState<{ [taskId: string]: { materialId: string; quantity: string }[] }>({});
+  const handleSaveMaterials = async (taskId: string) => {
+    const materialsArr = (taskMaterials[taskId] || [])
+      .filter(m => m.quantity && !isNaN(Number(m.quantity)))
+      .map(m => ({ materialId: m.materialId, quantity: Number(m.quantity) }));
     try {
-      const action = getNextClockAction();
-      setLastAction(action);
-      if (action === 'in') {
-        setClockedIn(true);
-        setOnLunch(false);
-        setShowWelcome(true);
-        Animated.timing(welcomeAnim, {
-          toValue: 1,
-          duration: 700,
-          useNativeDriver: true,
-        }).start(() => {
-          setTimeout(() => {
-            Animated.timing(welcomeAnim, {
-              toValue: 0,
-              duration: 500,
-              useNativeDriver: true,
-            }).start(() => setShowWelcome(false));
-          }, 1800);
-        });
-        Alert.alert('Clocked In', 'You are clocked in.');
-        await logClockEvent('in');
-      } else if (action === 'lunch') {
-        setOnLunch(true);
-        Alert.alert('Lunch Break', 'You are clocked out for lunch.');
-        await logClockEvent('lunch');
-      } else if (action === 'lunchBack') {
-        setOnLunch(false);
-        Alert.alert('Back from Lunch', 'You are clocked in from lunch.');
-        await logClockEvent('lunchBack');
-      } else if (action === 'out') {
-        setClockedIn(false);
-        setOnLunch(false);
-        Alert.alert('Clocked Out', 'You have clocked out for the day.');
-        await logClockEvent('out');
-      }
-      setCodePromptVisible(false);
-    } catch (err) {
-      console.error('handleClockAction: Exception:', err);
-      Alert.alert('Error', 'An error occurred during clock action.');
+      const { error } = await supabase.from('tasks').update({ materials_used: materialsArr }).eq('id', taskId);
+      if (error) throw error;
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, materials_used: materialsArr } : t));
+      Alert.alert('Saved', 'Materials used have been saved for this task.');
+    } catch {
+      Alert.alert('Error', 'Failed to save materials.');
     }
   };
-
-  // For clock in/out, use the selected employee's code
-  const handleCodeSubmit = async () => {
-    if (!selectedEmployee) {
-      Alert.alert('Error', 'No employee selected.');
-      return;
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      const { error } = await supabase.from('tasks').update({ completed: true, completed_at: new Date().toISOString() }).eq('id', taskId);
+      if (error) throw error;
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: true, completed_at: new Date().toISOString() } : t));
+      Alert.alert('Task Completed', 'Task marked as complete.');
+    } catch {
+      Alert.alert('Error', 'Failed to complete task.');
     }
-    if (enteredCode.trim() !== selectedEmployee.code) {
-      Alert.alert('Invalid Code', 'Please enter the correct code to continue.');
-      return;
-    }
-    setCurrentEmployee(selectedEmployee);
-    setCodePromptVisible(false);
-    setEnteredCode('');
-    // Optionally, reset clockedIn state here if you want a fresh session
+  };
+  // Theme/colors
+  const colorScheme = useColorScheme();
+  const [darkMode, setDarkMode] = useState(colorScheme === 'dark');
+  const isDark = darkMode;
+  const insets = useSafeAreaInsets();
+  // Match admin dashboard: white background, blue accents
+  const theme = {
+    background: '#fff',
+    card: '#fff',
+    primary: '#1976d2',
+    accent: '#388e3c',
+    error: '#c62828',
+    text: '#1a237e',
+    subtext: '#263238',
+    border: '#eee',
+    shadow: '#b0b8c1',
   };
 
-  // Remove selectedEmployee modal and use full page view instead
-  // Modal for viewing all employees
-  const openEmployeeTasks = (employeeId: string) => {
-    setEmployeeTasksId(employeeId);
-    setShowEmployeeTasksPage(true);
-    setModalVisible(false);
-  };
-  const closeEmployeeTasks = () => {
-    setShowEmployeeTasksPage(false);
-    setEmployeeTasksId(null);
-  };
+  // Tabs: 'clock' or 'tasks'
+  const [activeTab, setActiveTab] = useState<'clock' | 'tasks'>('clock');
 
-  // Render tasks for a specific employee
-  const handleSaveMaterials = (taskId: string) => {
-    setTasks(prevTasks => prevTasks.map(t => {
-      if (t.id !== taskId) return t;
-      // Save materials_used as numbers
-      return {
-        ...t,
-        materials_used: (taskMaterials[taskId] || [])
-          .filter(m => m.quantity && !isNaN(Number(m.quantity)))
-          .map(m => ({ materialId: m.materialId, quantity: Number(m.quantity) })),
-      };
-    }));
-    Alert.alert('Saved', 'Materials used have been saved for this task.');
-  };
+  // State for employees, tasks, materials, etc.
+  const [employees, setEmployees] = useState<Employee[]>([]); // Fetched from Supabase
+  const [tasks, setTasks] = useState<Task[]>([]); // Fetched from Supabase
+  const [materials, setMaterials] = useState<Material[]>([]); // Fetched from Supabase
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [notificationPanelVisible, setNotificationPanelVisible] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  // Clock in/out state
+  const [codePrompt, setCodePrompt] = useState('');
+  const [clockInError, setClockInError] = useState('');
+  const [clockedIn, setClockedIn] = useState(false);
+  const [onLunch, setOnLunch] = useState(false);
+  // View Tasks state
+  const [employeeTasksId, setEmployeeTasksId] = useState<string | null>(null);
+  const [showEmployeeTasksPage, setShowEmployeeTasksPage] = useState(false);
+  // TODO: Fetch employees, tasks, and materials from Supabase on mount
 
-  const handleCompleteTask = (taskId: string) => {
-    Alert.alert(
-      'Are you sure?',
-      'Mark this task as completed? This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Yes, Complete', style: 'destructive', onPress: () => {
-            setTasks(prevTasks => prevTasks.map(t => {
-              if (t.id !== taskId) return t;
-              return {
-                ...t,
-                completed: true,
-                completed_at: new Date().toISOString(),
-                materials_used: (taskMaterials[taskId] || [])
-                  .filter(m => m.quantity && !isNaN(Number(m.quantity)))
-                  .map(m => ({ materialId: m.materialId, quantity: Number(m.quantity) })),
-              };
-            }));
-            Alert.alert('Task Completed', 'Task marked as complete.');
-          }
-        }
-      ]
-    );
-  };
-
-  const renderEmployeeTasks = (employeeName: string) => {
-    const empTasks = tasks.filter(t => t.assigned_to === employeeName);
-    return (
-      <View style={styles.empTaskList}>
-      {empTasks.length === 0 ? <Text style={styles.noTask}>No tasks assigned.</Text> :
-        empTasks.map(task => (
-          <TouchableOpacity
-            key={task.id}
-            style={[styles.task, task.completed && styles.taskCompleted]}
-            onPress={() => setSelectedTask(task)}
-          >
-            <Text style={styles.taskName}>{task.name}</Text>
-            <Text style={styles.taskTime}>Start: {task.start} | Due: {task.deadline}</Text>
-            <Text style={styles.taskStatus}>{task.completed ? 'Completed' : 'In Progress'}</Text>
-            {task.completed && task.completed_at && (
-              <Text style={{ color: '#888', fontSize: 13, marginBottom: 4 }}>Completed at: {new Date(task.completed_at).toLocaleString()}</Text>
-            )}
-            {task.completed && task.materials_used && task.materials_used.length > 0 && (
-              <View style={{ marginTop: 8 }}>
-                <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Materials Used:</Text>
-                {task.materials_used.map(mu => {
-                  const mat = materials.find(m => m.id === mu.materialId);
-                  if (!mat) return null;
-                  return (
-                    <Text key={mat.id} style={{ fontSize: 14 }}>{mat.name}: {mu.quantity} {mat.unit}</Text>
-                  );
-                })}
-              </View>
-            )}
-          </TouchableOpacity>
-        ))}
+  // Tab UI
+  return (
+    <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 16, paddingHorizontal: 8 }]}> 
+      <View style={{ flexDirection: 'row', marginBottom: 18 }}>
+        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: activeTab === 'clock' ? theme.primary : '#e3e3e3', flex: 1, marginRight: 8 }]} onPress={() => setActiveTab('clock')}>
+          <Text style={{ color: activeTab === 'clock' ? '#fff' : '#1976d2', fontWeight: 'bold', fontSize: 18 }}>Clock In/Out</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.actionBtn, { backgroundColor: activeTab === 'tasks' ? theme.primary : '#e3e3e3', flex: 1 }]} onPress={() => setActiveTab('tasks')}>
+          <Text style={{ color: activeTab === 'tasks' ? '#fff' : '#1976d2', fontWeight: 'bold', fontSize: 18 }}>View Tasks</Text>
+        </TouchableOpacity>
       </View>
-    );
-  };
-
-  // Modal for a specific task (materials + complete)
-  const renderTaskModal = () => {
-    if (!selectedTask) return null;
-    const task = tasks.find(t => t.id === selectedTask.id);
-    if (!task) return null;
-    return (
+      {activeTab === 'clock' ? (
+        // --- CLOCK IN/OUT TAB ---
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.primary, marginBottom: 12 }}>Clock In/Out</Text>
+          <TextInput
+            style={[styles.codeInput, { width: 220, marginBottom: 10 }]}
+            placeholder="Enter Employee Code"
+            value={codePrompt}
+            onChangeText={setCodePrompt}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {clockInError ? <Text style={{ color: theme.error, marginBottom: 10 }}>{clockInError}</Text> : null}
+          <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.primary, width: 180, marginBottom: 10 }]} onPress={handleClockInOut}>
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>{clockedIn ? (onLunch ? 'End Lunch' : 'Clock Out') : 'Clock In'}</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        // --- VIEW TASKS TAB ---
+        <View style={{ flex: 1 }}>
+          {!showEmployeeTasksPage ? (
+            <>
+              <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.primary, marginBottom: 12 }}>Select Employee</Text>
+              <FlatList
+                data={employees}
+                keyExtractor={item => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[styles.employeeBlock, { minWidth: 220, alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, marginBottom: 18, padding: 18, borderWidth: 1, borderColor: '#e3e3e3' }]}
+                    onPress={() => { setSelectedEmployee(item); setShowEmployeeTasksPage(true); }}
+                  >
+                    <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.primary }}>{item.name}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            </>
+          ) : (
+            <>
+              <TouchableOpacity style={{ marginBottom: 10 }} onPress={() => setShowEmployeeTasksPage(false)}>
+                <Text style={{ color: theme.primary, fontWeight: 'bold' }}>{'< Back to Employees'}</Text>
+              </TouchableOpacity>
+              <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.primary, marginBottom: 8 }}>{selectedEmployee?.name}'s Tasks</Text>
+              <FlatList
+                data={tasks.filter(t => t.assigned_to === selectedEmployee?.id)}
+                keyExtractor={item => item.id}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={[styles.task, item.completed && styles.taskCompleted]}
+                    onPress={() => setSelectedTask(item)}
+                  >
+                    <Text style={styles.taskName}>{item.name}</Text>
+                    <Text style={styles.taskTime}>Start: {item.start} | Due: {item.deadline}</Text>
+                    <Text style={styles.taskStatus}>{item.completed ? 'Completed' : 'In Progress'}</Text>
+                    {item.completed && item.completed_at && (
+                      <Text style={{ color: '#888', fontSize: 13, marginBottom: 4 }}>Completed at: {new Date(item.completed_at).toLocaleString()}</Text>
+                    )}
+                  </TouchableOpacity>
+                )}
+              />
+            </>
+          )}
+        </View>
+      )}
+      {/* Task modal with materials and completion */}
       <Modal
         visible={!!selectedTask}
         animationType="slide"
@@ -514,168 +304,59 @@ function EmployeeDashboardScreen({ onLogout, user: passedUser }: EmployeeDashboa
       >
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { maxHeight: '90%' }]}> 
-            <Text style={styles.modalTitle}>{task.name}</Text>
-            <Text style={styles.taskTime}>Start: {task.start} | Due: {task.deadline}</Text>
-            <Text style={styles.taskStatus}>{task.completed ? 'Completed' : 'In Progress'}</Text>
-            {task.completed && task.completed_at && (
-              <Text style={{ color: '#888', fontSize: 13, marginBottom: 4 }}>Completed at: {new Date(task.completed_at).toLocaleString()}</Text>
-            )}
-            {!task.completed && (
-              <View style={{ marginTop: 10 }}>
-                <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Materials Used:</Text>
-                {materials.map(mat => (
-                  <View key={mat.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                    <Text style={{ flex: 1 }}>{mat.name} ({mat.unit}):</Text>
-                    <TextInput
-                      accessibilityLabel="Employee Code Entry"
-                      testID="employee-code-entry-input"
-                      style={{ borderWidth: 1, borderColor: '#bbb', borderRadius: 6, padding: 6, width: 60, marginLeft: 8, backgroundColor: '#fff' }}
-                      placeholder="0"
-                      keyboardType="numeric"
-                      value={taskMaterials[task.id]?.find(m => m.materialId === mat.id)?.quantity || ''}
-                      onChangeText={val => {
-                        setTaskMaterials(prev => {
-                          const prevArr = prev[task.id] || [];
-                          const filtered = prevArr.filter(m => m.materialId !== mat.id);
-                          return {
-                            ...prev,
-                            [task.id]: [...filtered, { materialId: mat.id, quantity: val }],
-                          };
-                        });
-                      }}
-                    />
+            {selectedTask && (
+              <>
+                <Text style={styles.modalTitle}>{selectedTask.name}</Text>
+                <Text style={styles.taskTime}>Start: {selectedTask.start} | Due: {selectedTask.deadline}</Text>
+                <Text style={styles.taskStatus}>{selectedTask.completed ? 'Completed' : 'In Progress'}</Text>
+                {selectedTask.completed && selectedTask.completed_at && (
+                  <Text style={{ color: '#888', fontSize: 13, marginBottom: 4 }}>Completed at: {new Date(selectedTask.completed_at).toLocaleString()}</Text>
+                )}
+                {/* Materials entry UI (only if not completed) */}
+                {!selectedTask.completed && (
+                  <View style={{ marginTop: 10 }}>
+                    <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Materials Used:</Text>
+                    {materials.map(mat => (
+                      <View key={mat.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+                        <Text style={{ flex: 1 }}>{mat.name} ({mat.unit}):</Text>
+                        <TextInput
+                          style={{ borderWidth: 1, borderColor: '#bbb', borderRadius: 6, padding: 6, width: 60, marginLeft: 8, backgroundColor: '#fff' }}
+                          placeholder="0"
+                          keyboardType="numeric"
+                          value={taskMaterials[selectedTask.id]?.find(m => m.materialId === mat.id)?.quantity || ''}
+                          onChangeText={val => {
+                            setTaskMaterials(prev => {
+                              const prevArr = prev[selectedTask.id] || [];
+                              const filtered = prevArr.filter(m => m.materialId !== mat.id);
+                              return {
+                                ...prev,
+                                [selectedTask.id]: [...filtered, { materialId: mat.id, quantity: val }],
+                              };
+                            });
+                          }}
+                        />
+                      </View>
+                    ))}
+                    <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.primary, marginTop: 8, paddingVertical: 10 }]} onPress={() => handleSaveMaterials(selectedTask.id)}>
+                      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Save Materials</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.accent, marginTop: 8, paddingVertical: 10 }]} onPress={() => handleCompleteTask(selectedTask.id)}>
+                      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Mark Complete</Text>
+                    </TouchableOpacity>
                   </View>
-                ))}
-                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#1976d2', marginTop: 8, paddingVertical: 10 }]} onPress={() => handleSaveMaterials(task.id)}>
-                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Save Materials</Text>
+                )}
+                <TouchableOpacity style={[styles.closeBtn, { marginTop: 18 }]} onPress={() => setSelectedTask(null)}>
+                  <Text style={styles.closeBtnText}>Close</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#388e3c', marginTop: 8, paddingVertical: 10 }]} onPress={() => handleCompleteTask(task.id)}>
-                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Mark Complete</Text>
-                </TouchableOpacity>
-              </View>
+              </>
             )}
-            {task.completed && task.materials_used && task.materials_used.length > 0 && (
-              <View style={{ marginTop: 8 }}>
-                <Text style={{ fontWeight: 'bold', marginBottom: 2 }}>Materials Used:</Text>
-                {task.materials_used.map(mu => {
-                  const mat = materials.find(m => m.id === mu.materialId);
-                  if (!mat) return null;
-                  return (
-                    <Text key={mat.id} style={{ fontSize: 14 }}>{mat.name}: {mu.quantity} {mat.unit}</Text>
-                  );
-                })}
-              </View>
-            )}
-            <TouchableOpacity style={[styles.closeBtn, { marginTop: 18 }]} onPress={() => setSelectedTask(null)}>
-              <Text style={styles.closeBtnText}>Close</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </Modal>
-    );
-  };
-
-  // Theme colors
-  const theme = {
-    background: isDark ? '#181C24' : '#f8fafd',
-    card: isDark ? '#232A36' : '#fff',
-    primary: '#1976d2',
-    accent: '#388e3c',
-    error: '#c62828',
-    text: isDark ? '#fff' : '#1a237e',
-    subtext: isDark ? '#b0b8c1' : '#263238',
-    border: isDark ? '#2c3440' : '#eee',
-    shadow: isDark ? '#000' : '#b0b8c1',
-  };
-
-  // Business code entry screen
-  if (!businessId) {
-    return (
-      <View style={[styles.container, { backgroundColor: '#f8fafd', justifyContent: 'center', alignItems: 'center' }]}> 
-        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#1976d2', textAlign: 'center', marginBottom: 18 }}>Enter Business Code</Text>
-        <TextInput
-          accessibilityLabel="Employee Dashboard Search"
-          testID="employee-dashboard-search-input"
-          style={[styles.codeInput, { marginBottom: 10, width: 260 }]}
-          placeholder="Business code"
-          value={businessCode}
-          onChangeText={setBusinessCode}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        {businessCodeError ? <Text style={{ color: '#c62828', marginBottom: 10 }}>{businessCodeError}</Text> : null}
-        <TouchableOpacity style={[styles.codeBtn, { width: 120, marginBottom: 20 }]} onPress={handleBusinessCodeSubmit}>
-          <Text style={styles.closeBtnText}>Submit</Text>
-        </TouchableOpacity>
-        {/* Optionally, allow admin to log in or go back */}
-      </View>
-    );
-  }
-
-  // Shared-tablet flow: If no employee is selected, show employee picker
-  if (!currentEmployee) {
-    return (
-      <View style={[styles.container, { backgroundColor: '#f8fafd', justifyContent: 'center', alignItems: 'center' }]}> 
-        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#1976d2', textAlign: 'center', marginBottom: 8 }}>Select Your Name</Text>
-        {loadingEmployees ? (
-          <ActivityIndicator size="large" color="#1976d2" />
-        ) : (
-          <FlatList
-            data={employees}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[styles.employeeBlock, { minWidth: 220, alignItems: 'center', backgroundColor: '#fff', borderRadius: 10, marginBottom: 18, padding: 18, borderWidth: 1, borderColor: '#e3e3e3' }]}
-                onPress={() => { setSelectedEmployee(item); setCodePromptVisible(true); }}
-              >
-                <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#1976d2' }}>{item.name}</Text>
-              </TouchableOpacity>
-            )}
-          />
-        )}
-        {/* Code prompt modal */}
-        <Modal
-          visible={codePromptVisible}
-          animationType="fade"
-          transparent={true}
-          onRequestClose={() => setCodePromptVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.codeModalContent}>
-              <Text style={styles.modalTitle}>Enter Your Employee Code</Text>
-              <TextInput
-                accessibilityLabel="Employee Dashboard Task Input"
-                testID="employee-dashboard-task-input"
-                style={styles.codeInput}
-                placeholder="Employee code"
-                value={enteredCode}
-                onChangeText={setEnteredCode}
-                secureTextEntry
-                autoFocus
-              />
-              <View style={styles.codeBtnRow}>
-                <TouchableOpacity style={styles.codeBtn} onPress={() => { setCodePromptVisible(false); setEnteredCode(''); setSelectedEmployee(null); }}>
-                  <Text style={styles.closeBtnText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.codeBtn} onPress={handleCodeSubmit}>
-                  <Text style={styles.closeBtnText}>Submit</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
-        {/* Notification Panel Modal */}
-        <Modal visible={notificationPanelVisible} animationType="slide" transparent onRequestClose={() => setNotificationPanelVisible(false)}>
-          <NotificationPanel notifications={notifications} onClose={() => setNotificationPanelVisible(false)} />
-        </Modal>
-      </View>
-    );
-  }
-
-  // After successful code entry, show the dashboard for the current employee
-  return (
-    <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 16, paddingHorizontal: 8 }]}> 
-      {/* ...existing dashboard code... */}
+      {/* Notification Panel Modal */}
+      <Modal visible={notificationPanelVisible} animationType="slide" transparent onRequestClose={() => setNotificationPanelVisible(false)}>
+        <NotificationPanel notifications={notifications} onClose={() => setNotificationPanelVisible(false)} />
+      </Modal>
     </View>
   );
 }
@@ -683,7 +364,7 @@ function EmployeeDashboardScreen({ onLogout, user: passedUser }: EmployeeDashboa
 export default EmployeeDashboardScreen;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
+  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
   title: { fontSize: 30, fontWeight: 'bold', marginBottom: 36, alignSelf: 'center', letterSpacing: 1 },
   buttonCol: { flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginBottom: 28 },
   actionBtn: { width: '92%', paddingVertical: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', marginHorizontal: 8, marginBottom: 0, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 6 },
