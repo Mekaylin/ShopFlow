@@ -349,13 +349,14 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
   };
   const handleCompleteTask = async (taskId: string) => {
     try {
-      const { error } = await supabase.from('tasks').update({ completed: true, completed_at: new Date().toISOString() }).eq('id', taskId);
-      if (error) {
+      const completedAt = new Date().toISOString();
+      const { data, error } = await supabase.from('tasks').update({ completed: true, completed_at: completedAt }).eq('id', taskId).select('*').single();
+      if (error || !data) {
         console.error('Supabase error completing task:', error);
         Alert.alert('Error', 'Failed to complete task.');
         return;
       }
-      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: true, completed_at: new Date().toISOString() } : t));
+      setTasks(prev => prev.map(t => t.id === data.id ? { ...t, ...data } : t));
       setSelectedTask(null); // Close modal after completion
       Alert.alert('Task Completed', 'Task marked as complete.');
     } catch (err) {
@@ -570,9 +571,10 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
                         style={{ backgroundColor: '#388e3c', borderRadius: 8, padding: 10, alignItems: 'center', marginTop: 8 }}
                         onPress={async () => {
                           try {
+                            const completedAt = new Date().toISOString();
                             const { data, error } = await supabase
                               .from('tasks')
-                              .update({ completed: true, completed_at: new Date().toISOString() })
+                              .update({ completed: true, completed_at: completedAt })
                               .eq('id', item.id)
                               .select('*')
                               .single();

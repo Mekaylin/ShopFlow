@@ -76,13 +76,19 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       setError('Please fill all required fields.');
       return;
     }
+    // If editing and marking as completed, always set completed_at
     if (taskToEdit && onEditTask) {
-      await onEditTask(taskToEdit.id, {
+      const updates: any = {
         name: newTaskName,
         start: newTaskStart,
         deadline: newTaskDeadline,
         materials_used: materialsForTask,
-      });
+      };
+      if (completed && !taskToEdit.completed) {
+        updates.completed = true;
+        updates.completed_at = new Date().toISOString();
+      }
+      await onEditTask(taskToEdit.id, updates);
     } else {
       await onAddTask({
         name: newTaskName,
