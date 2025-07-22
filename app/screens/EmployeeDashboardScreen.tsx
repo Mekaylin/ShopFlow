@@ -177,9 +177,9 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
     try {
       const { data: recentEvents, error: recentError } = await supabase
         .from('clock_events')
-        .select('id, action, timestamp')
+        .select('id, action, created_at')
         .eq('employee_id', employee.id)
-        .order('timestamp', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(1);
       if (recentError) {
         console.error('[ClockIn] Error fetching recent events:', recentError);
@@ -187,7 +187,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       }
       if (recentEvents && recentEvents.length > 0) {
         const lastEvent = recentEvents[0];
-        const lastTime = new Date(lastEvent.timestamp).getTime();
+        const lastTime = new Date(lastEvent.created_at).getTime();
         const now = Date.now();
         console.log('[ClockIn] Last event:', lastEvent, 'Now:', now, 'LastTime:', lastTime);
         if (lastEvent.action === action && now - lastTime < 60000) {
