@@ -1,3 +1,9 @@
+// Extend Task type to include rating using declaration merging
+declare module '../utility/types' {
+  interface Task {
+    rating?: number;
+  }
+}
 // --- AddTaskModal extracted for deduplication and reliability ---
 // ...existing code...
 type AddTaskModalProps = {
@@ -25,7 +31,11 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskStart, setNewTaskStart] = useState('');
   const [newTaskDeadline, setNewTaskDeadline] = useState('');
-  // Materials logic can be added here if needed
+  // Materials logic
+  const [selectedMaterialId, setSelectedMaterialId] = useState('');
+  const [selectedMaterialTypeId, setSelectedMaterialTypeId] = useState('');
+  const [materialQuantity, setMaterialQuantity] = useState('');
+  const [materialsForTask, setMaterialsForTask] = useState<{ materialId: string; materialTypeId?: string; quantity: number }[]>([]);
   const handleAdd = async () => {
     setError('');
     if (!newTaskName || !newTaskStart || !newTaskDeadline || !selectedEmployee) {
@@ -37,11 +47,12 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
       assigned_to: selectedEmployee.id,
       start: newTaskStart,
       deadline: newTaskDeadline,
-      // Add materials if needed
+      materials_used: materialsForTask,
     });
     setNewTaskName('');
     setNewTaskStart('');
     setNewTaskDeadline('');
+    setMaterialsForTask([]);
     setSelectedEmployee(null);
     onClose();
   };
@@ -49,6 +60,63 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
     <AdminModal visible={visible} onClose={() => { setSelectedEmployee(null); onClose(); }} title={!selectedEmployee ? 'Select Employee' : `Add Task for ${selectedEmployee?.name || ''}`}>
       {!selectedEmployee ? (
         <View>
+          {/* Material selection UI */}
+          <Text style={{ fontWeight: 'bold', marginTop: 8, marginBottom: 4 }}>Add Materials for Task</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={{ marginRight: 6 }}>Material:</Text>
+            <TextInput
+              style={[adminStyles.inputText, { flex: 1 }]}
+              placeholder="Material ID or Name"
+              value={selectedMaterialId}
+              onChangeText={setSelectedMaterialId}
+            />
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={{ marginRight: 6 }}>Type:</Text>
+            <TextInput
+              style={[adminStyles.inputText, { flex: 1 }]}
+              placeholder="Type ID (optional)"
+              value={selectedMaterialTypeId}
+              onChangeText={setSelectedMaterialTypeId}
+            />
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Text style={{ marginRight: 6 }}>Quantity:</Text>
+            <TextInput
+              style={[adminStyles.inputText, { flex: 1 }]}
+              placeholder="Quantity"
+              value={materialQuantity}
+              onChangeText={setMaterialQuantity}
+              keyboardType="numeric"
+            />
+          </View>
+          <TouchableOpacity
+            style={[adminStyles.addBtn, { marginBottom: 8 }]}
+            onPress={() => {
+              if (!selectedMaterialId || !materialQuantity) return;
+              setMaterialsForTask(prev => [...prev, {
+                materialId: selectedMaterialId,
+                materialTypeId: selectedMaterialTypeId || undefined,
+                quantity: Number(materialQuantity)
+              }]);
+              setSelectedMaterialId('');
+              setSelectedMaterialTypeId('');
+              setMaterialQuantity('');
+            }}
+          >
+            <Text style={adminStyles.addBtnText}>Add Material</Text>
+          </TouchableOpacity>
+          {/* List added materials */}
+          {materialsForTask.length > 0 && (
+            <View style={{ marginBottom: 8 }}>
+              <Text style={{ fontWeight: 'bold' }}>Materials for this task:</Text>
+              {materialsForTask.map((mat, idx) => (
+                <Text key={idx} style={{ fontSize: 14 }}>
+                  {mat.materialId}{mat.materialTypeId ? ` (${mat.materialTypeId})` : ''}: {mat.quantity}
+                </Text>
+              ))}
+            </View>
+          )}
           <FlatList
             data={employees}
             keyExtractor={item => item.id}
@@ -105,19 +173,18 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
     </AdminModal>
   );
 };
-import { FontAwesome5 } from '@expo/vector-icons';
-// Removed native DateTimePicker for Expo Go compatibility
-import { useRouter } from 'expo-router';
+
 import React, { useState } from 'react';
-import { FlatList, Image, SafeAreaView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, SafeAreaView, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
-import { Employee, Material, MaterialType, Task } from '../utility/types';
-import { minutesLate } from '../utility/utils';
+import { SearchAndFilterBar } from '../ui/SearchAndFilterBar';
 import AdminModal from './AdminModal';
-import NotificationPanel from './NotificationPanel';
-
-import type { PerformanceSettings, User } from '../utility/types';
+import { minutesLate } from '../utility/utils';
+import { Employee, Material, MaterialType, PerformanceSettings, User } from '../utility/types';
+import type { Task } from '../utility/types';
 interface TasksTabProps {
   user: User;
   employees: Employee[];
@@ -133,7 +200,8 @@ interface TasksTabProps {
   onRateTask: (task: Task) => void;
 }
 
-const TasksTab: React.FC<TasksTabProps> = ({
+
+export const TasksTab: React.FC<TasksTabProps> = ({
   user,
   employees,
   materials,
@@ -147,8 +215,11 @@ const TasksTab: React.FC<TasksTabProps> = ({
   setLateTaskNotifiedIds,
   onRateTask,
 }) => {
-  // Task state
+  // --- Task state ---
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [selectedTaskEmployee, setSelectedTaskEmployee] = useState<Employee | null>(null);
+  const [showEmployeeTasksModal, setShowEmployeeTasksModal] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [newTaskName, setNewTaskName] = useState('');
@@ -159,10 +230,7 @@ const TasksTab: React.FC<TasksTabProps> = ({
   // Removed showDatePicker state for Expo Go compatibility
   const [newTaskStart, setNewTaskStart] = useState('');
   const [newTaskDeadline, setNewTaskDeadline] = useState('');
-  const [selectedMaterialForTask, setSelectedMaterialForTask] = useState<string>('');
-  const [selectedMaterialTypeForTask, setSelectedMaterialTypeForTask] = useState<string>('');
-  const [materialQuantityForTask, setMaterialQuantityForTask] = useState('');
-  const [materialsForNewTask, setMaterialsForNewTask] = useState<{ materialId: string; materialTypeId?: string; quantity: number }[]>([]);
+  // Remove unused material states (now handled in modal)
   const router = useRouter();
   // Remove params.addTask usage; use local state for modal
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
@@ -196,12 +264,103 @@ const TasksTab: React.FC<TasksTabProps> = ({
     }
   };
   const handleCompleteTask = async (taskId: string) => {
-    // TODO: Implement complete task logic
-    // Example: mark as completed in supabase and update state
+    try {
+      const completedAt = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({ completed: true, completed_at: completedAt })
+        .eq('id', taskId)
+        .select('*')
+        .single();
+      if (error || !data) {
+        console.error('Error marking task complete:', error);
+        Alert.alert('Error', 'Failed to mark task as complete. Please try again.');
+        return;
+      }
+      setTasks(tasks.map(t => t.id === taskId ? { ...t, completed: true, completed_at: completedAt } : t));
+      Alert.alert('Success', 'Task marked as complete.');
+    } catch (e) {
+      console.error('Exception in handleCompleteTask:', e);
+      Alert.alert('Error', 'Unexpected error occurred.');
+    }
   };
   const handleDeleteTask = async (taskId: string) => {
-    // TODO: Implement delete task logic
-    // Example: delete from supabase and update state
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskId);
+      if (error) return;
+      setTasks(tasks.filter(t => t.id !== taskId));
+    } catch (e) {
+      // Optionally handle error
+    }
+  };
+  // Rating modal state
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingTask, setRatingTask] = useState<Task | null>(null);
+  const [taskRating, setTaskRating] = useState(0);
+  const [ratingLoading, setRatingLoading] = useState(false);
+  const [ratingError, setRatingError] = useState('');
+
+  const openRatingModal = (task: Task) => {
+    setRatingTask(task);
+    setTaskRating(task.rating || 0);
+    setShowRatingModal(true);
+  };
+
+  const handleRateTask = async () => {
+    if (!ratingTask) return;
+    setRatingLoading(true);
+    setRatingError('');
+    try {
+      // 1. Update the task rating in supabase
+      const { data: updatedTask, error: taskError } = await supabase
+        .from('tasks')
+        .update({ rating: taskRating })
+        .eq('id', ratingTask.id)
+        .select('*')
+        .single();
+      if (taskError || !updatedTask) {
+        setRatingError('Failed to rate task.');
+        return;
+      }
+      setTasks(tasks.map(t => t.id === ratingTask.id ? { ...t, rating: taskRating } : t));
+
+      // 2. Update employee performance metrics
+      // Fetch all rated tasks for this employee
+      const { data: ratedTasks, error: fetchError } = await supabase
+        .from('tasks')
+        .select('rating')
+        .eq('assigned_to', ratingTask.assigned_to)
+        .not('rating', 'is', null);
+      if (fetchError || !ratedTasks) {
+        // Don't block UI, but optionally log error
+      }
+      // Calculate average rating
+      const ratings = ratedTasks?.map((t: { rating: number }) => t.rating).filter(r => typeof r === 'number');
+      const avgRating = ratings && ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : null;
+
+      // Update employee performance table (assume table: employee_performance)
+      if (avgRating !== null) {
+        await supabase
+          .from('employee_performance')
+          .upsert([
+            {
+              employee_id: ratingTask.assigned_to,
+              avg_task_rating: avgRating,
+              last_updated: new Date().toISOString(),
+            }
+          ], { onConflict: 'employee_id' });
+      }
+
+      setShowRatingModal(false);
+      setRatingTask(null);
+    } catch (e) {
+      setRatingError('Unexpected error.');
+    } finally {
+      setRatingLoading(false);
+    }
   };
   const renderItem = ({ item }: { item: Employee | Task }) => {
     if ('assigned_to' in item) {
@@ -280,11 +439,11 @@ const TasksTab: React.FC<TasksTabProps> = ({
                   flexDirection: 'row',
                   alignItems: 'center'
                 }}
-                onPress={() => onRateTask(task)}
+                onPress={() => openRatingModal(task)}
               >
                 <FontAwesome5 name="star" size={14} color="#fff" style={{ marginRight: 6 }} />
                 <Text style={{ color: '#fff', fontWeight: '600', fontSize: 12 }}>
-                  Rate Task
+                  {task.rating ? `Rated: ${task.rating}/5` : 'Rate Task'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -302,9 +461,9 @@ const TasksTab: React.FC<TasksTabProps> = ({
         </View>
       );
     } else if (item && typeof item === 'object' && 'id' in item && 'name' in item) {
-      // Employee: clicking opens Add Task modal for that employee
+      // Employee: clicking opens modal showing all their tasks for the day
       return (
-        <TouchableOpacity
+        <View
           style={{
             backgroundColor: '#fff',
             borderRadius: 10,
@@ -317,24 +476,39 @@ const TasksTab: React.FC<TasksTabProps> = ({
             flexDirection: 'row',
             minWidth: 0,
             maxWidth: '100%',
-          }}
-          onPress={() => {
-            setSelectedTaskEmployee(item as Employee);
-            setShowAddTaskModal(true);
+            justifyContent: 'space-between',
           }}
         >
-          <View style={{ width: 28, height: 28, borderRadius: 14, marginRight: 7, backgroundColor: '#e3f2fd', alignItems: 'center', justifyContent: 'center' }}>
-            {'photoUri' in item && item.photoUri ? (
-              <Image source={{ uri: item.photoUri }} style={{ width: 28, height: 28, borderRadius: 14 }} />
-            ) : (
-              <FontAwesome5 name="user" size={16} color="#b3c0e0" />
-            )}
-          </View>
-          <View>
-            <Text style={{ fontWeight: 'bold', color: '#1976d2', fontSize: 13 }}>{item.name}</Text>
-            <Text style={{ color: '#888', fontSize: 11 }}>{'department' in item && item.department ? item.department : 'No Dept'}</Text>
-          </View>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
+            onPress={() => {
+              setSelectedTaskEmployee(item as Employee);
+              setShowEmployeeTasksModal(true);
+            }}
+          >
+            <View style={{ width: 28, height: 28, borderRadius: 14, marginRight: 7, backgroundColor: '#e3f2fd', alignItems: 'center', justifyContent: 'center' }}>
+              {'photoUri' in item && item.photoUri ? (
+                <Image source={{ uri: item.photoUri }} style={{ width: 28, height: 28, borderRadius: 14 }} />
+              ) : (
+                <FontAwesome5 name="user" size={16} color="#b3c0e0" />
+              )}
+            </View>
+            <View>
+              <Text style={{ fontWeight: 'bold', color: '#1976d2', fontSize: 13 }}>{item.name}</Text>
+              <Text style={{ color: '#888', fontSize: 11 }}>{'department' in item && item.department ? item.department : 'No Dept'}</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ marginLeft: 10, padding: 6, borderRadius: 16, backgroundColor: '#e3f2fd' }}
+            onPress={() => {
+              setSelectedTaskEmployee(item as Employee);
+              setShowAddTaskModal(true);
+            }}
+            accessibilityLabel={`Add task for ${item.name}`}
+          >
+            <FontAwesome5 name="plus" size={16} color="#1976d2" />
+          </TouchableOpacity>
+        </View>
       );
     }
     return null;
@@ -359,35 +533,35 @@ const TasksTab: React.FC<TasksTabProps> = ({
   };
   // Filtered tasks by date range
   const filteredTasks = tasks.filter(t => inRange(t.deadline));
+  // Filtered tasks by search
+  const filteredTasksBySearch = tasks.filter(t =>
+    t.name.toLowerCase().includes(search.toLowerCase()) &&
+    (!statusFilter || (statusFilter === 'completed' ? t.completed : !t.completed))
+  );
   // Data: always use (Employee | Task)[] and type guard in renderItem
-  const data: (Employee | Task)[] = !selectedTaskEmployee
-    ? employees
-    : filteredTasks.filter(t => t.assigned_to === selectedTaskEmployee.id);
+  const data: (Employee | Task)[] = filteredTasksBySearch.length > 0 || search ? filteredTasksBySearch : employees;
+
+  // Get today's tasks for selected employee
+  const todaysTasksForEmployee = selectedTaskEmployee
+    ? tasks.filter(t => t.assigned_to === selectedTaskEmployee.id && inRange(t.deadline))
+    : [];
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      {/* Banner with Notification Icon and Centered Heading */}
+      {/* Banner with Centered Heading */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 18, paddingBottom: 10, backgroundColor: '#f5faff', position: 'relative' }}>
-        {/* Notification Bell Icon (top left) */}
-        <View style={{ position: 'absolute', left: 16, top: 0, bottom: 0, justifyContent: 'center' }}>
-          <TouchableOpacity
-            onPress={() => setShowNotifications(true)}
-            accessibilityLabel="Show Notifications"
-          >
-            <FontAwesome5 name="bell" size={26} color="#1976d2" />
-            {notifications.filter(n => n.type === 'late').length > 0 && (
-              <View style={{ position: 'absolute', top: -4, right: -4, backgroundColor: '#c62828', borderRadius: 8, width: 16, height: 16, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{notifications.filter(n => n.type === 'late').length}</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-        {/* Centered Heading */}
         <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#1976d2', textAlign: 'center' }}>Employee Dashboard</Text>
       </View>
-      {showNotifications && (
-        <NotificationPanel notifications={notifications} onClose={() => setShowNotifications(false)} />
-      )}
+      <View style={{ paddingHorizontal: 8, marginBottom: 4 }}>
+        <SearchAndFilterBar
+          searchValue={search}
+          onSearchChange={setSearch}
+          filterChips={[{ label: 'All', value: '' }, { label: 'Completed', value: 'completed' }, { label: 'Pending', value: 'pending' }]}
+          selectedFilter={statusFilter}
+          onFilterChange={setStatusFilter}
+          placeholder="Search tasks by name..."
+        />
+      </View>
       <FlatList
         data={data}
         keyExtractor={item => item.id}
@@ -395,28 +569,39 @@ const TasksTab: React.FC<TasksTabProps> = ({
         contentContainerStyle={{ paddingBottom: 32, paddingHorizontal: 8 }}
         keyboardShouldPersistTaps="handled"
       />
-      <TouchableOpacity
-        style={{
-          position: 'absolute',
-          bottom: 24,
-          right: 24,
-          backgroundColor: '#1976d2',
-          borderRadius: 32,
-          width: 56,
-          height: 56,
-          alignItems: 'center',
-          justifyContent: 'center',
-          shadowColor: '#1976d2',
-          shadowOpacity: 0.18,
-          shadowRadius: 8,
-          elevation: 4,
-          zIndex: 100,
-        }}
-        onPress={() => setShowAddTaskModal(true)}
-        accessibilityLabel="Add Task"
+
+      {/* Modal: Show all tasks for selected employee for the day */}
+      <AdminModal
+        visible={showEmployeeTasksModal && !!selectedTaskEmployee}
+        onClose={() => { setShowEmployeeTasksModal(false); setSelectedTaskEmployee(null); }}
+        title={selectedTaskEmployee ? `${selectedTaskEmployee.name}'s Tasks for Today` : 'Tasks'}
       >
-        <FontAwesome5 name="plus" size={28} color="#fff" />
-      </TouchableOpacity>
+        {todaysTasksForEmployee.length === 0 ? (
+          <Text style={{ color: '#888', fontStyle: 'italic', textAlign: 'center', paddingVertical: 20 }}>
+            No tasks assigned for today.
+          </Text>
+        ) : (
+          <FlatList
+            data={todaysTasksForEmployee}
+            keyExtractor={item => item.id}
+            renderItem={({ item }) => (
+              <View style={{ backgroundColor: item.completed ? '#e8f5e9' : '#fffde7', borderRadius: 8, padding: 10, marginBottom: 8 }}>
+                <Text style={{ fontWeight: 'bold', fontSize: 16, color: '#1976d2' }}>{item.name}</Text>
+                <Text style={{ fontSize: 13, color: '#888' }}>Start: {item.start} | Due: {item.deadline}</Text>
+                {item.completed && (
+                  <Text style={{ color: '#388e3c', fontWeight: 'bold', fontSize: 13 }}>Completed</Text>
+                )}
+              </View>
+            )}
+            contentContainerStyle={{ paddingBottom: 16 }}
+          />
+        )}
+        <TouchableOpacity style={adminStyles.closeBtn} onPress={() => { setShowEmployeeTasksModal(false); setSelectedTaskEmployee(null); }}>
+          <Text style={adminStyles.closeBtnText}>Close</Text>
+        </TouchableOpacity>
+      </AdminModal>
+
+      {/* Add Task Modal: allow adding tasks for selected employee */}
       <AddTaskModal
         visible={showAddTaskModal}
         onClose={() => setShowAddTaskModal(false)}
@@ -428,8 +613,35 @@ const TasksTab: React.FC<TasksTabProps> = ({
         error={addTaskError}
         setError={setAddTaskError}
       />
+
+      {/* Rating Modal */}
+      <AdminModal
+        visible={showRatingModal}
+        onClose={() => setShowRatingModal(false)}
+        title={ratingTask ? `Rate Task: ${ratingTask.name}` : 'Rate Task'}
+      >
+        <View style={{ alignItems: 'center', padding: 16 }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 12 }}>Select Rating (1-5)</Text>
+          <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+            {[1,2,3,4,5].map(star => (
+              <TouchableOpacity key={star} onPress={() => setTaskRating(star)}>
+                <FontAwesome5 name="star" size={32} color={taskRating >= star ? '#FFD700' : '#ccc'} style={{ marginHorizontal: 4 }} />
+              </TouchableOpacity>
+            ))}
+          </View>
+          {ratingError ? <Text style={{ color: 'red', marginBottom: 8 }}>{ratingError}</Text> : null}
+          <TouchableOpacity
+            style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 12, marginBottom: 8 }}
+            onPress={handleRateTask}
+            disabled={ratingLoading}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{ratingLoading ? 'Saving...' : 'Save Rating'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={adminStyles.closeBtn} onPress={() => setShowRatingModal(false)}>
+            <Text style={adminStyles.closeBtnText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </AdminModal>
     </SafeAreaView>
   );
 }
-
-export default TasksTab;

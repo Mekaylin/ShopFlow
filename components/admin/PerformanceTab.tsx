@@ -1,10 +1,12 @@
-import { FontAwesome5 } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../../lib/supabase';
-import { adminStyles } from '../utility/styles';
+import { AnalyticsCharts } from '../ui/AnalyticsCharts';
 import { Employee, PerformanceMetrics, PerformanceSettings, Task } from '../utility/types';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { SearchAndFilterBar } from '../ui/SearchAndFilterBar';
+import { adminStyles } from '../utility/styles';
+import { supabase } from '../../lib/supabase';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import PerformanceMetricsModal from './PerformanceMetricsModal';
 
 import type { User } from '../utility/types';
@@ -15,6 +17,8 @@ interface PerformanceTabProps {
   performanceSettings: PerformanceSettings;
   setPerformanceSettings: (settings: PerformanceSettings) => void;
   darkMode: boolean;
+  materials: { id: string; name: string }[];
+  departments: string[];
 }
 
 
@@ -25,6 +29,8 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
   performanceSettings,
   setPerformanceSettings,
   darkMode,
+  materials,
+  departments,
 }) => {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -33,6 +39,31 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
   const [metricsModalVisible, setMetricsModalVisible] = useState(false);
   const [metrics, setMetrics] = useState<PerformanceMetrics[]>([]);
   const [loadingMetrics, setLoadingMetrics] = useState(false);
+
+
+
+  // --- Advanced search/filter state ---
+  const [employeeSearch, setEmployeeSearch] = useState('');
+  const [employeeDeptFilter, setEmployeeDeptFilter] = useState('');
+  const [taskSearch, setTaskSearch] = useState('');
+  const [taskStatusFilter, setTaskStatusFilter] = useState('');
+
+  // --- Filtered employees and tasks for stats and analytics ---
+  // Employees filtered by search and department
+  const filteredEmployees = employees.filter((e: Employee) => {
+    return (
+      (!employeeSearch || e.name.toLowerCase().includes(employeeSearch.toLowerCase())) &&
+      (!employeeDeptFilter || e.department === employeeDeptFilter)
+    );
+  });
+
+  // Tasks filtered by search and status
+  const filteredTasks = tasks.filter((t: Task) => {
+    return (
+      (!taskSearch || t.name.toLowerCase().includes(taskSearch.toLowerCase())) &&
+      (!taskStatusFilter || (taskStatusFilter === 'completed' ? t.completed : !t.completed))
+    );
+  });
 
 
   // Performance calculation function
@@ -201,32 +232,104 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
           metrics={metrics}
         />
       </View>
-      {/* Quick Stats */}
+      {/* Quick Stats with Search & Filter */}
       <View style={darkMode ? adminStyles.darkCard : adminStyles.card}>
         <Text style={[adminStyles.sectionTitle, adminStyles.mb16]}>Quick Stats</Text>
+        {/* Employee Search & Filter */}
+        <SearchAndFilterBar
+          searchValue={employeeSearch}
+          onSearchChange={setEmployeeSearch}
+          filterChips={[
+            { label: 'All', value: '' },
+            ...departments.map(dep => ({ label: dep, value: dep }))
+          ]}
+          selectedFilter={employeeDeptFilter}
+          onFilterChange={setEmployeeDeptFilter}
+          placeholder="Search employees by name..."
+        />
+        {/* Task Search & Filter */}
+        <SearchAndFilterBar
+          searchValue={taskSearch}
+          onSearchChange={setTaskSearch}
+          filterChips={[{ label: 'All', value: '' }, { label: 'Completed', value: 'completed' }, { label: 'Pending', value: 'pending' }]}
+          selectedFilter={taskStatusFilter}
+          onFilterChange={setTaskStatusFilter}
+          placeholder="Search tasks by name..."
+        />
         <View style={adminStyles.rowAround}>
+          {/* Completed Tasks Stat */}
+          {/* Completed Tasks Stat */}
           <View style={adminStyles.statsCol}>
             <FontAwesome5 name="tasks" size={24} color="#1976d2" />
             <Text style={[adminStyles.statsNumber, adminStyles.mt4, adminStyles.textPrimary]}>
-              {tasks.filter(t => t.completed).length}
+              {filteredTasks.filter((t: Task) => t.completed).length}
             </Text>
             <Text style={adminStyles.statsLabel}>Completed</Text>
           </View>
+          {/* Rated Tasks Stat */}
           <View style={adminStyles.statsCol}>
             <FontAwesome5 name="star" size={24} color="#FFD700" />
             <Text style={[adminStyles.statsNumber, adminStyles.mt4, adminStyles.textGold]}>
-              {tasks.filter(t => t.completed).length}
+              {filteredTasks.filter((t: Task) => typeof (t as any).rating === 'number').length}
             </Text>
             <Text style={adminStyles.statsLabel}>Rated</Text>
           </View>
+          {/* Employees Stat */}
           <View style={adminStyles.statsCol}>
             <FontAwesome5 name="users" size={24} color="#4CAF50" />
             <Text style={[adminStyles.statsNumber, adminStyles.mt4, adminStyles.textSuccess]}>
-              {employees.length}
+              {filteredEmployees.length}
             </Text>
             <Text style={adminStyles.statsLabel}>Employees</Text>
           </View>
         </View>
+      </View>
+      {/* Analytics & Trends */}
+      <View style={darkMode ? adminStyles.darkCard : adminStyles.card}>
+        <Text style={[adminStyles.sectionTitle, adminStyles.mb16]}>Analytics & Trends</Text>
+        <AnalyticsCharts
+          performanceData={filteredTasks
+            .filter((t: Task) => t.completed)
+            .map((t: Task) => ({
+              date: t.completed_at || t.date || '',
+              value: typeof (t as any).rating === 'number' ? (t as any).rating : 0
+            }))}
+          materialUsageData={(() => {
+            // Aggregate material usage across all filtered tasks
+            const usage: Record<string, number> = {};
+            filteredTasks.forEach((t: Task) => {
+              if (Array.isArray(t.materials_used)) {
+                t.materials_used.forEach((mu: any) => {
+                  if (mu.materialId) {
+                    usage[mu.materialId] = (usage[mu.materialId] || 0) + mu.quantity;
+                  }
+                });
+              }
+            });
+            // Map materialId to material name for better chart labels
+            return Object.entries(usage).map(([materialId, used]) => {
+              const materialObj = (materials ?? []).find((m: { id: string; name: string }) => m.id === materialId);
+              return {
+                material: materialObj ? materialObj.name : materialId,
+                used
+              };
+            });
+          })()}
+          attendanceData={(() => {
+            // Fallback to stub: all present, none absent
+            const today = new Date();
+            const days = Array.from({ length: 7 }, (_, i) => {
+              const d = new Date(today);
+              d.setDate(today.getDate() - (6 - i));
+              return d.toISOString().slice(0, 10);
+            });
+            return days.map(date => ({
+              date,
+              present: filteredEmployees.length,
+              absent: 0
+            }));
+          })()}
+        />
       </View>
     </ScrollView>
   );

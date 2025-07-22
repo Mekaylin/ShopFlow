@@ -137,7 +137,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     keyboardType="numeric"
                     placeholder="15"
                   />
-                  <TouchableOpacity style={[adminStyles.addBtn, { marginLeft: 8, paddingHorizontal: 12 }]} onPress={handleSaveLateThreshold}>
+                  <TouchableOpacity style={adminStyles.addBtn} onPress={handleSaveLateThreshold}>
                     <Text style={adminStyles.addBtnText}>Save</Text>
                   </TouchableOpacity>
                 </View>
@@ -202,7 +202,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                   <TouchableOpacity
-                    style={[adminStyles.addBtn, { flex: 1, marginRight: 8, opacity: businessCodeLoading ? 0.6 : 1 }]}
+                    style={[adminStyles.addBtn, { opacity: businessCodeLoading ? 0.6 : 1 }]} 
                     onPress={handleGetBusinessCode}
                     disabled={businessCodeLoading}
                   >
@@ -214,10 +214,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </View>
                 
                 {businessCode && (
-                  <View style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, marginBottom: 8 }}>
-                    <Text style={{ fontSize: 14, color: '#666', marginBottom: 4 }}>Business Code:</Text>
-                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1976d2' }}>{businessCode}</Text>
-                    <TouchableOpacity style={[adminStyles.addBtn, { marginTop: 8 }]} onPress={handleCopyBusinessCode}>
+                  <View style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, marginBottom: 8, flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 14, color: '#666', marginBottom: 4, textAlign: 'center' }}>Business Code:</Text>
+                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1976d2', textAlign: 'center', marginBottom: 12 }}>{businessCode}</Text>
+                    <TouchableOpacity style={[adminStyles.addBtn, { width: 180, alignSelf: 'center' }]} onPress={handleCopyBusinessCode}>
                       <Text style={adminStyles.addBtnText}>
                         {showCodeCopied ? 'Copied!' : 'Copy Code'}
                       </Text>
@@ -228,14 +228,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             )}
 
             {/* Dashboard Switch Section */}
-            <View style={{ marginTop: 16 }}>
-              <TouchableOpacity style={adminStyles.logoutBtn} onPress={onLogout}>
+            <View style={{ marginTop: 16, alignItems: 'center', justifyContent: 'center' }}>
+              <TouchableOpacity style={[adminStyles.logoutBtn, { width: 180, marginBottom: 14 }]} onPress={onLogout}>
                 <Text style={adminStyles.logoutBtnText}>Logout</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[adminStyles.addBtn, { marginTop: 10 }]} onPress={onSwitchDashboard}>
+              <TouchableOpacity style={[adminStyles.addBtn, { width: 180, marginBottom: 14 }]} onPress={onSwitchDashboard}>
                 <Text style={adminStyles.addBtnText}>Switch to Employee Dashboard</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={adminStyles.closeBtn} onPress={onClose}>
+              <TouchableOpacity style={[adminStyles.closeBtn, { width: 180 }]} onPress={onClose}>
                 <Text style={adminStyles.closeBtnText}>Close</Text>
               </TouchableOpacity>
             </View>

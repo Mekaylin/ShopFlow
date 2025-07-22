@@ -1,14 +1,14 @@
-import { FontAwesome5 } from '@expo/vector-icons';
 import React from 'react';
 import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { adminStyles } from '../utility/styles';
 import { Employee, Material, PerformanceMetrics, Task } from '../utility/types';
 import {
-    filterTasksByDate,
-    getBestPerformers,
-    getLateEmployeesByClockEvents,
-    getMaterialUsage,
-    limitLines
+  getBestPerformers,
+  getLateEmployeesByClockEvents,
+  getMaterialUsage,
+  limitLines
 } from '../utility/utils';
 
 import type { ClockEvent, MaterialType, User } from '../utility/types';
@@ -32,8 +32,12 @@ interface HomeTabProps {
     filteredMaterials: Material[];
     materialsUsed: Record<string, number>;
     bestPerformers: PerformanceMetrics[];
+    performanceMetrics: PerformanceMetrics[];
+    totalCompletedTasks: number;
+    totalRatedTasks: number;
     lateEmployees: string[];
   }) => void;
+  refetchDashboardData: () => Promise<void>;
 }
 
 const HomeTab: React.FC<HomeTabProps> = ({
@@ -49,7 +53,25 @@ const HomeTab: React.FC<HomeTabProps> = ({
   lunchStart,
   lunchEnd,
   onExport,
+  refetchDashboardData,
 }) => {
+  // --- New feature states ---
+  const [showNotifications, setShowNotifications] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  // Example notifications (replace with real data)
+  const notifications = [
+    { id: 1, message: 'Task "Inventory Check" overdue.' },
+    { id: 2, message: 'Employee John Doe clocked in late.' },
+    { id: 3, message: 'New material type added: Cleaning Supplies.' }
+  ];
+  // Auto-refresh every 5 minutes
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      refetchDashboardData();
+    }, 300000);
+    return () => clearInterval(interval);
+  }, [refetchDashboardData]);
   // Home tab state
   const [summaryRange, setSummaryRange] = React.useState<'day' | 'week' | 'month'>('day');
   const [summaryDate, setSummaryDate] = React.useState(new Date().toISOString().split('T')[0]);
@@ -90,48 +112,139 @@ const HomeTab: React.FC<HomeTabProps> = ({
 
   // Calculate filtered data based on selected range and date
   const { startDate, endDate } = getDateRange(summaryRange, summaryDate);
-  const filteredTasks = filterTasksByDate(tasks, startDate, endDate);
-  
-  // Filter materials used within the date range (using task dates since materials don't have created_at)
-  const filteredMaterials = materials.filter(material => {
-    // Check if this material is used in any of the filtered tasks
-    return filteredTasks.some(task => 
+  // Use task.deadline for filtering overdue/late tasks
+  // Filter tasks by date and search query
+  const filteredTasks = React.useMemo(() =>
+    tasks.filter(task => {
+      const taskDate = new Date(task.deadline);
+      const matchesSearch = searchQuery.trim() === '' || task.name.toLowerCase().includes(searchQuery.toLowerCase());
+      return taskDate >= new Date(startDate) && taskDate <= new Date(endDate) && matchesSearch;
+    }), [tasks, startDate, endDate, searchQuery]
+  );
+
+  // Materials used: aggregate from all filtered tasks
+  const materialsUsed = React.useMemo(() => getMaterialUsage(materials, filteredTasks), [materials, filteredTasks]);
+  // Helper to get material name by ID
+  const getMaterialName = (id: string) => {
+    const mat = materials.find(m => m.id === id);
+    return mat ? mat.name : id;
+  };
+
+  // --- Performance Metrics Calculation ---
+  // Calculates per-employee metrics: total, completed, rated tasks, average rating, and performance score
+  const performanceMetrics: PerformanceMetrics[] = React.useMemo(() => {
+    return employees.map(emp => {
+      // All tasks assigned to this employee in the filtered range
+      const empTasks = filteredTasks.filter(task => task.assigned_to === emp.id);
+      // Tasks marked as completed
+      const completedTasks = empTasks.filter(task => task.completed);
+      // Completed tasks that have a rating
+      const ratedTasks = completedTasks.filter(task => typeof task.rating === 'number');
+      // Average rating for completed tasks with a rating
+      const average_rating = ratedTasks.length > 0
+        ? ratedTasks.reduce((sum, t) => sum + (t.rating || 0), 0) / ratedTasks.length
+        : 0;
+      // Completion percentage
+      const performance_score = empTasks.length > 0
+        ? (completedTasks.length / empTasks.length) * 100
+        : 0;
+      return {
+        employee_id: emp.id,
+        employee_name: emp.name,
+        total_tasks: empTasks.length,
+        completed_tasks: completedTasks.length,
+        rated_tasks: ratedTasks.length,
+        average_rating: Math.round(average_rating * 100) / 100,
+        performance_score: Math.round(performance_score)
+      };
+    });
+  }, [employees, filteredTasks]);
+
+  // Restore filteredMaterials for export logic
+  const filteredMaterials = React.useMemo(() => materials.filter(material => {
+    return filteredTasks.some(task =>
       task.materials_used?.some((matUsed: any) => matUsed.materialId === material.id)
     );
-  });
-  const materialsUsed = getMaterialUsage(filteredMaterials, filteredTasks);
-  
-  // Calculate performance metrics from filtered tasks
-  const performanceMetrics: PerformanceMetrics[] = employees.map(emp => {
-    const empTasks = filteredTasks.filter(task => task.assigned_to === emp.id);
-    const completedTasks = empTasks.filter(task => task.completed);
-    const performance_score = empTasks.length > 0 ? (completedTasks.length / empTasks.length) * 100 : 0;
-    return {
-      employee_id: emp.id,
-      employee_name: emp.name,
-      total_tasks: empTasks.length,
-      completed_tasks: completedTasks.length,
-      average_rating: 0, // Would need to calculate from task ratings
-      performance_score: Math.round(performance_score)
-    };
-  });
-  
-  const bestPerformers = getBestPerformers(performanceMetrics, 5);
-  
+  }), [materials, filteredTasks]);
+  const bestPerformers = React.useMemo(() => getBestPerformers(performanceMetrics, 5), [performanceMetrics]);
+
+  // --- Aggregate Totals for Export Stats ---
+  // Total completed tasks across all employees
+  const totalCompletedTasks = React.useMemo(() =>
+    performanceMetrics.reduce((sum, emp) => sum + emp.completed_tasks, 0),
+    [performanceMetrics]
+  );
+  // Total rated tasks across all employees
+  const totalRatedTasks = React.useMemo(() =>
+    performanceMetrics.reduce((sum, emp) => sum + emp.rated_tasks, 0),
+    [performanceMetrics]
+  );
+
   // Filter clock events within the date range
-  const filteredClockEvents = Object.values(clockEventsByEmployee).flat().filter(event => {
+  const filteredClockEvents = React.useMemo(() => Object.values(clockEventsByEmployee).flat().filter(event => {
     const eventDate = event.clock_in || event.clock_out;
     if (!eventDate) return false;
     const clockDate = new Date(eventDate).toISOString().split('T')[0];
     return clockDate >= startDate && clockDate <= endDate;
-  });
-  
-  const lateEmployees = getLateEmployeesByClockEvents(filteredClockEvents, employees, 9);
+  }), [clockEventsByEmployee, startDate, endDate]);
+
+  // Late employees: use filtered clock events
+  const lateEmployees = React.useMemo(() => getLateEmployeesByClockEvents(filteredClockEvents, employees, 9), [filteredClockEvents, employees]);
 
   const canExpand = (arr: any[]) => arr.length > 10;
 
+  // Debug info for troubleshooting data issues
+  const debugInfo = [
+    `Employees: ${employees.length}`,
+    `Tasks: ${tasks.length}`,
+    `Materials: ${materials.length}`,
+    `ClockEvents: ${Object.values(clockEventsByEmployee).flat().length}`,
+    `FilteredTasks: ${filteredTasks.length}`,
+    `LateEmployees: ${lateEmployees.length}`,
+    `MaterialsUsed: ${Object.keys(materialsUsed).length}`,
+    `BestPerformers: ${bestPerformers.length}`
+  ];
   return (
     <ScrollView style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff', padding: 16 }}>
+      {/* Top Bar: Refresh, Notifications, Role Indicator */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, justifyContent: 'space-between' }}>
+        <TouchableOpacity
+          style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 8, marginRight: 8 }}
+          onPress={async () => {
+            setLoading(true);
+            await refetchDashboardData();
+            setLoading(false);
+          }}
+        >
+          <MaterialIcons name={loading ? 'autorenew' : 'refresh'} size={22} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{ backgroundColor: '#fff', borderRadius: 8, padding: 8, marginRight: 8, borderWidth: 1, borderColor: '#1976d2' }}
+          onPress={() => setShowNotifications(true)}
+        >
+          <FontAwesome5 name="bell" size={20} color="#1976d2" />
+        </TouchableOpacity>
+        <View style={{ backgroundColor: '#e3f2fd', borderRadius: 8, padding: 8 }}>
+          <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>{user.role ? user.role.toUpperCase() : 'ADMIN'}</Text>
+        </View>
+      </View>
+      {/* Search Bar for Tasks */}
+      <View style={{ marginBottom: 12 }}>
+        <TextInput
+          style={{ backgroundColor: '#fff', borderRadius: 8, borderWidth: 1, borderColor: '#ddd', padding: 10, fontSize: 16 }}
+          placeholder="Search tasks..."
+          placeholderTextColor="#999"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      </View>
+      {/* DEBUG INFO - REMOVE IN PRODUCTION */}
+      <View style={{ backgroundColor: darkMode ? '#232a36' : '#fffbe6', borderRadius: 8, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: darkMode ? '#333950' : '#ffe082' }}>
+        <Text style={{ color: '#c62828', fontWeight: 'bold', marginBottom: 4 }}>DATA COUNTS</Text>
+        {debugInfo.map((line, idx) => (
+          <Text key={idx} style={{ color: '#333', fontSize: 13 }}>{line}</Text>
+        ))}
+      </View>
       {/* Range Selector */}
       <View style={{ flexDirection: 'row', marginBottom: 16 }}>
         {(['day', 'week', 'month'] as const).map(range => (
@@ -159,7 +272,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
       </View>
 
       {/* Date Picker Row */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, backgroundColor: '#fff', borderRadius: 8, padding: 12 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, backgroundColor: darkMode ? '#232a36' : '#fff', borderRadius: 8, padding: 12 }}>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1976d2' }}>
             {summaryRange === 'day' ? `Date: ${summaryDate}` : 
@@ -184,7 +297,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
       <TouchableOpacity
         activeOpacity={canExpand(filteredTasks) ? 0.7 : 1}
         onPress={() => canExpand(filteredTasks) && setShowAllTasksModal(true)}
-        style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
+        style={{ backgroundColor: darkMode ? '#232a36' : '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: darkMode ? '#000' : '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
           <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2' }}>Tasks</Text>
@@ -212,12 +325,11 @@ const HomeTab: React.FC<HomeTabProps> = ({
           </>
         )}
       </TouchableOpacity>
-
       {/* Late Employees Card */}
       <TouchableOpacity
         activeOpacity={canExpand(lateEmployees) ? 0.7 : 1}
         onPress={() => canExpand(lateEmployees) && setShowAllLateEmpsModal(true)}
-        style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
+        style={{ backgroundColor: darkMode ? '#232a36' : '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: darkMode ? '#000' : '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
           <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#c62828' }}>Late Employees</Text>
@@ -240,12 +352,11 @@ const HomeTab: React.FC<HomeTabProps> = ({
           </>
         )}
       </TouchableOpacity>
-
       {/* Materials Used Card */}
       <TouchableOpacity
         activeOpacity={canExpand(Object.entries(materialsUsed)) ? 0.7 : 1}
         onPress={() => canExpand(Object.entries(materialsUsed)) && setShowAllMaterialsModal(true)}
-        style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
+        style={{ backgroundColor: darkMode ? '#232a36' : '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: darkMode ? '#000' : '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
           <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2' }}>Materials Used</Text>
@@ -259,7 +370,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
           <>
             {Object.entries(materialsUsed).slice(0, 10).map(([matId, qty], idx) => (
               <Text key={matId} style={{ color: '#263238', fontSize: 15 }} numberOfLines={1} ellipsizeMode="tail">
-                {idx + 1}. {matId}: {qty}
+                {idx + 1}. {getMaterialName(matId)}: {qty}
               </Text>
             ))}
             {Object.keys(materialsUsed).length > 10 && (
@@ -268,9 +379,8 @@ const HomeTab: React.FC<HomeTabProps> = ({
           </>
         )}
       </TouchableOpacity>
-
       {/* Best Performers Card */}
-      <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}>
+      <View style={{ backgroundColor: darkMode ? '#232a36' : '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: darkMode ? '#000' : '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
           <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2' }}>Best Performers</Text>
           <Text style={{ fontSize: 14, color: '#666' }}>Top 5</Text>
@@ -281,17 +391,15 @@ const HomeTab: React.FC<HomeTabProps> = ({
           </Text>
         ) : (
           bestPerformers.slice(0, 5).map((emp, idx) => (
-            <Text key={emp.employee_id} style={{ color: '#263238', fontSize: 15 }} numberOfLines={1} ellipsizeMode="tail">
-              {idx + 1}. {emp.employee_name} ({emp.performance_score}% completion - {emp.completed_tasks}/{emp.total_tasks} tasks)
+            <Text key={emp.employee_id} style={{ color: '#263238', fontSize: 15 }} numberOfLines={2} ellipsizeMode="tail">
+              {idx + 1}. {emp.employee_name} ({emp.performance_score}% completion - {emp.completed_tasks}/{emp.total_tasks} tasks, {emp.rated_tasks} rated, Avg Rating: {emp.average_rating})
             </Text>
           ))
         )}
       </View>
-
       {/* Export Section with Date Filter */}
-      <View style={{ marginTop: 16, backgroundColor: '#fff', borderRadius: 16, padding: 18, shadowColor: '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}>
+      <View style={{ marginTop: 16, backgroundColor: darkMode ? '#232a36' : '#fff', borderRadius: 16, padding: 18, shadowColor: darkMode ? '#000' : '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}>
         <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', marginBottom: 12 }}>Export Data</Text>
-        
         {/* Current Filter Display */}
         <View style={{ backgroundColor: '#f5f9ff', borderRadius: 8, padding: 12, marginBottom: 12 }}>
           <Text style={{ fontSize: 14, color: '#666', marginBottom: 4 }}>Current Filter:</Text>
@@ -304,7 +412,6 @@ const HomeTab: React.FC<HomeTabProps> = ({
             </Text>
           )}
         </View>
-
         {/* Export Stats Preview */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
           <View style={{ alignItems: 'center' }}>
@@ -324,16 +431,26 @@ const HomeTab: React.FC<HomeTabProps> = ({
             <Text style={{ fontSize: 12, color: '#666' }}>Late</Text>
           </View>
         </View>
-
+        {/* Completed/Rated Tasks Summary */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#388e3c' }}>{totalCompletedTasks}</Text>
+            <Text style={{ fontSize: 12, color: '#666' }}>Completed Tasks</Text>
+          </View>
+          <View style={{ alignItems: 'center' }}>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1976d2' }}>{totalRatedTasks}</Text>
+            <Text style={{ fontSize: 12, color: '#666' }}>Rated Tasks</Text>
+          </View>
+        </View>
         {/* Quick Filter Actions */}
         <View style={{ flexDirection: 'row', marginBottom: 12 }}>
           <TouchableOpacity
             style={{
               flex: 1,
-              backgroundColor: '#e3f2fd',
-              borderRadius: 6,
-              paddingVertical: 8,
-              paddingHorizontal: 12,
+              backgroundColor: summaryRange === 'day' && summaryDate === new Date().toISOString().split('T')[0] ? '#1976d2' : '#e3f2fd',
+              borderRadius: 8,
+              paddingVertical: 12,
+              paddingHorizontal: 20,
               alignItems: 'center',
               marginRight: 4,
               borderWidth: summaryRange === 'day' && summaryDate === new Date().toISOString().split('T')[0] ? 2 : 1,
@@ -349,10 +466,10 @@ const HomeTab: React.FC<HomeTabProps> = ({
           <TouchableOpacity
             style={{
               flex: 1,
-              backgroundColor: '#e8f5e9',
-              borderRadius: 6,
-              paddingVertical: 8,
-              paddingHorizontal: 12,
+              backgroundColor: summaryRange === 'week' ? '#4CAF50' : '#e8f5e9',
+              borderRadius: 8,
+              paddingVertical: 12,
+              paddingHorizontal: 20,
               alignItems: 'center',
               marginHorizontal: 4,
               borderWidth: summaryRange === 'week' ? 2 : 1,
@@ -365,10 +482,10 @@ const HomeTab: React.FC<HomeTabProps> = ({
           <TouchableOpacity
             style={{
               flex: 1,
-              backgroundColor: '#fff3e0',
-              borderRadius: 6,
-              paddingVertical: 8,
-              paddingHorizontal: 12,
+              backgroundColor: summaryRange === 'month' ? '#FF9800' : '#fff3e0',
+              borderRadius: 8,
+              paddingVertical: 12,
+              paddingHorizontal: 20,
               alignItems: 'center',
               marginLeft: 4,
               borderWidth: summaryRange === 'month' ? 2 : 1,
@@ -379,7 +496,6 @@ const HomeTab: React.FC<HomeTabProps> = ({
             <Text style={{ color: '#FF9800', fontSize: 12, fontWeight: '600' }}>This Month</Text>
           </TouchableOpacity>
         </View>
-
         <TouchableOpacity
           style={{
             backgroundColor: exporting ? '#A5D6A7' : '#4CAF50',
@@ -403,6 +519,9 @@ const HomeTab: React.FC<HomeTabProps> = ({
                 filteredMaterials,
                 materialsUsed,
                 bestPerformers,
+                performanceMetrics,
+                totalCompletedTasks,
+                totalRatedTasks,
                 lateEmployees
               }));
               // Optionally show a success message
@@ -429,7 +548,6 @@ const HomeTab: React.FC<HomeTabProps> = ({
           </Text>
         </TouchableOpacity>
       </View>
-
       {/* All Tasks Modal */}
       <Modal visible={showAllTasksModal} transparent animationType="slide" onRequestClose={() => setShowAllTasksModal(false)}>
         <View style={adminStyles.modalOverlay}>
@@ -451,7 +569,6 @@ const HomeTab: React.FC<HomeTabProps> = ({
           </View>
         </View>
       </Modal>
-
       {/* All Late Employees Modal */}
       <Modal visible={showAllLateEmpsModal} transparent animationType="slide" onRequestClose={() => setShowAllLateEmpsModal(false)}>
         <View style={adminStyles.modalOverlay}>
@@ -470,7 +587,6 @@ const HomeTab: React.FC<HomeTabProps> = ({
           </View>
         </View>
       </Modal>
-
       {/* All Materials Modal */}
       <Modal visible={showAllMaterialsModal} transparent animationType="slide" onRequestClose={() => setShowAllMaterialsModal(false)}>
         <View style={adminStyles.modalOverlay}>
@@ -479,7 +595,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
             <ScrollView>
               {Object.entries(materialsUsed).map(([matId, qty], idx) => (
                 <Text key={matId} style={adminStyles.taskListText}>
-                  {idx + 1}. {matId}: {qty}
+                  {idx + 1}. {getMaterialName(matId)}: {qty}
                 </Text>
               ))}
             </ScrollView>
@@ -489,7 +605,28 @@ const HomeTab: React.FC<HomeTabProps> = ({
           </View>
         </View>
       </Modal>
-
+      {/* Notifications Modal */}
+      <Modal visible={showNotifications} transparent animationType="slide" onRequestClose={() => setShowNotifications(false)}>
+        <View style={adminStyles.modalOverlay}>
+          <View style={adminStyles.modalContent}>
+            <Text style={adminStyles.modalTitle}>Notifications</Text>
+            <ScrollView>
+              {notifications.length === 0 ? (
+                <Text style={{ color: '#999', fontStyle: 'italic', textAlign: 'center', paddingVertical: 20 }}>
+                  No notifications
+                </Text>
+              ) : (
+                notifications.map(n => (
+                  <Text key={n.id} style={{ color: '#1976d2', fontSize: 15, marginBottom: 8 }}>{n.message}</Text>
+                ))
+              )}
+            </ScrollView>
+            <TouchableOpacity style={adminStyles.closeBtn} onPress={() => setShowNotifications(false)}>
+              <Text style={adminStyles.closeBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       {/* Date Picker Modal */}
       <Modal visible={showDatePicker} transparent animationType="slide" onRequestClose={() => setShowDatePicker(false)}>
         <View style={adminStyles.modalOverlay}>
@@ -553,4 +690,4 @@ const HomeTab: React.FC<HomeTabProps> = ({
   );
 };
 
-export default HomeTab; 
+export default HomeTab;

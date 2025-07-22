@@ -1,4 +1,3 @@
-
 import { StyleSheet } from 'react-native';
 import { createShadowStyle, shadowPresets } from '../../utils/shadowUtils';
 
@@ -139,15 +138,16 @@ export const adminStyles = StyleSheet.create({
   addBtn: {
     backgroundColor: '#1976d2',
     borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    minWidth: 56,
     alignItems: 'center',
     justifyContent: 'center',
   },
   addBtnText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 14,
   },
   saveBtn: {
     backgroundColor: '#388e3c',
@@ -165,8 +165,9 @@ export const adminStyles = StyleSheet.create({
   closeBtn: {
     backgroundColor: '#888',
     borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    minWidth: 56,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
@@ -174,7 +175,7 @@ export const adminStyles = StyleSheet.create({
   closeBtnText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 14,
   },
 
   // Input
@@ -209,8 +210,9 @@ export const adminStyles = StyleSheet.create({
   logoutBtn: {
     backgroundColor: '#d32f2f',
     borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
+    minWidth: 56,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
@@ -218,7 +220,7 @@ export const adminStyles = StyleSheet.create({
   logoutBtnText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 14,
   },
 
   // Add employee modal
@@ -406,6 +408,75 @@ export const adminStyles = StyleSheet.create({
     color: '#888',
     marginTop: 32,
   },
+
+  // Secondary button (outline)
+  secondaryBtn: {
+    backgroundColor: '#fff',
+    borderColor: '#1976d2',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  secondaryBtnText: {
+    color: '#1976d2',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  // Disabled button
+  disabledBtn: {
+    backgroundColor: '#bdbdbd',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: 0.7,
+  },
+  // Notification badge (red dot or count)
+  notificationBadge: {
+    position: 'absolute',
+    top: 2,
+    right: 2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#d32f2f',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 2,
+    paddingHorizontal: 3,
+  },
+  notificationBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  // Card shadow (for consistent card appearance)
+  cardShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  // Loading spinner container
+  loadingSpinner: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+
+  // Example usage for new styles (add to your components as needed):
+  // <TouchableOpacity style={[adminStyles.secondaryBtn, isDisabled && adminStyles.disabledBtn]} disabled={isDisabled}>
+  //   <Text style={adminStyles.secondaryBtnText}>Secondary</Text>
+  // </TouchableOpacity>
+  // <View style={adminStyles.notificationBadge}><Text style={adminStyles.notificationBadgeText}>3</Text></View>
+  // <View style={adminStyles.cardShadow}>...</View>
+  // <View style={adminStyles.loadingSpinner}><ActivityIndicator size="large" color="#1976d2" /></View>
 });
 
 // Dynamic styles for tab buttons (not part of StyleSheet.create)

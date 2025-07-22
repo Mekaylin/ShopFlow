@@ -67,6 +67,7 @@ export interface PerformanceMetrics {
   employee_name: string;
   total_tasks: number;
   completed_tasks: number;
+  rated_tasks: number;
   average_rating: number;
   performance_score: number;
 }

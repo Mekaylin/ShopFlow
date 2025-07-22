@@ -8,8 +8,14 @@ import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
+import { NotificationBadge } from '@/components/ui/NotificationBadge';
+import { View } from 'react-native';
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+
+  // TODO: Replace with real unread notification count from state/store
+  const unreadCount = 3;
 
   return (
     <Tabs
@@ -30,7 +36,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />, 
         }}
       />
       <Tabs.Screen
@@ -38,6 +44,18 @@ export default function TabLayout() {
         options={{
           title: 'Explore',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: 'Notifications',
+          tabBarIcon: ({ color }) => (
+            <View>
+              <IconSymbol size={28} name="chevron.right" color={color} />
+              <NotificationBadge count={unreadCount} style={{ top: -2, right: -2 }} />
+            </View>
+          ),
         }}
       />
     </Tabs>

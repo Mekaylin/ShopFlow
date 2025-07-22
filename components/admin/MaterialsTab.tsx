@@ -1,11 +1,12 @@
+
 import React, { useState } from 'react';
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
-import { Material, MaterialType } from '../utility/types';
+import { SearchAndFilterBar } from '../ui/SearchAndFilterBar';
 import AdminModal from './AdminModal';
 
-import type { User } from '../utility/types';
+import type { User, Material, MaterialType } from '../utility/types';
 interface MaterialsTabProps {
   user: User;
   materials: Material[];
@@ -15,6 +16,7 @@ interface MaterialsTabProps {
   darkMode: boolean;
 }
 
+
 const MaterialsTab: React.FC<MaterialsTabProps> = ({
   user,
   materials,
@@ -23,7 +25,9 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
   setMaterialTypes,
   darkMode,
 }) => {
-  // Material state
+  // --- Material state ---
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
   const [editMaterial, setEditMaterial] = useState<Material | null>(null);
   const [newMaterialName, setNewMaterialName] = useState('');
   const [newMaterialUnit, setNewMaterialUnit] = useState('');
@@ -172,7 +176,7 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
         setMaterialTypes({ ...materialTypes, [materialId]: types });
       }
       setNewMaterialTypeLabel('');
-      // Close modal using local state if needed
+      setAddTypeModal(null); // Close modal after successful add
     } catch (err) {
       const errMsg = typeof err === 'object' && err && 'message' in err ? (err as any).message : String(err);
       alert('Unexpected error: ' + errMsg);
@@ -181,16 +185,31 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
     }
   };
 
+  // Filter materials by search and type
+  const filteredMaterials = materials.filter(item =>
+    item.name.toLowerCase().includes(search.toLowerCase()) &&
+    (!typeFilter || (materialTypes[item.id]?.some(type => type.name === typeFilter)))
+  );
+
   return (
     <View style={darkMode ? adminStyles.darkContainer : adminStyles.container}>
       <Text style={[adminStyles.sectionTitle, { marginBottom: 8 }]}>Materials</Text>
-      
+      <View style={{ paddingHorizontal: 8, marginBottom: 4 }}>
+        <SearchAndFilterBar
+          searchValue={search}
+          onSearchChange={setSearch}
+          filterChips={[{ label: 'All', value: '' }, ...Object.values(materialTypes).flat().map(type => ({ label: type.name, value: type.name }))]}
+          selectedFilter={typeFilter}
+          onFilterChange={setTypeFilter}
+          placeholder="Search materials by name..."
+        />
+      </View>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingBottom: 60, paddingHorizontal: 2 }}
         showsVerticalScrollIndicator={false}
       >
-        {materials.map(item => (
+        {filteredMaterials.map(item => (
           <View key={item.id} style={[
             darkMode ? adminStyles.darkCard : adminStyles.card,
             {
@@ -221,18 +240,18 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
                 </View>
               )}
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 8 }}>
               <TouchableOpacity onPress={() => {
                 setEditMaterial(item);
                 setNewMaterialName(item.name);
                 setNewMaterialUnit(item.unit);
-              }} style={adminStyles.actionBtn}>
+              }} style={[adminStyles.actionBtn, { marginRight: 8 }]}> 
                 <Text style={[adminStyles.actionBtnEdit, { color: '#fff', fontSize: 13 }]}>Edit</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => handleDeleteMaterial(item.id)} style={adminStyles.actionBtn}>
+              <TouchableOpacity onPress={() => handleDeleteMaterial(item.id)} style={adminStyles.actionBtn}> 
                 <Text style={[adminStyles.actionBtnDelete, { color: '#fff', fontSize: 13 }]}>Delete</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setAddTypeModal(item.id)} style={adminStyles.actionBtn}>
+              <TouchableOpacity onPress={() => setAddTypeModal(item.id)} style={adminStyles.actionBtn}> 
                 <Text style={[adminStyles.actionBtnAdd, { color: '#fff', fontSize: 13 }]}>Add Type</Text>
               </TouchableOpacity>
             </View>
@@ -291,8 +310,12 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
           accessibilityLabel="Material Type Label"
           testID="material-type-label-input"
         />
-        <TouchableOpacity style={adminStyles.addBtn} onPress={() => addTypeModal && handleAddMaterialType(addTypeModal)}>
-          <Text style={[adminStyles.addBtnText, { color: '#fff' }]}>Add</Text>
+        <TouchableOpacity
+          style={adminStyles.addBtn}
+          onPress={() => addTypeModal && handleAddMaterialType(addTypeModal)}
+          disabled={loading || !newMaterialTypeLabel}
+        >
+          <Text style={[adminStyles.addBtnText, { color: '#fff' }]}>{loading ? 'Adding...' : 'Add'}</Text>
         </TouchableOpacity>
       </AdminModal>
       {/* Edit Material Modal */}

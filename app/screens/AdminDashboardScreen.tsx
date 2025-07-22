@@ -11,7 +11,7 @@ import type { Notification } from '../../components/admin/NotificationPanel';
 import NotificationPanel from '../../components/admin/NotificationPanel';
 import PerformanceTab from '../../components/admin/PerformanceTab';
 import SettingsModal from '../../components/admin/SettingsModal';
-import TasksTab from '../../components/admin/TasksTab';
+import { TasksTab } from '../../components/admin/TasksTab';
 import PerformanceManagement from '../../components/PerformanceManagement';
 import TaskRatingModal from '../../components/TaskRatingModal';
 import { adminStyles, tabButton, tabButtonText } from '../../components/utility/styles';
@@ -71,8 +71,8 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
   const [notificationPanelVisible, setNotificationPanelVisible] = useState(false);
   // Example notifications (replace with real logic as needed)
   const notifications: Notification[] = [
-    // { id: '1', message: 'Task X is overdue!', timestamp: new Date().toISOString(), type: 'late' },
-    // ...
+    { id: '1', message: 'Task X is overdue!', timestamp: new Date().toISOString(), type: 'late' },
+    { id: '2', message: 'Welcome to the admin dashboard!', timestamp: new Date().toISOString(), type: 'info' },
   ];
   // Always use utility for businessId extraction
   const businessId = getBusinessId(user);
@@ -174,51 +174,49 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
   const [initialLoading, setInitialLoading] = useState(true);
 
   // Fetch all initial data in parallel
-  useEffect(() => {
+  const fetchAllInitialData = React.useCallback(async () => {
     if (!businessId) {
       Alert.alert('Error', 'No business ID found. Please log in again or contact support.');
       setInitialLoading(false);
       return;
     }
-    let isMounted = true;
-    async function fetchAllInitialData() {
-      setInitialLoading(true);
-      try {
-        const [empRes, taskRes, matRes, deptRes, perfRes, clockRes] = await Promise.all([
-          supabase.from('employees').select('*').eq('business_id', businessId),
-          supabase.from('tasks').select('*').eq('business_id', businessId),
-          supabase.from('materials').select('*').eq('business_id', businessId),
-          supabase.from('departments').select('name').eq('business_id', businessId),
-          supabase.from('performance_settings').select('*').eq('business_id', businessId).maybeSingle(),
-          supabase.from('clock_events').select('*').eq('business_id', businessId).order('clock_in', { ascending: false }),
-        ]);
-        if (!isMounted) return;
-        if (empRes.error) throw empRes.error;
-        if (taskRes.error) throw taskRes.error;
-        if (matRes.error) throw matRes.error;
-        if (deptRes.error) throw deptRes.error;
-        if (perfRes.error) throw perfRes.error;
-        if (clockRes.error) throw clockRes.error;
-        setEmployees(empRes.data ?? []);
-        setTasks(taskRes.data ?? []);
-        setMaterials(matRes.data ?? []);
-        setDepartments(deptRes.data ? deptRes.data.map((d: any) => d.name) : []);
-        setPerformanceSettings({
-          ratingSystemEnabled: perfRes.data?.rating_system_enabled ?? false,
-          autoRateCompletedTasks: perfRes.data?.auto_rate_completed_tasks ?? false,
-          defaultRating: perfRes.data?.default_rating ?? 3,
-        });
-        setClockEvents(clockRes.data ?? []);
-      } catch (err: any) {
-        Alert.alert('Error', `Failed to load dashboard data: ${err.message || err}`);
-        console.error('Error fetching initial data:', err);
-      } finally {
-        if (isMounted) setInitialLoading(false);
-      }
+    setInitialLoading(true);
+    try {
+      const [empRes, taskRes, matRes, deptRes, perfRes, clockRes] = await Promise.all([
+        supabase.from('employees').select('*').eq('business_id', businessId),
+        supabase.from('tasks').select('*').eq('business_id', businessId),
+        supabase.from('materials').select('*').eq('business_id', businessId),
+        supabase.from('departments').select('name').eq('business_id', businessId),
+        supabase.from('performance_settings').select('*').eq('business_id', businessId).maybeSingle(),
+        supabase.from('clock_events').select('*').eq('business_id', businessId).order('clock_in', { ascending: false }),
+      ]);
+      if (empRes.error) throw empRes.error;
+      if (taskRes.error) throw taskRes.error;
+      if (matRes.error) throw matRes.error;
+      if (deptRes.error) throw deptRes.error;
+      if (perfRes.error) throw perfRes.error;
+      if (clockRes.error) throw clockRes.error;
+      setEmployees(empRes.data ?? []);
+      setTasks(taskRes.data ?? []);
+      setMaterials(matRes.data ?? []);
+      setDepartments(deptRes.data ? deptRes.data.map((d: any) => d.name) : []);
+      setPerformanceSettings({
+        ratingSystemEnabled: perfRes.data?.rating_system_enabled ?? false,
+        autoRateCompletedTasks: perfRes.data?.auto_rate_completed_tasks ?? false,
+        defaultRating: perfRes.data?.default_rating ?? 3,
+      });
+      setClockEvents(clockRes.data ?? []);
+    } catch (err: any) {
+      Alert.alert('Error', `Failed to load dashboard data: ${err.message || err}`);
+      console.error('Error fetching initial data:', err);
+    } finally {
+      setInitialLoading(false);
     }
-    fetchAllInitialData();
-    return () => { isMounted = false; };
   }, [businessId]);
+
+  useEffect(() => {
+    fetchAllInitialData();
+  }, [fetchAllInitialData]);
 
   // Check for late tasks and show notifications
   // Late task notification cooldown (avoid repeated alerts)
@@ -311,8 +309,19 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
           {/* Right: Dark mode and settings */}
           <View style={{ position: 'absolute', right: 0, flexDirection: 'row', alignItems: 'center' }}>
             <TouchableOpacity onPress={() => setDarkMode((d) => !d)} style={{ padding: 8, marginRight: 8, flexDirection: 'row', alignItems: 'center' }}>
-              <FontAwesome5 name={darkMode ? 'moon' : 'sun'} size={22} color={darkMode ? '#FFD700' : '#1976d2'} style={{ marginRight: 4 }} />
-              <Text style={{ color: darkMode ? '#FFD700' : '#1976d2', fontWeight: 'bold', fontSize: 13 }}>{darkMode ? 'Night' : 'Day'}</Text>
+              <FontAwesome5
+                name={darkMode ? 'moon' : 'sun'}
+                size={28}
+                color={darkMode ? '#FFD700' : '#FFB300'}
+                style={{
+                  marginRight: 8,
+                  textShadowColor: '#FFD700',
+                  textShadowOffset: { width: 2, height: 2 },
+                  textShadowRadius: 6,
+                  elevation: 4,
+                }}
+              />
+              <Text style={{ color: darkMode ? '#FFD700' : '#FFB300', fontWeight: 'bold', fontSize: 15 }}>{darkMode ? 'Night' : 'Day'}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setSettingsModalVisible(true)} style={{ padding: 8 }}>
               <FontAwesome5 name="cog" size={24} color={darkMode ? '#b3c0e0' : '#1976d2'} />
@@ -343,6 +352,7 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
                 workEnd={workEnd}
                 lunchStart={lunchStart}
                 lunchEnd={lunchEnd}
+                refetchDashboardData={fetchAllInitialData}
                 onExport={(filteredData) => {
                   // If filtered data is provided, you could store it for the export modal
                   // For now, just open the export modal
@@ -375,7 +385,7 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
                 lateThreshold={lateThreshold}
                 lateTaskNotifiedIds={lateTaskNotifiedIds}
                 setLateTaskNotifiedIds={setLateTaskNotifiedIds}
-                onRateTask={(task) => setSelectedTaskForRating(task)}
+                onRateTask={(task: Task) => setSelectedTaskForRating(task)}
               />
             )}
             {tab === 'materials' && isUser(user) && (
@@ -411,6 +421,8 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
                 performanceSettings={performanceSettings}
                 setPerformanceSettings={setPerformanceSettings}
                 darkMode={darkMode}
+                materials={materials}
+                departments={departments}
               />
             )}
           </Suspense>

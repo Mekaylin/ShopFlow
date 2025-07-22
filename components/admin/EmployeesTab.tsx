@@ -1,16 +1,17 @@
+
+import React, { useState } from 'react';
+import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../../lib/supabase';
 import { adminStyles } from '../utility/styles';
-import { Employee } from '../utility/types';
+import { SearchAndFilterBar } from '../ui/SearchAndFilterBar';
 import AdminModal from './AdminModal';
 import AdminRow from './AdminRow';
 
-import type { User } from '../utility/types';
+import type { User, Employee } from '../utility/types';
 
 interface EmployeesTabProps {
   user: User;
@@ -23,6 +24,7 @@ interface EmployeesTabProps {
   biometricLoggedIn?: boolean;
 }
 
+
 const EmployeesTab: React.FC<EmployeesTabProps> = ({
   user,
   darkMode,
@@ -33,8 +35,11 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   biometricEnabled = false,
   biometricLoggedIn = false,
 }) => {
-  // State
+  // --- State ---
+  const [search, setSearch] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('');
   const [editEmployee, setEditEmployee] = useState<Employee | null>(null);
+  const [selectedTaskEmployee, setSelectedTaskEmployee] = useState<Employee | null>(null);
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskStart, setNewTaskStart] = useState('');
   const [newTaskDeadline, setNewTaskDeadline] = useState('');
@@ -48,7 +53,8 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  // Modal state using local state instead of navigation
+
+  // --- Modal state ---
   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false);
   const [showAddDeptModal, setShowAddDeptModal] = useState(false);
   const [showAssignTaskModal, setShowAssignTaskModal] = useState(false);
@@ -350,8 +356,23 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
     }
   };
 
+  // Filter employees by search and department
+  // (filteredEmployees already declared above)
+
   return (
     <View style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff' }}>
+      <View style={{ paddingHorizontal: 8, marginTop: 8, marginBottom: 4 }}>
+        <SearchAndFilterBar
+          searchValue={search}
+          onSearchChange={setSearch}
+          filterChips={[{ label: 'All', value: '' }, ...departments.map(dep => ({ label: dep, value: dep }))]}
+          selectedFilter={departmentFilter}
+          onFilterChange={setDepartmentFilter}
+          placeholder="Search employees by name..."
+        />
+      </View>
+
+      {/* Filtered employees for display */}
       <ScrollView 
         style={{ flex: 1, padding: 8 }}
         contentContainerStyle={{ 
@@ -361,56 +382,46 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
           paddingBottom: 100 // Extra padding to ensure content doesn't get cut off
         }}
       >
-        {employees.map(emp => (
-          <TouchableOpacity
-            key={emp.id}
-            onPress={() => {
-              setEditEmployee(emp);
-              setNewEmployeeName(emp.name || '');
-              setNewEmployeeCode(emp.code || '');
-              setNewEmployeeLunchStart(((emp as any).lunch_start ?? emp.lunchStart) || '12:00');
-              setNewEmployeeLunchEnd(((emp as any).lunch_end ?? emp.lunchEnd) || '12:30');
-              setNewEmployeePhotoUri(((emp as any).photo_url ?? emp.photoUri) || undefined);
-              setNewEmployeeDepartment(emp.department || '');
-            }}
-            activeOpacity={0.85}
-            style={{
-              backgroundColor: darkMode ? '#23263a' : '#fff',
-              borderRadius: 10,
-              marginBottom: 7,
-              marginHorizontal: 2,
-              paddingVertical: 8,
-              paddingHorizontal: 6,
-              borderWidth: 1.2,
-              borderColor: '#1976d2',
-              flexDirection: 'row',
-              alignItems: 'center',
-              minWidth: 0,
-              maxWidth: '100%',
-            }}
-          >
-            <AdminRow
-              icon={((emp as any).photo_url || emp.photoUri) ? undefined : 'user'}
-              title={emp.name}
-              subtitle={emp.department || 'No Dept'}
-              actions={
-                <TouchableOpacity
-                  onPress={e => {
-                    e.stopPropagation && e.stopPropagation();
-                    setEditEmployee(emp);
-                    setShowAssignTaskModal(true);
-                  }}
-                  style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 6 }}
-                >
-                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 13 }}>Assign Task</Text>
-                </TouchableOpacity>
-              }
-              style={{ backgroundColor: 'transparent' }}
+        {employees
+          .filter((emp: Employee) =>
+            emp.name.toLowerCase().includes(search.toLowerCase()) &&
+            (!departmentFilter || emp.department === departmentFilter)
+          )
+          .map((emp: Employee) => (
+            <TouchableOpacity
+              key={emp.id}
+              onPress={() => {
+                setEditEmployee(emp);
+                setNewEmployeeName(emp.name || '');
+                setNewEmployeeCode(emp.code || '');
+                setNewEmployeeLunchStart(((emp as any).lunch_start ?? emp.lunchStart) || '12:00');
+                setNewEmployeeLunchEnd(((emp as any).lunch_end ?? emp.lunchEnd) || '12:30');
+                setNewEmployeePhotoUri(((emp as any).photo_url ?? emp.photoUri) || undefined);
+                setNewEmployeeDepartment(emp.department || '');
+              }}
+              activeOpacity={0.85}
+              style={{
+                backgroundColor: darkMode ? '#23263a' : '#fff',
+                borderRadius: 10,
+                marginBottom: 7,
+                marginHorizontal: 2,
+                paddingVertical: 8,
+                paddingHorizontal: 6,
+                borderWidth: 1.2,
+                borderColor: '#1976d2',
+                flexDirection: 'row',
+                alignItems: 'center',
+                minWidth: 0,
+                maxWidth: '100%',
+              }}
             >
-              <Text style={{ color: '#888', fontSize: 12, marginBottom: 2 }}>{`Lunch: ${((emp as any).lunch_start ?? emp.lunchStart) || ''} - ${((emp as any).lunch_end ?? emp.lunchEnd) || ''}`}</Text>
-            </AdminRow>
-          </TouchableOpacity>
-        ))}
+              <AdminRow
+                icon={((emp as any).photo_url || emp.photoUri) ? undefined : 'user'}
+                title={emp.name}
+                // ...existing code...
+              />
+            </TouchableOpacity>
+          ))}
       </ScrollView>
       {/* Fixed position buttons at bottom */}
       <View style={{ 
@@ -628,7 +639,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       <AdminModal
         visible={!!showAssignTaskModal}
         onClose={() => setShowAssignTaskModal(false)}
-        title={editEmployee ? `Assign Task to ${editEmployee.name}` : 'Assign Task'}
+        title={selectedTaskEmployee ? `Assign Task to ${selectedTaskEmployee.name}` : 'Assign Task'}
       >
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
           <TextInput
