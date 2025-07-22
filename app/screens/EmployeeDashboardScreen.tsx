@@ -53,6 +53,10 @@ interface Employee {
   name: string;
   code: string;
   business_id: string;
+  work_start?: string; // 'HH:mm', e.g. '08:00'
+  work_end?: string;   // 'HH:mm', e.g. '17:00'
+  lunch_start?: string; // 'HH:mm', e.g. '12:00'
+  lunch_end?: string;   // 'HH:mm', e.g. '13:00'
 }
 
 interface Material {
@@ -131,15 +135,43 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
     const employee = employees.find(e => e.code.toLowerCase() === code.toLowerCase());
     if (!employee) {
       console.warn('[ClockIn] No employee found for code:', code);
-      setClockInError('Invalid code.');
+      setClockInError('Invalid employee code. Please check and try again.');
+      Alert.alert('Invalid Code', 'The employee code you entered is incorrect. Please try again.');
       return;
     }
-    // Determine action
+    // Auto-detect action based on working hours and lunch times
+    // Assumes employee object has work_start, work_end, lunch_start, lunch_end as 'HH:mm' strings
+    const nowDate = new Date();
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const nowHM = pad(nowDate.getHours()) + ':' + pad(nowDate.getMinutes());
     let action: 'in' | 'out' | 'lunch' | 'lunchBack' = 'in';
-    if (clockedIn && !onLunch) action = 'out';
-    else if (clockedIn && !onLunch) action = 'lunch';
-    else if (clockedIn && onLunch) action = 'lunchBack';
-    console.log('[ClockIn] Action determined:', action);
+    if (employee.work_start && employee.work_end && employee.lunch_start && employee.lunch_end) {
+      // Helper to compare HH:mm
+      const isBetween = (start: string, end: string, time: string) => {
+        return start <= time && time <= end;
+      };
+      if (isBetween(employee.work_start, employee.lunch_start, nowHM)) {
+        action = 'in';
+      } else if (isBetween(employee.lunch_start, employee.lunch_end, nowHM)) {
+        action = 'lunch';
+      } else if (isBetween(employee.lunch_end, employee.work_end, nowHM)) {
+        action = 'lunchBack';
+      } else {
+        action = 'out';
+      }
+    } else {
+      // Fallback to previous logic if schedule not set
+      if (clockedIn && !onLunch) action = 'out';
+      else if (clockedIn && !onLunch) action = 'lunch';
+      else if (clockedIn && onLunch) action = 'lunchBack';
+      else action = 'in';
+    }
+    console.log('[ClockIn] Action auto-detected:', action, 'Current time:', nowHM, 'Schedule:', {
+      work_start: employee.work_start,
+      lunch_start: employee.lunch_start,
+      lunch_end: employee.lunch_end,
+      work_end: employee.work_end
+    });
     setClockLoading(true);
     // Prevent duplicate clock events within 1 minute
     try {
@@ -165,13 +197,17 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
           return;
         }
       }
-      // Insert clock event with employee name and readable time
-      const event = {
+      // Insert clock event with correct timestamp column based on action
+      const now = new Date().toISOString();
+      const event: any = {
         business_id: employee.business_id,
         employee_id: employee.id,
-        clock_in: new Date().toISOString(),
-        action, // Add action to event
+        action,
       };
+      if (action === 'in') event.clock_in = now;
+      if (action === 'out') event.clock_out = now;
+      if (action === 'lunch') event.lunch_start = now;
+      if (action === 'lunchBack') event.lunch_end = now;
       console.log('[ClockIn] Inserting event:', event);
       const { error } = await supabase.from('clock_events').insert(event);
       if (error) {
