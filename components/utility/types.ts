@@ -42,6 +42,8 @@ export interface ClockEvent {
   employee_id: string;
   clock_in: string;
   clock_out?: string;
+  lunch_start?: string;
+  lunch_end?: string;
   business_id: string;
 }
 

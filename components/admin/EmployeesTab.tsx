@@ -1,17 +1,17 @@
 
-import React, { useState } from 'react';
-import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../../lib/supabase';
-import { adminStyles } from '../utility/styles';
 import { SearchAndFilterBar } from '../ui/SearchAndFilterBar';
+import { adminStyles } from '../utility/styles';
 import AdminModal from './AdminModal';
 import AdminRow from './AdminRow';
 
-import type { User, Employee } from '../utility/types';
+import type { Employee, User } from '../utility/types';
 
 interface EmployeesTabProps {
   user: User;

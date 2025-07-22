@@ -1,15 +1,41 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import AddTaskModal from '../../components/ui/AddTaskModal';
+// --- Welcome/Goodbye Animation State ---
+import { ActivityIndicator, Alert, Animated, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import NotificationPanel, { Notification } from '../../components/admin/NotificationPanel';
 import { supabase } from '../../lib/supabase';
+  // Welcome/Goodbye animation state
+  const [showGreeting, setShowGreeting] = useState<null | 'welcome' | 'goodbye'>(null);
+  const greetingAnim = useRef(new Animated.Value(0)).current;
+
+  const triggerGreeting = (type: 'welcome' | 'goodbye', name: string) => {
+    setShowGreeting(type);
+    greetingAnim.setValue(0);
+    Animated.timing(greetingAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start(() => {
+      setTimeout(() => {
+        Animated.timing(greetingAnim, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }).start(() => setShowGreeting(null));
+      }, 1400);
+    });
+  };
 // Helper to queue clock events locally
 type ClockEvent = {
   employee_id: string;
   business_id: string;
   action: string;
-  timestamp: string;
+  clock_in?: string;
+  clock_out?: string;
+  lunch_start?: string;
+  lunch_end?: string;
 };
 
 
@@ -34,6 +60,7 @@ async function syncClockEvents() {
     const remaining = [];
     for (const event of queue as ClockEvent[]) {
       try {
+        // Only send the correct columns to Supabase
         const { error } = await supabase.from('clock_events').insert(event);
         if (error) remaining.push(event);
       } catch {
@@ -98,6 +125,33 @@ interface EmployeeDashboardScreenProps {
 import { useRouter } from 'expo-router';
 
 function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProps) {
+  // --- Add Task Modal State for Employee ---
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [addTaskLoading, setAddTaskLoading] = useState(false);
+  const [addTaskError, setAddTaskError] = useState('');
+  const handleAddTask = async (taskData: any) => {
+    setAddTaskLoading(true);
+    setAddTaskError('');
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert({
+          ...taskData,
+          business_id: user?.business_id,
+        })
+        .select('*')
+        .single();
+      if (error || !data) {
+        setAddTaskError('Failed to add task.');
+        return;
+      }
+      setTasks((prev: Task[]) => [...prev, data]);
+    } catch (e) {
+      setAddTaskError('Unexpected error.');
+    } finally {
+      setAddTaskLoading(false);
+    }
+  };
   const router = useRouter();
   // Fetch employees, tasks, and materials from Supabase on mount
   useEffect(() => {
@@ -218,10 +272,47 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
         { id: Math.random().toString(36).slice(2), message: `Clock ${action} for ${employee.name} at ${new Date().toLocaleTimeString()}`, timestamp: new Date().toISOString(), type: 'info' },
         ...prev.slice(0, 19),
       ]);
-      if (action === 'in') { setClockedIn(true); setOnLunch(false); Alert.alert('Clocked In', `${employee.name} clocked in at ${new Date().toLocaleTimeString()}`); }
-      else if (action === 'out') { setClockedIn(false); setOnLunch(false); Alert.alert('Clocked Out', `${employee.name} clocked out at ${new Date().toLocaleTimeString()}`); }
+      if (action === 'in') {
+        setClockedIn(true); setOnLunch(false);
+        triggerGreeting('welcome', employee.name);
+        Alert.alert('Clocked In', `${employee.name} clocked in at ${new Date().toLocaleTimeString()}`);
+      }
+      else if (action === 'out') {
+        setClockedIn(false); setOnLunch(false);
+        triggerGreeting('goodbye', employee.name);
+        Alert.alert('Clocked Out', `${employee.name} clocked out at ${new Date().toLocaleTimeString()}`);
+      }
       else if (action === 'lunch') { setOnLunch(true); Alert.alert('Lunch', `${employee.name} started lunch at ${new Date().toLocaleTimeString()}`); }
       else if (action === 'lunchBack') { setOnLunch(false); Alert.alert('Back', `${employee.name} ended lunch at ${new Date().toLocaleTimeString()}`); }
+      {/* Welcome/Goodbye Animation Modal */}
+      {showGreeting && (
+        <Modal visible transparent animationType="none">
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.18)', justifyContent: 'center', alignItems: 'center' }}>
+            <Animated.View style={{
+              opacity: greetingAnim,
+              transform: [{ scale: greetingAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }],
+              backgroundColor: '#fff',
+              borderRadius: 24,
+              padding: 36,
+              alignItems: 'center',
+              shadowColor: '#000',
+              shadowOpacity: 0.18,
+              shadowRadius: 16,
+              elevation: 8,
+              minWidth: 260,
+            }}>
+              <Text style={{ fontSize: 32, fontWeight: 'bold', color: showGreeting === 'welcome' ? '#388e3c' : '#c62828', marginBottom: 10 }}>
+                {showGreeting === 'welcome' ? 'Welcome!' : 'Goodbye!'}
+              </Text>
+              <Text style={{ fontSize: 22, color: '#1976d2', fontWeight: '600', marginBottom: 8 }}>
+                {showGreeting === 'welcome' ? 'Have a great shift!' : 'See you next time!'}
+              </Text>
+              {/* Simple animation: waving hand or checkmark */}
+              <Text style={{ fontSize: 48, marginTop: 8 }}>{showGreeting === 'welcome' ? '👋' : '✅'}</Text>
+            </Animated.View>
+          </View>
+        </Modal>
+      )}
       setCodePrompt('');
       console.log('[ClockIn] Clock event successful for', employee.name, 'Action:', action);
     } catch (err) {
@@ -380,30 +471,53 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       </View>
       {activeTab === 'clock' ? (
         // --- CLOCK IN/OUT TAB ---
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%' }}>
           <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 26, fontWeight: 'bold', color: theme.primary, marginBottom: 18 }}>Clock In/Out</Text>
-            <View style={{ width: 320, backgroundColor: theme.card, borderRadius: 16, padding: 24, shadowColor: theme.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 6, elevation: 3, alignItems: 'center' }}>
+            <Text style={{ fontSize: 30, fontWeight: 'bold', color: theme.primary, marginBottom: 8, letterSpacing: 0.5 }}>Clock Events</Text>
+            <Text style={{ color: theme.subtext, fontSize: 16, marginBottom: 18, textAlign: 'center', maxWidth: 340 }}>
+              Enter your employee code to clock in, out, or manage lunch. Your action is auto-detected based on your schedule.
+            </Text>
+            <View style={{ width: 350, backgroundColor: theme.card, borderRadius: 20, padding: 28, shadowColor: theme.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.13, shadowRadius: 10, elevation: 4, alignItems: 'center', marginBottom: 18 }}>
               <TextInput
-                style={[styles.codeInput, { width: '100%', marginBottom: 16, fontSize: 20, textAlign: 'center' }]}
+                style={{ borderWidth: 1, borderColor: clockInError ? theme.error : '#bbb', borderRadius: 10, padding: 16, width: '100%', fontSize: 22, marginBottom: 14, backgroundColor: isDark ? '#232A36' : '#f8fafd', textAlign: 'center', letterSpacing: 1 }}
                 placeholder="Enter Employee Code"
                 value={codePrompt}
                 onChangeText={setCodePrompt}
                 secureTextEntry
                 autoCapitalize="none"
                 autoCorrect={false}
+                placeholderTextColor={theme.subtext}
+                returnKeyType="done"
+                onSubmitEditing={handleClockInOut}
+                accessibilityLabel="Employee Code Input"
               />
-              {clockInError ? <Text style={{ color: theme.error, marginBottom: 10 }}>{clockInError}</Text> : null}
+              {clockInError ? (
+                <Text style={{ color: theme.error, marginBottom: 10, fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>{clockInError}</Text>
+              ) : null}
               <TouchableOpacity
-                style={[styles.actionBtn, { backgroundColor: theme.primary, width: '100%', marginBottom: 0, paddingVertical: 18, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }]}
+                style={{ backgroundColor: theme.primary, width: '100%', borderRadius: 10, paddingVertical: 18, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 0, shadowColor: theme.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 4, elevation: 2 }}
                 onPress={handleClockInOut}
                 disabled={clockLoading}
+                accessibilityLabel="Submit Clock Event"
               >
                 {clockLoading ? (
                   <ActivityIndicator color="#fff" size="small" style={{ marginRight: 8 }} />
                 ) : null}
-                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>{clockedIn ? (onLunch ? 'End Lunch' : 'Clock Out') : 'Clock In'}</Text>
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 22, letterSpacing: 1 }}>
+                  {clockedIn ? (onLunch ? 'End Lunch' : 'Clock Out') : 'Clock In'}
+                </Text>
               </TouchableOpacity>
+              {/* Last event summary */}
+              {employees.length > 0 && codePrompt && employees.find(e => e.code.toLowerCase() === codePrompt.trim().toLowerCase()) && (
+                <View style={{ marginTop: 18, width: '100%', alignItems: 'center' }}>
+                  <Text style={{ color: theme.subtext, fontSize: 15, marginBottom: 2 }}>Last Event:</Text>
+                  {/* You could fetch and display the last event here if desired */}
+                  {/* For now, just show status */}
+                  <Text style={{ color: theme.primary, fontWeight: 'bold', fontSize: 16 }}>
+                    {clockedIn ? (onLunch ? 'On Lunch' : 'Clocked In') : 'Clocked Out'}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
         </View>
@@ -428,9 +542,14 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
             </>
           ) : (
             <>
-              <TouchableOpacity style={{ marginBottom: 10 }} onPress={() => setShowEmployeeTasksPage(false)}>
-                <Text style={{ color: theme.primary, fontWeight: 'bold' }}>{'< Back to Employees'}</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10, justifyContent: 'space-between' }}>
+                <TouchableOpacity onPress={() => setShowEmployeeTasksPage(false)}>
+                  <Text style={{ color: theme.primary, fontWeight: 'bold' }}>{'< Back to Employees'}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowAddTaskModal(true)} style={{ backgroundColor: theme.primary, borderRadius: 20, padding: 8, paddingHorizontal: 16 }}>
+                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>+ Add Task</Text>
+                </TouchableOpacity>
+              </View>
               <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.primary, marginBottom: 8 }}>{selectedEmployee?.name}'s Tasks</Text>
               <FlatList
                 data={tasks.filter(t => t.assigned_to === selectedEmployee?.id)}
@@ -449,6 +568,18 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
                   </TouchableOpacity>
                 )}
               />
+              {/* Add Task Modal for Employee */}
+              {selectedEmployee && (
+                <AddTaskModal
+                  visible={showAddTaskModal}
+                  onClose={() => setShowAddTaskModal(false)}
+                  currentEmployee={selectedEmployee}
+                  onAddTask={handleAddTask}
+                  loading={addTaskLoading}
+                  error={addTaskError}
+                  setError={setAddTaskError}
+                />
+              )}
             </>
           )}
         </View>

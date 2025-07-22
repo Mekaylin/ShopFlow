@@ -1,15 +1,16 @@
+import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
 import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
-import { MaterialIcons } from '@expo/vector-icons';
 import { adminStyles } from '../utility/styles';
-import { Employee, Material, PerformanceMetrics, Task } from '../utility/types';
+import { Task as BaseTask, Employee, Material, PerformanceMetrics } from '../utility/types';
 import {
   getBestPerformers,
   getLateEmployeesByClockEvents,
   getMaterialUsage,
   limitLines
 } from '../utility/utils';
+// Extend Task type locally to include optional rating property for performance metrics
+type Task = BaseTask & { rating?: number };
 
 import type { ClockEvent, MaterialType, User } from '../utility/types';
 interface HomeTabProps {
@@ -114,16 +115,33 @@ const HomeTab: React.FC<HomeTabProps> = ({
   const { startDate, endDate } = getDateRange(summaryRange, summaryDate);
   // Use task.deadline for filtering overdue/late tasks
   // Filter tasks by date and search query
+  // Show all tasks active on the selected day/range: (start <= rangeEnd && deadline >= rangeStart)
   const filteredTasks = React.useMemo(() =>
     tasks.filter(task => {
-      const taskDate = new Date(task.deadline);
+      const taskStart = new Date(task.start);
+      const taskEnd = new Date(task.deadline);
+      const rangeStart = new Date(startDate);
+      const rangeEnd = new Date(endDate);
+      const matchesDate = taskStart <= rangeEnd && taskEnd >= rangeStart;
       const matchesSearch = searchQuery.trim() === '' || task.name.toLowerCase().includes(searchQuery.toLowerCase());
-      return taskDate >= new Date(startDate) && taskDate <= new Date(endDate) && matchesSearch;
+      return matchesDate && matchesSearch;
     }), [tasks, startDate, endDate, searchQuery]
   );
 
-  // Materials used: aggregate from all filtered tasks
-  const materialsUsed = React.useMemo(() => getMaterialUsage(materials, filteredTasks), [materials, filteredTasks]);
+  // Materials used: aggregate from all filtered tasks, only count materials with nonzero quantity for the selected day/range
+  const materialsUsed = React.useMemo(() => {
+    const usage: Record<string, number> = {};
+    filteredTasks.forEach(task => {
+      if (Array.isArray(task.materials_used)) {
+        task.materials_used.forEach((matUsed: any) => {
+          if (matUsed && matUsed.materialId && typeof matUsed.quantity === 'number' && matUsed.quantity > 0) {
+            usage[matUsed.materialId] = (usage[matUsed.materialId] || 0) + matUsed.quantity;
+          }
+        });
+      }
+    });
+    return usage;
+  }, [filteredTasks]);
   // Helper to get material name by ID
   const getMaterialName = (id: string) => {
     const mat = materials.find(m => m.id === id);
@@ -188,8 +206,80 @@ const HomeTab: React.FC<HomeTabProps> = ({
     return clockDate >= startDate && clockDate <= endDate;
   }), [clockEventsByEmployee, startDate, endDate]);
 
-  // Late employees: use filtered clock events
-  const lateEmployees = React.useMemo(() => getLateEmployeesByClockEvents(filteredClockEvents, employees, 9), [filteredClockEvents, employees]);
+  // Late employees: use admin-configured workStart and lunchEnd times
+  // Returns array of { name, lateForWork, lateFromLunch, clockIn, lunchEnd }
+  type LateEmployee = {
+    name: string;
+    lateForWork: boolean;
+    lateFromLunch: boolean;
+    clockIn: string | null;
+    lunchEnd: string | null;
+  };
+  const lateEmployeesDetailed: LateEmployee[] = React.useMemo(() => {
+    // Helper to parse time string (e.g., '09:00') into a Date object on a given date
+    const parseTime = (dateStr: string, timeStr: string): Date => {
+      const [h, m] = timeStr.split(':').map(Number);
+      const d = new Date(dateStr + 'T' + timeStr.padStart(5, '0'));
+      // If timeStr is missing seconds, pad it
+      return d;
+    };
+    // For each employee, check clock_in and lunch_end events
+    return employees.map(emp => {
+      // Find all clock events for this employee in the filtered range
+      const empEvents = Object.values(clockEventsByEmployee).flat().filter(ev => ev.employee_id === emp.id);
+      // Find earliest clock_in for the selected day only
+      const todaysEvents = empEvents.filter(ev => {
+        if (!ev.clock_in) return false;
+        const eventDate = new Date(ev.clock_in);
+        const eventDay = eventDate.toISOString().split('T')[0];
+        return eventDay === startDate;
+      });
+      const clockInEvent = todaysEvents.sort((a, b) => {
+        const aTime = a.clock_in ? new Date(a.clock_in).getTime() : Infinity;
+        const bTime = b.clock_in ? new Date(b.clock_in).getTime() : Infinity;
+        return aTime - bTime;
+      })[0];
+      // Find latest lunch_end for the selected day only
+      const todaysLunchEvents = empEvents.filter(ev => {
+        if (!ev.lunch_end) return false;
+        const eventDate = new Date(ev.lunch_end);
+        const eventDay = eventDate.toISOString().split('T')[0];
+        return eventDay === startDate;
+      });
+      const lunchEndEvent = todaysLunchEvents.sort((a, b) => {
+        const aTime = a.lunch_end ? new Date(a.lunch_end).getTime() : -Infinity;
+        const bTime = b.lunch_end ? new Date(b.lunch_end).getTime() : -Infinity;
+        return bTime - aTime;
+      })[0];
+      // Parse admin-configured times for today
+      const today = startDate;
+      const workStartTime = parseTime(today, workStart);
+      const lunchEndTime = parseTime(today, lunchEnd);
+      // Determine lateness
+      let lateForWork = false;
+      if (clockInEvent && clockInEvent.clock_in) {
+        const clockInDate = new Date(clockInEvent.clock_in);
+        lateForWork = clockInDate > workStartTime;
+        // Debug output
+        if (typeof window !== 'undefined' && window.console) {
+          // @ts-ignore
+          window.console.log(`DEBUG: ${emp.name} clocked in at ${clockInDate.toLocaleTimeString()} (workStart: ${workStartTime.toLocaleTimeString()}) => late: ${lateForWork}`);
+        }
+      }
+      let lateFromLunch = false;
+      if (lunchEndEvent && lunchEndEvent.lunch_end) {
+        const lunchEndDate = new Date(lunchEndEvent.lunch_end);
+        lateFromLunch = lunchEndDate > lunchEndTime;
+      }
+      return {
+        name: emp.name,
+        lateForWork,
+        lateFromLunch,
+        clockIn: clockInEvent && clockInEvent.clock_in ? clockInEvent.clock_in : null,
+        lunchEnd: lunchEndEvent && lunchEndEvent.lunch_end ? lunchEndEvent.lunch_end : null,
+      };
+    }).filter(e => e.lateForWork || e.lateFromLunch);
+  }, [employees, clockEventsByEmployee, workStart, lunchEnd, startDate]);
 
   const canExpand = (arr: any[]) => arr.length > 10;
 
@@ -200,7 +290,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
     `Materials: ${materials.length}`,
     `ClockEvents: ${Object.values(clockEventsByEmployee).flat().length}`,
     `FilteredTasks: ${filteredTasks.length}`,
-    `LateEmployees: ${lateEmployees.length}`,
+    `LateEmployees: ${lateEmployeesDetailed.length}`,
     `MaterialsUsed: ${Object.keys(materialsUsed).length}`,
     `BestPerformers: ${bestPerformers.length}`
   ];
@@ -327,27 +417,27 @@ const HomeTab: React.FC<HomeTabProps> = ({
       </TouchableOpacity>
       {/* Late Employees Card */}
       <TouchableOpacity
-        activeOpacity={canExpand(lateEmployees) ? 0.7 : 1}
-        onPress={() => canExpand(lateEmployees) && setShowAllLateEmpsModal(true)}
+        activeOpacity={canExpand(lateEmployeesDetailed) ? 0.7 : 1}
+        onPress={() => canExpand(lateEmployeesDetailed) && setShowAllLateEmpsModal(true)}
         style={{ backgroundColor: darkMode ? '#232a36' : '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: darkMode ? '#000' : '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
           <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#c62828' }}>Late Employees</Text>
-          <Text style={{ fontSize: 14, color: '#666' }}>{lateEmployees.length} employees</Text>
+          <Text style={{ fontSize: 14, color: '#666' }}>{lateEmployeesDetailed.length} employees</Text>
         </View>
-        {lateEmployees.length === 0 ? (
+        {lateEmployeesDetailed.length === 0 ? (
           <Text style={{ color: '#999', fontStyle: 'italic', textAlign: 'center', paddingVertical: 20 }}>
             No late employees for this {summaryRange}
           </Text>
         ) : (
           <>
-            {limitLines(lateEmployees, 10).map((name, idx) => (
-              <Text key={name} style={{ color: '#c62828', fontSize: 15 }} numberOfLines={1} ellipsizeMode="tail">
-                {idx + 1}. {name}
+            {limitLines(lateEmployeesDetailed, 10).map((emp, idx) => (
+              <Text key={emp.name} style={{ color: '#c62828', fontSize: 15 }} numberOfLines={1} ellipsizeMode="tail">
+                {idx + 1}. {emp.name}
               </Text>
             ))}
-            {lateEmployees.length > 10 && (
-              <Text style={{ color: '#c62828', fontWeight: 'bold', marginTop: 4 }}>+{lateEmployees.length - 10} more...</Text>
+            {lateEmployeesDetailed.length > 10 && (
+              <Text style={{ color: '#c62828', fontWeight: 'bold', marginTop: 4 }}>+{lateEmployeesDetailed.length - 10} more...</Text>
             )}
           </>
         )}
@@ -427,7 +517,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
             <Text style={{ fontSize: 12, color: '#666' }}>Performers</Text>
           </View>
           <View style={{ alignItems: 'center' }}>
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#9C27B0' }}>{lateEmployees.length}</Text>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#9C27B0' }}>{lateEmployeesDetailed.length}</Text>
             <Text style={{ fontSize: 12, color: '#666' }}>Late</Text>
           </View>
         </View>
@@ -522,7 +612,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
                 performanceMetrics,
                 totalCompletedTasks,
                 totalRatedTasks,
-                lateEmployees
+                lateEmployees: lateEmployeesDetailed.map(e => e.name)
               }));
               // Optionally show a success message
               // Alert.alert('Export', 'Data export started.');
@@ -569,17 +659,35 @@ const HomeTab: React.FC<HomeTabProps> = ({
           </View>
         </View>
       </Modal>
-      {/* All Late Employees Modal */}
+      {/* All Late Employees Modal - Shows late for work and late from lunch */}
       <Modal visible={showAllLateEmpsModal} transparent animationType="slide" onRequestClose={() => setShowAllLateEmpsModal(false)}>
         <View style={adminStyles.modalOverlay}>
           <View style={adminStyles.modalContent}>
             <Text style={[adminStyles.modalTitle, adminStyles.textError]}>All Late Employees</Text>
             <ScrollView>
-              {lateEmployees.map((name, idx) => (
-                <Text key={name} style={[adminStyles.taskListText, adminStyles.textError]}>
-                  {idx + 1}. {name}
+              {lateEmployeesDetailed.length === 0 ? (
+                <Text style={{ color: '#999', fontStyle: 'italic', textAlign: 'center', paddingVertical: 20 }}>
+                  No late employees for this {summaryRange}
                 </Text>
-              ))}
+              ) : (
+                lateEmployeesDetailed.map((emp, idx) => (
+                  <View key={emp.name} style={{ marginBottom: 16 }}>
+                    <Text style={[adminStyles.taskListText, adminStyles.textError, { fontWeight: 'bold', fontSize: 16 }]}>
+                      {idx + 1}. {emp.name}
+                    </Text>
+                    {emp.lateForWork && (
+                      <Text style={{ color: '#c62828', fontSize: 13, marginLeft: 8 }}>
+                        Late for work. Clocked in: {emp.clockIn ? new Date(emp.clockIn).toLocaleTimeString() : 'N/A'} (Expected: {workStart})
+                      </Text>
+                    )}
+                    {emp.lateFromLunch && (
+                      <Text style={{ color: '#c62828', fontSize: 13, marginLeft: 8 }}>
+                        Late from lunch. Returned: {emp.lunchEnd ? new Date(emp.lunchEnd).toLocaleTimeString() : 'N/A'} (Expected: {lunchEnd})
+                      </Text>
+                    )}
+                  </View>
+                ))
+              )}
             </ScrollView>
             <TouchableOpacity style={adminStyles.closeBtn} onPress={() => setShowAllLateEmpsModal(false)}>
               <Text style={adminStyles.closeBtnText}>Close</Text>

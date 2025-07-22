@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
-import { adminStyles } from '../utility/styles';
 import { SearchAndFilterBar } from '../ui/SearchAndFilterBar';
+import { adminStyles } from '../utility/styles';
 import AdminModal from './AdminModal';
 
-import type { User, Material, MaterialType } from '../utility/types';
+import type { Material, MaterialType, User } from '../utility/types';
 interface MaterialsTabProps {
   user: User;
   materials: Material[];

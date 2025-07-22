@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, useColorScheme, LayoutChangeEvent, TouchableOpacity } from 'react-native';
-import Svg, { Rect, Line as SvgLine, G, Text as SvgText, Path, Polyline } from 'react-native-svg';
+import { LayoutChangeEvent, StyleSheet, Text, TouchableOpacity, useColorScheme, View } from 'react-native';
+import Svg, { G, Path, Polyline, Rect, Line as SvgLine, Text as SvgText } from 'react-native-svg';
 
 interface AnalyticsChartsProps {
   performanceData: { date: string; value: number }[];

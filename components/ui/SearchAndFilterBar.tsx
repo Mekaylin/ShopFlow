@@ -1,6 +1,5 @@
 import React from 'react';
-import { Text } from 'react-native';
-import { View, TextInput, StyleSheet, Platform } from 'react-native';
+import { Platform, StyleSheet, Text, TextInput, View } from 'react-native';
 import { adminStyles } from '../utility/styles';
 
 interface FilterChip {

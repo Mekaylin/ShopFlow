@@ -1,12 +1,12 @@
+import { FontAwesome5 } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { supabase } from '../../lib/supabase';
 import { AnalyticsCharts } from '../ui/AnalyticsCharts';
-import { Employee, PerformanceMetrics, PerformanceSettings, Task } from '../utility/types';
-import { FontAwesome5 } from '@expo/vector-icons';
 import { SearchAndFilterBar } from '../ui/SearchAndFilterBar';
 import { adminStyles } from '../utility/styles';
-import { supabase } from '../../lib/supabase';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Employee, PerformanceMetrics, PerformanceSettings, Task } from '../utility/types';
 import PerformanceMetricsModal from './PerformanceMetricsModal';
 
 import type { User } from '../utility/types';
