@@ -142,10 +142,13 @@ const HomeTab: React.FC<HomeTabProps> = ({
     });
     return usage;
   }, [filteredTasks]);
-  // Helper to get material name by ID
+  // Helper to get material name by ID using materialTypes (source of truth)
   const getMaterialName = (id: string) => {
-    const mat = materials.find(m => m.id === id);
-    return mat ? mat.name : id;
+    // materialTypes is a Record<string, MaterialType[]>
+    // Flatten all arrays and find the matching id
+    const allTypes = Object.values(materialTypes).flat();
+    const matType = allTypes.find(mt => mt.id === id);
+    return matType ? matType.name : id;
   };
 
   // --- Performance Metrics Calculation ---

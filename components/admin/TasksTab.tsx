@@ -2,7 +2,11 @@
 import React, { useState } from 'react';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import AddTaskModal from '../ui/AddTaskModal';
-import type { Employee, Material, Task, User } from '../utility/types';
+import AdminModal from './AdminModal';
+import TaskRatingModal from './TaskRatingModal';
+import type { Employee, Material, User } from '../utility/types';
+// Extend Task type locally to include optional rating property for UI
+type Task = import('../utility/types').Task & { rating?: number };
 
 interface TasksTabProps {
   user: User;
@@ -37,6 +41,30 @@ export const TasksTab: React.FC<TasksTabProps> = ({
   const [addTaskLoading, setAddTaskLoading] = useState(false);
   const [addTaskError, setAddTaskError] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [taskToRate, setTaskToRate] = useState<Task | null>(null);
+  // Handle rating submission
+  const handleSubmitRating = async (rating: number) => {
+    if (!taskToRate) return;
+    try {
+      // Update rating in backend (tasks table, or task_ratings if separate)
+      const { supabase } = await import('../../lib/supabase');
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({ rating })
+        .eq('id', taskToRate.id)
+        .select('*')
+        .single();
+      if (!error && data) {
+        setTasks((prev: Task[]) => prev.map(t => t.id === data.id ? { ...t, rating: data.rating } : t));
+      }
+    } catch (e) {
+      // Optionally handle error
+    } finally {
+      setShowRatingModal(false);
+      setTaskToRate(null);
+    }
+  };
 
   const handleAddTask = async (taskData: any) => {
     setAddTaskLoading(true);
@@ -49,7 +77,7 @@ export const TasksTab: React.FC<TasksTabProps> = ({
         business_id: user.business_id,
       }).select('*').single();
       if (error || !data) {
-        setAddTaskError('Failed to add task.');
+        setAddTaskError('Failed to add task.' + (error?.message ? ` (${error.message})` : ''));
         return;
       }
       setTasks((prev: Task[]) => [...prev, data]);
@@ -67,6 +95,22 @@ export const TasksTab: React.FC<TasksTabProps> = ({
       <TouchableOpacity style={styles.addBtn} onPress={() => setShowAddTaskModal(true)}>
         <Text style={styles.addBtnText}>+ Add Task</Text>
       </TouchableOpacity>
+      {/* Employee Picker Modal */}
+      {showAddTaskModal && !selectedEmployee && (
+        <AdminModal visible={showAddTaskModal} onClose={() => setShowAddTaskModal(false)} title="Select Employee">
+          <View>
+            {employees.map(emp => (
+              <TouchableOpacity
+                key={emp.id}
+                style={{ padding: 12, borderBottomWidth: 1, borderColor: '#eee' }}
+                onPress={() => setSelectedEmployee(emp)}
+              >
+                <Text style={{ fontSize: 16 }}>{emp.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </AdminModal>
+      )}
       <FlatList
         data={tasks}
         keyExtractor={item => item.id}
@@ -79,20 +123,59 @@ export const TasksTab: React.FC<TasksTabProps> = ({
             {item.completed && item.completed_at && (
               <Text style={styles.completedAt}>Completed at: {new Date(item.completed_at).toLocaleString()}</Text>
             )}
-            {/* Add more task actions as needed */}
+            {item.completed && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
+                <Text style={{ color: '#888', marginRight: 8 }}>
+                  Rating: {typeof item.rating === 'number' ? item.rating : 'Not rated'}
+                </Text>
+                <TouchableOpacity
+                  style={{ backgroundColor: '#FFD700', borderRadius: 6, padding: 4, paddingHorizontal: 10, marginRight: 8 }}
+                  onPress={() => {
+                    setTaskToRate(item);
+                    setShowRatingModal(true);
+                  }}
+                >
+                  <Text style={{ color: '#333', fontWeight: 'bold' }}>Rate</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ backgroundColor: '#1976d2', borderRadius: 6, padding: 4, paddingHorizontal: 10 }}
+                  onPress={async () => {
+                    // Auto-rate logic: 5 if completed on/before deadline, 3 if late
+                    const deadline = new Date(item.deadline);
+                    const completedAt = item.completed_at ? new Date(item.completed_at) : null;
+                    let autoRating = 5;
+                    if (completedAt && completedAt > deadline) autoRating = 3;
+                    await handleSubmitRating(autoRating);
+                  }}
+                >
+                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Auto Rate</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         )}
         ListEmptyComponent={<Text style={styles.emptyText}>No tasks found.</Text>}
       />
       <AddTaskModal
-        visible={showAddTaskModal}
-        onClose={() => setShowAddTaskModal(false)}
+        visible={!!selectedEmployee}
+        onClose={() => {
+          setSelectedEmployee(null);
+          setShowAddTaskModal(false);
+        }}
         currentEmployee={selectedEmployee ?? undefined}
         onAddTask={handleAddTask}
         loading={addTaskLoading}
         error={addTaskError}
         setError={setAddTaskError}
       />
+      {showRatingModal && (
+        <TaskRatingModal
+          visible={showRatingModal}
+          onClose={() => setShowRatingModal(false)}
+          onSubmit={handleSubmitRating}
+          task={taskToRate}
+        />
+      )}
     </View>
   );
 };
