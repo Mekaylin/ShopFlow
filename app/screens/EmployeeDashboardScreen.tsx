@@ -170,6 +170,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
         business_id: employee.business_id,
         employee_id: employee.id,
         clock_in: new Date().toISOString(),
+        action, // Add action to event
       };
       console.log('[ClockIn] Inserting event:', event);
       const { error } = await supabase.from('clock_events').insert(event);
