@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
-import { Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import NotificationPanel, { Notification } from '../../components/admin/NotificationPanel';
 import { supabase } from '../../lib/supabase';
@@ -116,16 +116,21 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
   }, []);
 
   // --- CLOCK IN/OUT LOGIC ---
+  const [clockLoading, setClockLoading] = useState(false);
   const handleClockInOut = async () => {
     setClockInError('');
     const code = codePrompt.trim();
-    if (!code) {
-      setClockInError('Please enter your employee code.');
+    console.log('[ClockIn] Attempting clock in/out with code:', code);
+    // Validate code format: must be alphanumeric, 3-10 chars
+    if (!code || !/^[a-zA-Z0-9]{3,10}$/.test(code)) {
+      console.warn('[ClockIn] Invalid code format:', code);
+      setClockInError('Please enter a valid employee code (3-10 alphanumeric characters).');
       return;
     }
-    // Find employee by code
-    const employee = employees.find(e => e.code === code);
+    // Find employee by code (case-insensitive)
+    const employee = employees.find(e => e.code.toLowerCase() === code.toLowerCase());
     if (!employee) {
+      console.warn('[ClockIn] No employee found for code:', code);
       setClockInError('Invalid code.');
       return;
     }
@@ -134,27 +139,59 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
     if (clockedIn && !onLunch) action = 'out';
     else if (clockedIn && !onLunch) action = 'lunch';
     else if (clockedIn && onLunch) action = 'lunchBack';
-    // Insert clock event
-    const event: ClockEvent = {
-      employee_id: employee.id,
-      business_id: employee.business_id,
-      action,
-      timestamp: new Date().toISOString(),
-    };
+    console.log('[ClockIn] Action determined:', action);
+    setClockLoading(true);
+    // Prevent duplicate clock events within 1 minute
     try {
+      const { data: recentEvents, error: recentError } = await supabase
+        .from('clock_events')
+        .select('id, action, timestamp')
+        .eq('employee_id', employee.id)
+        .order('timestamp', { ascending: false })
+        .limit(1);
+      if (recentError) {
+        console.error('[ClockIn] Error fetching recent events:', recentError);
+        throw recentError;
+      }
+      if (recentEvents && recentEvents.length > 0) {
+        const lastEvent = recentEvents[0];
+        const lastTime = new Date(lastEvent.timestamp).getTime();
+        const now = Date.now();
+        console.log('[ClockIn] Last event:', lastEvent, 'Now:', now, 'LastTime:', lastTime);
+        if (lastEvent.action === action && now - lastTime < 60000) {
+          console.warn('[ClockIn] Duplicate clock event detected:', lastEvent);
+          setClockLoading(false);
+          setClockInError('Duplicate clock event detected. Please wait a moment before trying again.');
+          return;
+        }
+      }
+      // Insert clock event with employee name and readable time
+      const event = {
+        business_id: employee.business_id,
+        employee_id: employee.id,
+        clock_in: new Date().toISOString(),
+      };
+      console.log('[ClockIn] Inserting event:', event);
       const { error } = await supabase.from('clock_events').insert(event);
-      if (error) throw error;
+      if (error) {
+        console.error('[ClockIn] Error inserting clock event:', error);
+        throw error;
+      }
       setNotifications(prev => [
-        { id: Math.random().toString(36).slice(2), message: `Clock ${action} for ${employee.name}`, timestamp: new Date().toISOString(), type: 'info' },
+        { id: Math.random().toString(36).slice(2), message: `Clock ${action} for ${employee.name} at ${new Date().toLocaleTimeString()}`, timestamp: new Date().toISOString(), type: 'info' },
         ...prev.slice(0, 19),
       ]);
-      if (action === 'in') { setClockedIn(true); setOnLunch(false); Alert.alert('Clocked In', 'You are clocked in.'); }
-      else if (action === 'out') { setClockedIn(false); setOnLunch(false); Alert.alert('Clocked Out', 'You have clocked out.'); }
-      else if (action === 'lunch') { setOnLunch(true); Alert.alert('Lunch', 'You are on lunch.'); }
-      else if (action === 'lunchBack') { setOnLunch(false); Alert.alert('Back', 'Lunch ended.'); }
+      if (action === 'in') { setClockedIn(true); setOnLunch(false); Alert.alert('Clocked In', `${employee.name} clocked in at ${new Date().toLocaleTimeString()}`); }
+      else if (action === 'out') { setClockedIn(false); setOnLunch(false); Alert.alert('Clocked Out', `${employee.name} clocked out at ${new Date().toLocaleTimeString()}`); }
+      else if (action === 'lunch') { setOnLunch(true); Alert.alert('Lunch', `${employee.name} started lunch at ${new Date().toLocaleTimeString()}`); }
+      else if (action === 'lunchBack') { setOnLunch(false); Alert.alert('Back', `${employee.name} ended lunch at ${new Date().toLocaleTimeString()}`); }
       setCodePrompt('');
+      console.log('[ClockIn] Clock event successful for', employee.name, 'Action:', action);
     } catch (err) {
-      setClockInError('Failed to clock event.');
+      console.error('[ClockIn] Failed to clock event:', err);
+      setClockInError('Failed to clock event. Please check your connection or try again.');
+    } finally {
+      setClockLoading(false);
     }
   };
 
@@ -164,22 +201,37 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
     const materialsArr = (taskMaterials[taskId] || [])
       .filter(m => m.quantity && !isNaN(Number(m.quantity)))
       .map(m => ({ materialId: m.materialId, quantity: Number(m.quantity) }));
+    if (materialsArr.length === 0) {
+      Alert.alert('No Materials', 'Please enter quantities for at least one material before saving.');
+      return;
+    }
     try {
       const { error } = await supabase.from('tasks').update({ materials_used: materialsArr }).eq('id', taskId);
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error saving materials:', error);
+        Alert.alert('Error', 'Failed to save materials.');
+        return;
+      }
       setTasks(prev => prev.map(t => t.id === taskId ? { ...t, materials_used: materialsArr } : t));
       Alert.alert('Saved', 'Materials used have been saved for this task.');
-    } catch {
+    } catch (err) {
+      console.error('Unexpected error saving materials:', err);
       Alert.alert('Error', 'Failed to save materials.');
     }
   };
   const handleCompleteTask = async (taskId: string) => {
     try {
       const { error } = await supabase.from('tasks').update({ completed: true, completed_at: new Date().toISOString() }).eq('id', taskId);
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error completing task:', error);
+        Alert.alert('Error', 'Failed to complete task.');
+        return;
+      }
       setTasks(prev => prev.map(t => t.id === taskId ? { ...t, completed: true, completed_at: new Date().toISOString() } : t));
+      setSelectedTask(null); // Close modal after completion
       Alert.alert('Task Completed', 'Task marked as complete.');
-    } catch {
+    } catch (err) {
+      console.error('Unexpected error completing task:', err);
       Alert.alert('Error', 'Failed to complete task.');
     }
   };
@@ -240,14 +292,14 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { alignItems: 'center', padding: 32 }]}> 
             <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.primary, marginBottom: 18 }}>Settings</Text>
-            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.primary, marginBottom: 18, width: 220 }]} onPress={() => { setSettingsVisible(false); router.replace('/admin-dashboard'); }}>
-              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>Go to Admin Dashboard</Text>
+            <TouchableOpacity style={[styles.settingsBtn, { backgroundColor: theme.primary, marginBottom: 14 }]} onPress={() => { setSettingsVisible(false); router.replace('/admin-dashboard'); }}>
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Go to Admin Dashboard</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionBtn, { backgroundColor: isDark ? theme.card : theme.primary, marginBottom: 18, width: 220 }]} onPress={() => setDarkMode(!darkMode)}>
-              <Text style={{ color: isDark ? theme.primary : '#fff', fontWeight: 'bold', fontSize: 18 }}>{isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</Text>
+            <TouchableOpacity style={[styles.settingsBtn, { backgroundColor: isDark ? theme.card : theme.primary, marginBottom: 14 }]} onPress={() => setDarkMode(!darkMode)}>
+              <Text style={{ color: isDark ? theme.primary : '#fff', fontWeight: 'bold', fontSize: 16 }}>{isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.closeBtn, { marginTop: 10 }]} onPress={() => setSettingsVisible(false)}>
-              <Text style={styles.closeBtnText}>Close</Text>
+            <TouchableOpacity style={[styles.settingsBtn, { backgroundColor: theme.card, marginTop: 6, borderWidth: 1, borderColor: theme.primary }]} onPress={() => setSettingsVisible(false)}>
+              <Text style={{ color: theme.primary, fontWeight: 'bold', fontSize: 16 }}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -305,7 +357,14 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
                 autoCorrect={false}
               />
               {clockInError ? <Text style={{ color: theme.error, marginBottom: 10 }}>{clockInError}</Text> : null}
-              <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.primary, width: '100%', marginBottom: 0, paddingVertical: 18 }]} onPress={handleClockInOut}>
+              <TouchableOpacity
+                style={[styles.actionBtn, { backgroundColor: theme.primary, width: '100%', marginBottom: 0, paddingVertical: 18, flexDirection: 'row', justifyContent: 'center', alignItems: 'center' }]}
+                onPress={handleClockInOut}
+                disabled={clockLoading}
+              >
+                {clockLoading ? (
+                  <ActivityIndicator color="#fff" size="small" style={{ marginRight: 8 }} />
+                ) : null}
                 <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 20 }}>{clockedIn ? (onLunch ? 'End Lunch' : 'Clock Out') : 'Clock In'}</Text>
               </TouchableOpacity>
             </View>
@@ -402,7 +461,11 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
                     <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.primary, marginTop: 8, paddingVertical: 10 }]} onPress={() => handleSaveMaterials(selectedTask.id)}>
                       <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Save Materials</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.accent, marginTop: 8, paddingVertical: 10 }]} onPress={() => handleCompleteTask(selectedTask.id)}>
+                    <TouchableOpacity
+                      style={[styles.actionBtn, { backgroundColor: theme.accent, marginTop: 8, paddingVertical: 10, opacity: (!selectedTask || selectedTask.completed) ? 0.5 : 1 }]}
+                      onPress={() => selectedTask && !selectedTask.completed && handleCompleteTask(selectedTask.id)}
+                      disabled={!selectedTask || selectedTask.completed}
+                    >
                       <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Mark Complete</Text>
                     </TouchableOpacity>
                   </View>
@@ -449,6 +512,18 @@ const styles = StyleSheet.create({
   noTask: { color: '#888', fontStyle: 'italic' },
   closeBtn: { marginTop: 20, backgroundColor: '#1976d2', borderRadius: 10, padding: 14, alignItems: 'center', minWidth: 100 },
   closeBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 18, textAlign: 'center' },
+  settingsBtn: {
+    width: 160,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.10,
+    shadowRadius: 4,
+    elevation: 2,
+  },
   fullPageOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10, justifyContent: 'center', alignItems: 'center' },
   fullPageContent: { flex: 1, width: '100%', padding: 24, justifyContent: 'flex-start', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 12, elevation: 8 },
   // --- MaterialDropdown component ---
