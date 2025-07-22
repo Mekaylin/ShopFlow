@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Text, TextInput, TouchableOpacity, View } from 'react-native';
 import AdminModal from '../admin/AdminModal';
 import { Employee } from '../utility/types';
@@ -14,10 +14,14 @@ export type AddTaskModalProps = {
   setSelectedEmployee?: (e: Employee | null) => void;
   currentEmployee?: Employee;
   onAddTask: (taskData: any) => Promise<void>;
+  onEditTask?: (taskId: string, updates: any) => Promise<void>;
   loading: boolean;
   error: string;
   setError: (msg: string) => void;
+  taskToEdit?: any;
+
 };
+
 
 const AddTaskModal: React.FC<AddTaskModalProps> = ({
   visible,
@@ -27,9 +31,11 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
   setSelectedEmployee,
   currentEmployee,
   onAddTask,
+  onEditTask,
   loading,
   error,
-  setError
+  setError,
+  taskToEdit
 }) => {
   const [showMaterials, setShowMaterials] = useState(false);
   const [newTaskName, setNewTaskName] = useState('');
@@ -39,35 +45,75 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
   const [selectedMaterialTypeId, setSelectedMaterialTypeId] = useState('');
   const [materialQuantity, setMaterialQuantity] = useState('');
   const [materialsForTask, setMaterialsForTask] = useState<{ materialId: string; materialTypeId?: string; quantity: number }[]>([]);
+  const [completed, setCompleted] = useState(false);
+  const [completedAt, setCompletedAt] = useState<string | null>(null);
 
   // Determine which employee to use
   const employee = currentEmployee || selectedEmployee;
 
-  const handleAdd = async () => {
+  // Populate fields if editing
+  useEffect(() => {
+    if (taskToEdit) {
+      setNewTaskName(taskToEdit.name || '');
+      setNewTaskStart(taskToEdit.start || '');
+      setNewTaskDeadline(taskToEdit.deadline || '');
+      setMaterialsForTask(taskToEdit.materials_used || []);
+      setCompleted(!!taskToEdit.completed);
+      setCompletedAt(taskToEdit.completed_at || null);
+    } else {
+      setNewTaskName('');
+      setNewTaskStart('');
+      setNewTaskDeadline('');
+      setMaterialsForTask([]);
+      setCompleted(false);
+      setCompletedAt(null);
+    }
+  }, [taskToEdit, visible]);
+
+  const handleAddOrEdit = async () => {
     setError('');
     if (!newTaskName || !newTaskStart || !newTaskDeadline || !employee) {
       setError('Please fill all required fields.');
       return;
     }
-    await onAddTask({
-      name: newTaskName,
-      assigned_to: employee.id,
-      start: newTaskStart,
-      deadline: newTaskDeadline,
-      materials_used: materialsForTask,
-    });
-    setNewTaskName('');
-    setNewTaskStart('');
-    setNewTaskDeadline('');
-    setMaterialsForTask([]);
+    if (taskToEdit && onEditTask) {
+      await onEditTask(taskToEdit.id, {
+        name: newTaskName,
+        start: newTaskStart,
+        deadline: newTaskDeadline,
+        materials_used: materialsForTask,
+      });
+    } else {
+      await onAddTask({
+        name: newTaskName,
+        assigned_to: employee.id,
+        start: newTaskStart,
+        deadline: newTaskDeadline,
+        materials_used: materialsForTask,
+      });
+    }
     if (setSelectedEmployee) setSelectedEmployee(null);
     onClose();
+  };
+
+  const handleMarkCompleted = async () => {
+    setError('');
+    if (taskToEdit && onEditTask) {
+      await onEditTask(taskToEdit.id, {
+        completed: true,
+        completed_at: new Date().toISOString(),
+      });
+      setCompleted(true);
+      setCompletedAt(new Date().toISOString());
+      if (setSelectedEmployee) setSelectedEmployee(null);
+      onClose();
+    }
   };
 
   if (!employee) return null;
 
   return (
-    <AdminModal visible={visible} onClose={() => { if (setSelectedEmployee) setSelectedEmployee(null); onClose(); }} title={`Add Task for ${employee?.name || ''}`}>
+    <AdminModal visible={visible} onClose={() => { if (setSelectedEmployee) setSelectedEmployee(null); onClose(); }} title={`${taskToEdit ? 'Edit Task' : 'Add Task'} for ${employee?.name || ''}`}>
       <View>
         <TextInput
           style={{ borderWidth: 1, borderColor: '#bbb', borderRadius: 8, padding: 12, marginBottom: 10, fontSize: 16 }}
@@ -161,13 +207,29 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
         )}
         {error ? <Text style={{ color: 'red', marginBottom: 8 }}>{error}</Text> : null}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
-          <TouchableOpacity style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 12, alignItems: 'center', minWidth: 100 }} onPress={handleAdd} disabled={loading}>
-            <Text style={{ color: '#fff', fontWeight: 'bold' }}>{loading ? 'Adding...' : 'Add Task'}</Text>
+          <TouchableOpacity
+            style={{ backgroundColor: '#1976d2', borderRadius: 8, padding: 12, alignItems: 'center', minWidth: 100 }}
+            onPress={handleAddOrEdit}
+            disabled={loading}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>{loading ? (taskToEdit ? 'Updating...' : 'Adding...') : (taskToEdit ? 'Update Task' : 'Add Task')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={{ backgroundColor: '#bbb', borderRadius: 8, padding: 12, alignItems: 'center', minWidth: 100 }} onPress={() => { if (setSelectedEmployee) setSelectedEmployee(null); onClose(); }}>
             <Text style={{ color: '#fff', fontWeight: 'bold' }}>Cancel</Text>
           </TouchableOpacity>
         </View>
+        {taskToEdit && !completed && (
+          <TouchableOpacity
+            style={{ backgroundColor: '#388e3c', borderRadius: 8, padding: 12, alignItems: 'center', minWidth: 100, marginTop: 12 }}
+            onPress={handleMarkCompleted}
+            disabled={loading}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>{loading ? 'Completing...' : 'Mark as Completed'}</Text>
+          </TouchableOpacity>
+        )}
+        {completed && completedAt && (
+          <Text style={{ color: '#388e3c', marginTop: 8 }}>Completed at: {new Date(completedAt).toLocaleString()}</Text>
+        )}
       </View>
     </AdminModal>
   );

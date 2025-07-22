@@ -565,20 +565,51 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
                     {item.completed && item.completed_at && (
                       <Text style={{ color: '#888', fontSize: 13, marginBottom: 4 }}>Completed at: {new Date(item.completed_at).toLocaleString()}</Text>
                     )}
+                    {!item.completed && (
+                      <TouchableOpacity
+                        style={{ backgroundColor: '#388e3c', borderRadius: 8, padding: 10, alignItems: 'center', marginTop: 8 }}
+                        onPress={async () => {
+                          try {
+                            const { data, error } = await supabase
+                              .from('tasks')
+                              .update({ completed: true, completed_at: new Date().toISOString() })
+                              .eq('id', item.id)
+                              .select('*')
+                              .single();
+                            if (!error && data) {
+                              setTasks(prev => prev.map(t => t.id === data.id ? { ...t, ...data } : t));
+                            } else {
+                              console.error('Mark as Completed error (employee):', error);
+                              setAddTaskError('Failed to mark as completed. See console for details.');
+                            }
+                          } catch (err) {
+                            console.error('Mark as Completed error (employee):', err);
+                            setAddTaskError('Failed to mark as completed. See console for details.');
+                          }
+                        }}
+                      >
+                        <Text style={{ color: '#fff', fontWeight: 'bold' }}>Mark as Completed</Text>
+                      </TouchableOpacity>
+                    )}
                   </TouchableOpacity>
                 )}
               />
               {/* Add Task Modal for Employee */}
               {selectedEmployee && (
-                <AddTaskModal
-                  visible={showAddTaskModal}
-                  onClose={() => setShowAddTaskModal(false)}
-                  currentEmployee={selectedEmployee}
-                  onAddTask={handleAddTask}
-                  loading={addTaskLoading}
-                  error={addTaskError}
-                  setError={setAddTaskError}
-                />
+                <>
+                  <AddTaskModal
+                    visible={showAddTaskModal}
+                    onClose={() => setShowAddTaskModal(false)}
+                    currentEmployee={selectedEmployee}
+                    onAddTask={handleAddTask}
+                    loading={addTaskLoading}
+                    error={addTaskError}
+                    setError={setAddTaskError}
+                  />
+                  {addTaskError && (
+                    <Text style={{ color: 'red', marginTop: 8, textAlign: 'center' }}>{addTaskError}</Text>
+                  )}
+                </>
               )}
             </>
           )}

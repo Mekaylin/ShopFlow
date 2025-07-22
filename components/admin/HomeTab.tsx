@@ -4,10 +4,8 @@ import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'reac
 import { adminStyles } from '../utility/styles';
 import { Task as BaseTask, Employee, Material, PerformanceMetrics } from '../utility/types';
 import {
-  getBestPerformers,
-  getLateEmployeesByClockEvents,
-  getMaterialUsage,
-  limitLines
+    getBestPerformers,
+    limitLines
 } from '../utility/utils';
 // Extend Task type locally to include optional rating property for performance metrics
 type Task = BaseTask & { rating?: number };
