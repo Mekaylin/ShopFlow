@@ -56,20 +56,33 @@ export default function AdminDashboard() {
   }, [router]);
 
   // Loading overlay
-  if (loading || !user) {
+  if (loading) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f6fa' }}>
-        <Text style={{ fontSize: 20, color: '#222', marginBottom: 16 }}>Loading...</Text>
+        <ActivityIndicator size="large" color="#1976d2" />
+        <Text style={{ fontSize: 18, color: '#1976d2', marginTop: 16 }}>Loading your dashboard...</Text>
       </View>
     );
   }
 
-  // Error Alert
-  if (error) {
-    setTimeout(() => { Alert.alert('Error', error); setError(null); }, 100);
-    return null;
+  // Error Alert and fallback UI
+  if (error || !user || !user.business_id) {
+    setTimeout(() => { Alert.alert('Error', error || (!user ? 'No user found.' : 'Missing business ID.')); setError(null); }, 100);
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f6fa' }}>
+        <Text style={{ fontSize: 20, color: '#c62828', marginBottom: 16 }}>Error: {error || (!user ? 'No user found.' : 'Missing business ID.')}</Text>
+        <Text style={{ color: '#888', marginBottom: 8 }}>Please try again or contact support.</Text>
+        <TouchableOpacity
+          style={{ backgroundColor: '#1976d2', borderRadius: 8, paddingVertical: 12, paddingHorizontal: 24, marginTop: 18 }}
+          onPress={fetchUser}
+        >
+          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
+  // Only render dashboard if user and business_id are present
   return <AdminDashboardScreen onLogout={async () => {
     try {
       const { error } = await supabase.auth.signOut();
