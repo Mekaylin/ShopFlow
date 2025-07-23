@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Text, View } from 'react-native';
+import { Alert, Text, View, ActivityIndicator } from 'react-native';
 import { supabase } from '../lib/supabase';
 import EmployeeDashboardScreen from './screens/EmployeeDashboardScreen';
 
@@ -66,7 +66,21 @@ export default function EmployeeDashboard() {
   // Error Alert
   if (error) {
     setTimeout(() => { Alert.alert('Error', error); setError(null); }, 100);
-    return null;
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f6fa' }}>
+        <Text style={{ fontSize: 20, color: '#c62828', marginBottom: 16 }}>Error: {error}</Text>
+        <Text style={{ color: '#888', marginBottom: 8 }}>Please try again or contact support.</Text>
+      </View>
+    );
+  }
+
+  if (loading || !user) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f6fa' }}>
+        <ActivityIndicator size="large" color="#1976d2" />
+        <Text style={{ fontSize: 18, color: '#1976d2', marginTop: 16 }}>Loading your dashboard...</Text>
+      </View>
+    );
   }
 
   return <EmployeeDashboardScreen onLogout={() => router.replace('/')} user={user} />;

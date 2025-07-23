@@ -484,7 +484,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
                 placeholder="Enter Employee Code"
                 value={codePrompt}
                 onChangeText={setCodePrompt}
-                secureTextEntry
+                keyboardType="number-pad"
                 autoCapitalize="none"
                 autoCorrect={false}
                 placeholderTextColor={theme.subtext}
