@@ -19,7 +19,6 @@ export default function AdminDashboard() {
       if (authError || !authUser) {
         setError(authError?.message || 'No authenticated user found.');
         setLoading(false);
-        setTimeout(() => router.replace('/'), 100);
         return;
       }
 
@@ -32,7 +31,6 @@ export default function AdminDashboard() {
       if (userError || !userRecord) {
         setError(userError?.message || 'User not found in users table.');
         setLoading(false);
-        setTimeout(() => router.replace('/'), 100);
         return;
       }
 
@@ -40,7 +38,6 @@ export default function AdminDashboard() {
       if (userRecord.role !== 'admin') {
         setError('User is not an admin.');
         setLoading(false);
-        setTimeout(() => router.replace('/'), 100);
         return;
       }
 
@@ -49,7 +46,6 @@ export default function AdminDashboard() {
     } catch (error: any) {
       setError(error?.message || 'Error fetching user.');
       setLoading(false);
-      setTimeout(() => router.replace('/'), 100);
     }
   };
   useEffect(() => {
@@ -68,7 +64,7 @@ export default function AdminDashboard() {
 
   // Error Alert and fallback UI
   if (error || !user || !user.business_id) {
-    setTimeout(() => { Alert.alert('Error', error || (!user ? 'No user found.' : 'Missing business ID.')); setError(null); }, 100);
+    Alert.alert('Error', error || (!user ? 'No user found.' : 'Missing business ID.'));
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f6fa' }}>
         <Text style={{ fontSize: 20, color: '#c62828', marginBottom: 16 }}>Error: {error || (!user ? 'No user found.' : 'Missing business ID.')}</Text>
