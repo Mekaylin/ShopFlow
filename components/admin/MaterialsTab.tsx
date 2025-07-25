@@ -154,14 +154,18 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
     if (!newMaterialTypeLabel) return;
     setLoading(true);
     try {
+      // Insert both name and label fields for material_types
       const { error } = await supabase
         .from('material_types')
         .insert({
           name: newMaterialTypeLabel,
+          label: newMaterialTypeLabel, // Use the same value for label
           material_id: materialId,
           business_id: user.business_id,
         });
       if (error) {
+        // Log the full error for debugging
+        console.error('Failed to add type:', error);
         const errMsg = typeof error === 'object' && error && 'message' in error ? (error as any).message : String(error);
         alert('Failed to add type: ' + errMsg);
         return;
@@ -178,6 +182,8 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
       setNewMaterialTypeLabel('');
       setAddTypeModal(null); // Close modal after successful add
     } catch (err) {
+      // Log the full error for debugging
+      console.error('Unexpected error adding material type:', err);
       const errMsg = typeof err === 'object' && err && 'message' in err ? (err as any).message : String(err);
       alert('Unexpected error: ' + errMsg);
     } finally {
