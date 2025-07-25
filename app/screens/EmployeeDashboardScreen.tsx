@@ -6,27 +6,7 @@ import { ActivityIndicator, Alert, Animated, FlatList, Modal, StyleSheet, Text, 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import NotificationPanel, { Notification } from '../../components/admin/NotificationPanel';
 import { supabase } from '../../lib/supabase';
-  // Welcome/Goodbye animation state
-  const [showGreeting, setShowGreeting] = useState<null | 'welcome' | 'goodbye'>(null);
-  const greetingAnim = useRef(new Animated.Value(0)).current;
-
-  const triggerGreeting = (type: 'welcome' | 'goodbye', name: string) => {
-    setShowGreeting(type);
-    greetingAnim.setValue(0);
-    Animated.timing(greetingAnim, {
-      toValue: 1,
-      duration: 400,
-      useNativeDriver: true,
-    }).start(() => {
-      setTimeout(() => {
-        Animated.timing(greetingAnim, {
-          toValue: 0,
-          duration: 400,
-          useNativeDriver: true,
-        }).start(() => setShowGreeting(null));
-      }, 1400);
-    });
-  };
+// Helper: Welcome/Goodbye animation state must be inside the component
 // Helper to queue clock events locally
 type ClockEvent = {
   employee_id: string;
@@ -125,6 +105,26 @@ interface EmployeeDashboardScreenProps {
 import { useRouter } from 'expo-router';
 
 function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProps) {
+  // Welcome/Goodbye animation state (moved inside component)
+  const [showGreeting, setShowGreeting] = useState<null | 'welcome' | 'goodbye'>(null);
+  const greetingAnim = useRef(new Animated.Value(0)).current;
+  const triggerGreeting = (type: 'welcome' | 'goodbye', name: string) => {
+    setShowGreeting(type);
+    greetingAnim.setValue(0);
+    Animated.timing(greetingAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start(() => {
+      setTimeout(() => {
+        Animated.timing(greetingAnim, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }).start(() => setShowGreeting(null));
+      }, 1400);
+    });
+  };
   // --- Add Task Modal State for Employee ---
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [addTaskLoading, setAddTaskLoading] = useState(false);
@@ -276,6 +276,14 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
         setClockedIn(true); setOnLunch(false);
         triggerGreeting('welcome', employee.name);
         Alert.alert('Clocked In', `${employee.name} clocked in at ${new Date().toLocaleTimeString()}`);
+        // Robust error log after successful clock in
+        console.info('[ClockIn][Success]', {
+          employeeId: employee.id,
+          employeeName: employee.name,
+          action,
+          timestamp: new Date().toISOString(),
+          event,
+        });
       }
       else if (action === 'out') {
         setClockedIn(false); setOnLunch(false);
@@ -284,35 +292,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       }
       else if (action === 'lunch') { setOnLunch(true); Alert.alert('Lunch', `${employee.name} started lunch at ${new Date().toLocaleTimeString()}`); }
       else if (action === 'lunchBack') { setOnLunch(false); Alert.alert('Back', `${employee.name} ended lunch at ${new Date().toLocaleTimeString()}`); }
-      {/* Welcome/Goodbye Animation Modal */}
-      {showGreeting && (
-        <Modal visible transparent animationType="none">
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.18)', justifyContent: 'center', alignItems: 'center' }}>
-            <Animated.View style={{
-              opacity: greetingAnim,
-              transform: [{ scale: greetingAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }],
-              backgroundColor: '#fff',
-              borderRadius: 24,
-              padding: 36,
-              alignItems: 'center',
-              shadowColor: '#000',
-              shadowOpacity: 0.18,
-              shadowRadius: 16,
-              elevation: 8,
-              minWidth: 260,
-            }}>
-              <Text style={{ fontSize: 32, fontWeight: 'bold', color: showGreeting === 'welcome' ? '#388e3c' : '#c62828', marginBottom: 10 }}>
-                {showGreeting === 'welcome' ? 'Welcome!' : 'Goodbye!'}
-              </Text>
-              <Text style={{ fontSize: 22, color: '#1976d2', fontWeight: '600', marginBottom: 8 }}>
-                {showGreeting === 'welcome' ? 'Have a great shift!' : 'See you next time!'}
-              </Text>
-              {/* Simple animation: waving hand or checkmark */}
-              <Text style={{ fontSize: 48, marginTop: 8 }}>{showGreeting === 'welcome' ? '👋' : '✅'}</Text>
-            </Animated.View>
-          </View>
-        </Modal>
-      )}
+      // Modal rendering moved to main return block
       setCodePrompt('');
       console.log('[ClockIn] Clock event successful for', employee.name, 'Action:', action);
     } catch (err) {
@@ -409,6 +389,35 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
   // Tab UI
   return (
     <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 16, paddingHorizontal: 8 }]}> 
+      {/* Welcome/Goodbye Animation Modal */}
+      {showGreeting && (
+        <Modal visible transparent animationType="none">
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.18)', justifyContent: 'center', alignItems: 'center' }}>
+            <Animated.View style={{
+              opacity: greetingAnim,
+              transform: [{ scale: greetingAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }],
+              backgroundColor: '#fff',
+              borderRadius: 24,
+              padding: 36,
+              alignItems: 'center',
+              shadowColor: '#000',
+              shadowOpacity: 0.18,
+              shadowRadius: 16,
+              elevation: 8,
+              minWidth: 260,
+            }}>
+              <Text style={{ fontSize: 32, fontWeight: 'bold', color: showGreeting === 'welcome' ? '#388e3c' : '#c62828', marginBottom: 10 }}>
+                {showGreeting === 'welcome' ? 'Welcome!' : 'Goodbye!'}
+              </Text>
+              <Text style={{ fontSize: 22, color: '#1976d2', fontWeight: '600', marginBottom: 8 }}>
+                {showGreeting === 'welcome' ? 'Have a great shift!' : 'See you next time!'}
+              </Text>
+              {/* Simple animation: waving hand or checkmark */}
+              <Text style={{ fontSize: 48, marginTop: 8 }}>{showGreeting === 'welcome' ? '👋' : '✅'}</Text>
+            </Animated.View>
+          </View>
+        </Modal>
+      )}
       {/* Settings Button */}
       <TouchableOpacity
         style={{ position: 'absolute', top: insets.top + 10, right: 18, zIndex: 10, backgroundColor: theme.card, borderRadius: 20, padding: 10, shadowColor: theme.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 4, elevation: 2 }}
@@ -529,7 +538,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
             <>
               <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.primary, marginBottom: 12 }}>Select Employee</Text>
               <FlatList
-                data={employees}
+                data={employees || []}
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
                   <TouchableOpacity
@@ -553,7 +562,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
               </View>
               <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.primary, marginBottom: 8 }}>{selectedEmployee?.name}'s Tasks</Text>
               <FlatList
-                data={tasks.filter(t => t.assigned_to === selectedEmployee?.id)}
+                data={(tasks && selectedEmployee) ? tasks.filter(t => t.assigned_to === selectedEmployee.id) : []}
                 keyExtractor={item => item.id}
                 renderItem={({ item }) => (
                   <TouchableOpacity
