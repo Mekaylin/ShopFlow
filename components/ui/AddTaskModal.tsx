@@ -1,9 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, TextInput, TouchableOpacity, View, ScrollView } from 'react-native';
+// @ts-ignore
+import { Picker } from '@react-native-picker/picker';
 import AdminModal from '../admin/AdminModal';
-import { Employee } from '../utility/types';
+import { Employee, MaterialType } from '../utility/types';
+import { fetchMaterialTypes } from '../utility/fetchMaterialTypes';
 
 // Unified AddTaskModal for both admin and employee flows
+import { Material } from '../utility/types';
 export type AddTaskModalProps = {
   visible: boolean;
   onClose: () => void;
@@ -19,37 +23,50 @@ export type AddTaskModalProps = {
   error: string;
   setError: (msg: string) => void;
   taskToEdit?: any;
+  materials?: Material[]; // Pass materials for dropdown
 
 };
-
-
-const AddTaskModal: React.FC<AddTaskModalProps> = ({
-  visible,
-  onClose,
-  employees,
-  selectedEmployee,
-  setSelectedEmployee,
-  currentEmployee,
-  onAddTask,
-  onEditTask,
-  loading,
-  error,
-  setError,
-  taskToEdit
-}) => {
+const AddTaskModal: React.FC<AddTaskModalProps> = (props) => {
+  const {
+    visible,
+    onClose,
+    employees,
+    selectedEmployee,
+    setSelectedEmployee,
+    currentEmployee,
+    onAddTask,
+    onEditTask,
+    loading,
+    error,
+    setError,
+    taskToEdit,
+    materials = [],
+  } = props;
+  // Determine which employee to use (must be before any hook that uses it)
+  const employee = currentEmployee || selectedEmployee; // Only declare these once
   const [showMaterials, setShowMaterials] = useState(false);
+  const [materialTypes, setMaterialTypes] = useState<MaterialType[]>([]);
+  const [selectedMaterialTypeId, setSelectedMaterialTypeId] = useState('');
+  // Fetch material types when modal opens (if employee has business_id)
+  useEffect(() => {
+    if (visible && employee?.business_id) {
+      fetchMaterialTypes(employee.business_id)
+        .then(setMaterialTypes)
+        .catch(() => setMaterialTypes([]));
+    }
+  }, [visible, employee?.business_id]);
   const [newTaskName, setNewTaskName] = useState('');
   const [newTaskStart, setNewTaskStart] = useState('');
   const [newTaskDeadline, setNewTaskDeadline] = useState('');
   const [selectedMaterialId, setSelectedMaterialId] = useState('');
-  const [selectedMaterialTypeId, setSelectedMaterialTypeId] = useState('');
   const [materialQuantity, setMaterialQuantity] = useState('');
   const [materialsForTask, setMaterialsForTask] = useState<{ materialId: string; materialTypeId?: string; quantity: number }[]>([]);
   const [completed, setCompleted] = useState(false);
   const [completedAt, setCompletedAt] = useState<string | null>(null);
 
-  // Determine which employee to use
-  const employee = currentEmployee || selectedEmployee;
+
+  // Determine which employee to use (already declared above)
+  // const employee = currentEmployee || selectedEmployee;
 
   // Populate fields if editing
   useEffect(() => {
@@ -120,7 +137,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
 
   return (
     <AdminModal visible={visible} onClose={() => { if (setSelectedEmployee) setSelectedEmployee(null); onClose(); }} title={`${taskToEdit ? 'Edit Task' : 'Add Task'} for ${employee?.name || ''}`}>
-      <View>
+      <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
         <TextInput
           style={{ borderWidth: 1, borderColor: '#bbb', borderRadius: 8, padding: 12, marginBottom: 10, fontSize: 16 }}
           placeholder="Task Title"
@@ -154,24 +171,51 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
         </TouchableOpacity>
         {showMaterials && (
           <View style={{ marginBottom: 8 }}>
+            {/* Material Dropdown */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
               <Text style={{ marginRight: 6 }}>Material:</Text>
-              <TextInput
-                style={{ borderWidth: 1, borderColor: '#bbb', borderRadius: 6, padding: 6, flex: 1, backgroundColor: '#fff' }}
-                placeholder="Material ID or Name"
-                value={selectedMaterialId}
-                onChangeText={setSelectedMaterialId}
-              />
+              <View style={{ flex: 1, borderWidth: 1, borderColor: '#bbb', borderRadius: 6, backgroundColor: '#fff' }}>
+                <Picker
+                  selectedValue={selectedMaterialId}
+                  onValueChange={setSelectedMaterialId}
+                  style={{ height: 44 }}
+                  itemStyle={{ fontSize: 16 }}
+                >
+                  {(!materials || materials.length === 0) ? (
+                    <Picker.Item label="No materials available" value="" />
+                  ) : (
+                    <>
+                      <Picker.Item label="Select Material" value="" />
+                      {materials.map((mat: Material) => (
+                        <Picker.Item key={mat.id} label={`${mat.name} (${mat.unit})`} value={mat.id} />
+                      ))}
+                    </>
+                  )}
+                </Picker>
+              </View>
             </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-              <Text style={{ marginRight: 6 }}>Type:</Text>
-              <TextInput
-                style={{ borderWidth: 1, borderColor: '#bbb', borderRadius: 6, padding: 6, flex: 1, backgroundColor: '#fff' }}
-                placeholder="Type ID (optional)"
-                value={selectedMaterialTypeId}
-                onChangeText={setSelectedMaterialTypeId}
-              />
-            </View>
+            {/* Type Dropdown */}
+            {materialTypes.length > 0 && selectedMaterialId && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                <Text style={{ marginRight: 6 }}>Type (optional):</Text>
+                <View style={{ flex: 1, borderWidth: 1, borderColor: '#bbb', borderRadius: 6, backgroundColor: '#fff' }}>
+                  <Picker
+                    selectedValue={selectedMaterialTypeId}
+                    onValueChange={setSelectedMaterialTypeId}
+                    style={{ height: 44 }}
+                    itemStyle={{ fontSize: 16 }}
+                  >
+                    <Picker.Item label="Select Type (optional)" value="" />
+                    {materialTypes
+                      .filter(type => type.material_id === selectedMaterialId)
+                      .map(type => (
+                        <Picker.Item key={type.id} label={type.name} value={type.id} />
+                      ))}
+                  </Picker>
+                </View>
+              </View>
+            )}
+            {/* Quantity Textbox */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
               <Text style={{ marginRight: 6 }}>Quantity:</Text>
               <TextInput
@@ -204,7 +248,9 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
                 <Text style={{ fontWeight: 'bold' }}>Materials for this task:</Text>
                 {materialsForTask.map((mat, idx) => (
                   <Text key={idx} style={{ fontSize: 14 }}>
-                    {mat.materialId}{mat.materialTypeId ? ` (${mat.materialTypeId})` : ''}: {mat.quantity}
+                    {materials?.find((m: Material) => m.id === mat.materialId)?.name || mat.materialId}
+                    {mat.materialTypeId ? ` (${materialTypes.find(t => t.id === mat.materialTypeId)?.name || mat.materialTypeId})` : ''}
+                    : {mat.quantity}
                   </Text>
                 ))}
               </View>
@@ -236,7 +282,7 @@ const AddTaskModal: React.FC<AddTaskModalProps> = ({
         {completed && completedAt && (
           <Text style={{ color: '#388e3c', marginTop: 8 }}>Completed at: {new Date(completedAt).toLocaleString()}</Text>
         )}
-      </View>
+      </ScrollView>
     </AdminModal>
   );
 };

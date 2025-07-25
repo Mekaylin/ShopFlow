@@ -67,6 +67,50 @@ function isBusiness(obj: any): obj is Business {
 }
 
 function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
+  // Top-level error/loading fallback
+  const [initError, setInitError] = useState<string | null>(null);
+  const [initLoading, setInitLoading] = useState(false);
+  useEffect(() => {
+    if (!user) {
+      setInitError('No user found. Please log in again.');
+    } else {
+      setInitError(null);
+    }
+  }, [user]);
+  useEffect(() => {
+    if (initError) {
+      Alert.alert('Error', initError);
+    }
+  }, [initError]);
+  // ...existing code...
+  if (initLoading || !user || initError) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f6fa' }}>
+        {initLoading || !user ? (
+          <>
+            <ActivityIndicator size="large" color="#1976d2" />
+            <Text style={{ fontSize: 18, color: '#1976d2', marginTop: 16 }}>Loading admin dashboard...</Text>
+          </>
+        ) : (
+          <>
+            <Text style={{ fontSize: 20, color: '#c62828', marginBottom: 16 }}>Error: {initError}</Text>
+            <Text style={{ color: '#888', marginBottom: 8 }}>Please try again or contact support.</Text>
+            <TouchableOpacity
+              style={{ backgroundColor: '#1976d2', borderRadius: 8, paddingVertical: 12, paddingHorizontal: 24, marginTop: 18 }}
+              onPress={() => {
+                setInitLoading(true);
+                setInitError(null);
+                // Could trigger a refetch or reload here
+                setTimeout(() => setInitLoading(false), 1200);
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Retry</Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </View>
+    );
+  }
   // Notification panel modal state
   const [notificationPanelVisible, setNotificationPanelVisible] = useState(false);
   // Example notifications (replace with real logic as needed)
@@ -298,33 +342,33 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
   return (
     <DashboardErrorBoundary>
     <SafeAreaView style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff', paddingHorizontal: 16 }}>
-        {/* Header with flex row, no absolute positioning, for mobile safety */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: darkMode ? '#333950' : '#e3f2fd' }}>
+        {/* Header with centered title and notification bell */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: darkMode ? '#333950' : '#e3f2fd', position: 'relative' }}>
           {/* Left: Notification bell */}
-          <TouchableOpacity onPress={() => setNotificationPanelVisible(true)} style={{ padding: 8 }}>
+          <TouchableOpacity onPress={() => setNotificationPanelVisible(true)} style={{ position: 'absolute', left: 0, padding: 8 }}>
             <FontAwesome5 name="bell" size={24} color={darkMode ? '#b3c0e0' : '#1976d2'} />
           </TouchableOpacity>
           {/* Center: Title */}
-          <Text style={{ fontSize: 22, fontWeight: 'bold', color: darkMode ? '#b3c0e0' : '#1976d2', textAlign: 'center', flex: 1, marginHorizontal: 8 }} numberOfLines={1} ellipsizeMode="tail">Admin Dashboard</Text>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: darkMode ? '#b3c0e0' : '#1976d2', textAlign: 'center', flex: 1 }}>Admin Dashboard</Text>
           {/* Right: Dark mode and settings */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', minWidth: 90, justifyContent: 'flex-end' }}>
-            <TouchableOpacity onPress={() => setDarkMode((d) => !d)} style={{ padding: 8, marginRight: 2, flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ position: 'absolute', right: 0, flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity onPress={() => setDarkMode((d) => !d)} style={{ padding: 8, marginRight: 8, flexDirection: 'row', alignItems: 'center' }}>
               <FontAwesome5
                 name={darkMode ? 'moon' : 'sun'}
-                size={24}
+                size={28}
                 color={darkMode ? '#FFD700' : '#FFB300'}
                 style={{
-                  marginRight: 4,
+                  marginRight: 8,
                   textShadowColor: '#FFD700',
-                  textShadowOffset: { width: 1, height: 1 },
-                  textShadowRadius: 4,
-                  elevation: 2,
+                  textShadowOffset: { width: 2, height: 2 },
+                  textShadowRadius: 6,
+                  elevation: 4,
                 }}
               />
-              <Text style={{ color: darkMode ? '#FFD700' : '#FFB300', fontWeight: 'bold', fontSize: 14 }}>{darkMode ? 'Night' : 'Day'}</Text>
+              <Text style={{ color: darkMode ? '#FFD700' : '#FFB300', fontWeight: 'bold', fontSize: 15 }}>{darkMode ? 'Night' : 'Day'}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setSettingsModalVisible(true)} style={{ padding: 8 }}>
-              <FontAwesome5 name="cog" size={22} color={darkMode ? '#b3c0e0' : '#1976d2'} />
+              <FontAwesome5 name="cog" size={24} color={darkMode ? '#b3c0e0' : '#1976d2'} />
             </TouchableOpacity>
           </View>
         </View>

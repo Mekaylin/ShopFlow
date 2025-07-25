@@ -1,6 +1,6 @@
-
-import React, { useState } from 'react';
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View, Alert, Platform, ActivityIndicator } from 'react-native';
+import { supabase } from '../../lib/supabase';
 import AddTaskModal from '../ui/AddTaskModal';
 import type { Employee, Material, User } from '../utility/types';
 import AdminModal from './AdminModal';
@@ -43,22 +43,59 @@ export const TasksTab: React.FC<TasksTabProps> = ({
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [taskToRate, setTaskToRate] = useState<Task | null>(null);
-  // Handle rating submission
+  // Store ratings for tasks in state
+  const [taskRatings, setTaskRatings] = useState<Record<string, number>>({});
+  const [ratingError, setRatingError] = useState('');
+
+  // Fetch ratings for all tasks on mount or when tasks change
+  React.useEffect(() => {
+    const fetchRatings = async () => {
+      try {
+        const { supabase } = await import('../../lib/supabase');
+        const taskIds = tasks.map(t => t.id);
+        if (taskIds.length === 0) return;
+        const { data, error } = await supabase
+          .from('task_ratings')
+          .select('task_id, rating')
+          .in('task_id', taskIds);
+        if (!error && data) {
+          const ratingsMap: Record<string, number> = {};
+          data.forEach((r: { task_id: string; rating: number }) => {
+            ratingsMap[r.task_id] = r.rating;
+          });
+          setTaskRatings(ratingsMap);
+        }
+      } catch (e) {
+        // Optionally handle error
+      }
+    };
+    fetchRatings();
+  }, [tasks]);
+
+  // Handle rating submission to task_ratings table
   const handleSubmitRating = async (rating: number) => {
     if (!taskToRate) return;
+    setRatingError('');
     try {
       const { supabase } = await import('../../lib/supabase');
-      const { data, error } = await supabase
-        .from('tasks')
-        .update({ rating })
-        .eq('id', taskToRate.id)
-        .select('*')
-        .single();
-      if (!error && data) {
-        setTasks((prev: Task[]) => prev.map(t => t.id === data.id ? { ...t, rating: data.rating } : t));
+      // Upsert rating for this task by this admin
+      const { error } = await supabase
+        .from('task_ratings')
+        .upsert({
+          task_id: taskToRate.id,
+          employee_id: taskToRate.assigned_to,
+          admin_id: user.id,
+          rating,
+          rated_at: new Date().toISOString(),
+          business_id: user.business_id,
+        }, { onConflict: 'task_id' });
+      if (error) {
+        setRatingError('Failed to submit rating. ' + error.message);
+        return;
       }
+      setTaskRatings(prev => ({ ...prev, [taskToRate.id]: rating }));
     } catch (e) {
-      // Optionally handle error
+      setRatingError('Unexpected error.');
     } finally {
       setShowRatingModal(false);
       setTaskToRate(null);
@@ -116,6 +153,30 @@ export const TasksTab: React.FC<TasksTabProps> = ({
     }
   };
 
+  // Delete task handler
+  const [deleteTaskLoading, setDeleteTaskLoading] = useState(false);
+  const [deleteTaskError, setDeleteTaskError] = useState('');
+  const handleDeleteTask = async (taskId: string) => {
+    setDeleteTaskLoading(true);
+    setDeleteTaskError('');
+    try {
+      const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+      if (error) {
+        // Log the full error object for debugging
+        console.error('[Delete Task] Full error:', error);
+        setDeleteTaskError('Failed to delete task. ' + (error.message || JSON.stringify(error)));
+        return;
+      }
+      setTasks((prev: Task[]) => prev.filter((t: Task) => t.id !== taskId));
+    } catch (e) {
+      // Log any unexpected error
+      console.error('[Delete Task] Exception:', e);
+      setDeleteTaskError('Unexpected error: ' + (typeof e === 'object' && e && 'message' in e ? (e as any).message : JSON.stringify(e)));
+    } finally {
+      setDeleteTaskLoading(false);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Tasks</Text>
@@ -169,7 +230,7 @@ export const TasksTab: React.FC<TasksTabProps> = ({
               {item.completed && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
                   <Text style={{ color: '#888', marginRight: 8 }}>
-                    Rating: {typeof item.rating === 'number' ? item.rating : 'Not rated'}
+                    Rating: {typeof taskRatings[item.id] === 'number' ? taskRatings[item.id] : 'Not rated'}
                   </Text>
                   <TouchableOpacity
                     style={{ backgroundColor: '#FFD700', borderRadius: 6, padding: 4, paddingHorizontal: 10, marginRight: 8 }}
@@ -181,7 +242,7 @@ export const TasksTab: React.FC<TasksTabProps> = ({
                     <Text style={{ color: '#333', fontWeight: 'bold' }}>Rate</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={{ backgroundColor: '#1976d2', borderRadius: 6, padding: 4, paddingHorizontal: 10 }}
+                    style={{ backgroundColor: '#1976d2', borderRadius: 6, padding: 4, paddingHorizontal: 10, marginRight: 8 }}
                     onPress={async () => {
                       // Auto-rate logic: 5 if completed on/before deadline, 3 if late
                       const deadline = new Date(item.deadline);
@@ -193,6 +254,36 @@ export const TasksTab: React.FC<TasksTabProps> = ({
                   >
                     <Text style={{ color: '#fff', fontWeight: 'bold' }}>Auto Rate</Text>
                   </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{ backgroundColor: '#e53935', borderRadius: 6, padding: 4, paddingHorizontal: 10, marginLeft: 8, flexDirection: 'row', alignItems: 'center' }}
+                    onPress={() => {
+                      if (deleteTaskLoading) return;
+                      if (Platform.OS === 'web') {
+                        if (window.confirm && typeof window.confirm === 'function') {
+                          if (!window.confirm('Are you sure you want to delete this task?')) return;
+                        }
+                        handleDeleteTask(item.id);
+                      } else {
+                        Alert.alert(
+                          'Delete Task',
+                          'Are you sure you want to delete this task?',
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Delete', style: 'destructive', onPress: () => handleDeleteTask(item.id) },
+                          ]
+                        );
+                      }
+                    }}
+                    disabled={deleteTaskLoading}
+                  >
+                    {deleteTaskLoading ? (
+                      <ActivityIndicator size="small" color="#fff" style={{ marginRight: 6 }} />
+                    ) : null}
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Delete</Text>
+                  </TouchableOpacity>
+      {deleteTaskError ? (
+        <Text style={{ color: 'red', marginTop: 8, textAlign: 'center' }}>{deleteTaskError}</Text>
+      ) : null}
                 </View>
               )}
             </View>
@@ -214,9 +305,16 @@ export const TasksTab: React.FC<TasksTabProps> = ({
         error={addTaskError || editTaskError}
         setError={msg => { setAddTaskError(msg); setEditTaskError(msg); }}
         taskToEdit={taskToEdit}
+        materials={materials}
       />
       {(addTaskError || editTaskError) && (
         <Text style={{ color: 'red', marginTop: 8, textAlign: 'center' }}>{addTaskError || editTaskError}</Text>
+      )}
+      {materials.length === 0 && (
+        <View style={{ margin: 16, padding: 12, backgroundColor: '#fffbe6', borderRadius: 8, borderWidth: 1, borderColor: '#ffe082' }}>
+          <Text style={{ color: '#b71c1c', fontWeight: 'bold', marginBottom: 4 }}>DEBUG: No materials found for this business.</Text>
+          <Text style={{ fontSize: 12, color: '#333' }}>If you see this, check your Supabase materials table for business_id values.</Text>
+        </View>
       )}
       {showRatingModal && (
         <TaskRatingModal
@@ -226,6 +324,12 @@ export const TasksTab: React.FC<TasksTabProps> = ({
           task={taskToRate}
         />
       )}
+      {ratingError ? (
+        <Text style={{ color: 'red', marginTop: 8, textAlign: 'center' }}>{ratingError}</Text>
+      ) : null}
+      {deleteTaskError ? (
+        <Text style={{ color: 'red', marginTop: 8, textAlign: 'center' }}>{deleteTaskError}</Text>
+      ) : null}
     </View>
   );
 };

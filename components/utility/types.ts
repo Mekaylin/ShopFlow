@@ -132,6 +132,7 @@ export interface MaterialType {
   id: string;
   name: string;
   business_id: string;
+  material_id: string;
 }
 
 export interface LateTask {

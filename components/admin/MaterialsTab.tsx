@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 import { SearchAndFilterBar } from '../ui/SearchAndFilterBar';
@@ -25,6 +25,26 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
   setMaterialTypes,
   darkMode,
 }) => {
+  // Fetch all material types for the business and group by material_id
+  useEffect(() => {
+    if (!user?.business_id) return;
+    const fetchAllTypes = async () => {
+      const { data: types, error } = await supabase
+        .from('material_types')
+        .select('*')
+        .eq('business_id', user.business_id);
+      if (!error && types) {
+        // Group by material_id
+        const grouped: Record<string, MaterialType[]> = {};
+        types.forEach((type: MaterialType) => {
+          if (!grouped[type.material_id]) grouped[type.material_id] = [];
+          grouped[type.material_id].push(type);
+        });
+        setMaterialTypes(grouped);
+      }
+    };
+    fetchAllTypes();
+  }, [user?.business_id, materials.length]);
   // --- Material state ---
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
@@ -154,18 +174,14 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
     if (!newMaterialTypeLabel) return;
     setLoading(true);
     try {
-      // Insert both name and label fields for material_types
       const { error } = await supabase
         .from('material_types')
         .insert({
           name: newMaterialTypeLabel,
-          label: newMaterialTypeLabel, // Use the same value for label
           material_id: materialId,
           business_id: user.business_id,
         });
       if (error) {
-        // Log the full error for debugging
-        console.error('Failed to add type:', error);
         const errMsg = typeof error === 'object' && error && 'message' in error ? (error as any).message : String(error);
         alert('Failed to add type: ' + errMsg);
         return;
@@ -182,8 +198,6 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
       setNewMaterialTypeLabel('');
       setAddTypeModal(null); // Close modal after successful add
     } catch (err) {
-      // Log the full error for debugging
-      console.error('Unexpected error adding material type:', err);
       const errMsg = typeof err === 'object' && err && 'message' in err ? (err as any).message : String(err);
       alert('Unexpected error: ' + errMsg);
     } finally {

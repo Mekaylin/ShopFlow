@@ -7,10 +7,10 @@ import {
     getBestPerformers,
     limitLines
 } from '../utility/utils';
-// Extend Task type locally to include optional rating property for performance metrics
-type Task = BaseTask & { rating?: number };
 
 import type { ClockEvent, MaterialType, User } from '../utility/types';
+// Extend Task type locally to include optional rating property for performance metrics
+type Task = BaseTask & { rating?: number };
 interface HomeTabProps {
   user: User;
   employees: Employee[];

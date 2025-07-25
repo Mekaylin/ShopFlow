@@ -19,7 +19,7 @@ interface SettingsModalProps {
   onLogout: () => void;
   onUpdateWorkHours: (hours: { start: string; end: string; lunchStart: string; lunchEnd: string }) => void;
   onUpdateLateThreshold: (threshold: number) => void;
-  onSwitchDashboard: () => void; // NEW PROP
+  onSwitchDashboard?: () => void;
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -52,31 +52,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const handleGetBusinessCode = async () => {
     setBusinessCodeLoading(true);
     try {
-      if (!user || !user.business_id) {
-        setBusinessCode(null);
-        Alert.alert('Error', 'No business ID found for this user.');
-        setBusinessCodeLoading(false);
-        return;
-      }
       const code = await getBusinessCode(user.business_id);
       if (!code) {
         setBusinessCode(null);
-        Alert.alert('Error', `No business code found for business_id: ${user.business_id}. Please contact support.`);
+        Alert.alert('Error', 'No business code found. Please contact support.');
       } else {
         setBusinessCode(code);
       }
     } catch (error) {
-      console.error('Error getting business code:', error, 'user:', user);
+      console.error('Error getting business code:', error);
       setBusinessCode(null);
-      let errorMsg = 'Unknown error';
-      if (typeof error === 'string') {
-        errorMsg = error;
-      } else if (error && typeof error === 'object' && 'message' in error && typeof (error as any).message === 'string') {
-        errorMsg = (error as any).message;
-      } else if (error) {
-        errorMsg = JSON.stringify(error);
-      }
-      Alert.alert('Error', `Failed to get business code. ${errorMsg}`);
+      Alert.alert('Error', 'Failed to get business code.');
     } finally {
       setBusinessCodeLoading(false);
     }
@@ -129,15 +115,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <TextInput
-                    accessibilityLabel="SettingsModal Name"
-                    testID="settingsmodal-name-input"
                     style={[adminStyles.inputText, { marginBottom: 0 }]}
                     value={newLateThreshold}
                     onChangeText={setNewLateThreshold}
                     keyboardType="numeric"
                     placeholder="15"
                   />
-                  <TouchableOpacity style={adminStyles.addBtn} onPress={handleSaveLateThreshold}>
+                  <TouchableOpacity style={[adminStyles.addBtn, { marginLeft: 8, paddingHorizontal: 12 }]} onPress={handleSaveLateThreshold}>
                     <Text style={adminStyles.addBtnText}>Save</Text>
                   </TouchableOpacity>
                 </View>
@@ -151,8 +135,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Text style={adminStyles.timeLabel}>Start:</Text>
                 <TextInput
-                  accessibilityLabel="SettingsModal Email"
-                  testID="settingsmodal-email-input"
                   style={adminStyles.inputText}
                   value={newWorkStart}
                   onChangeText={setNewWorkStart}
@@ -160,8 +142,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 />
                 <Text style={adminStyles.timeLabel}>End:</Text>
                 <TextInput
-                  accessibilityLabel="SettingsModal Old Password"
-                  testID="settingsmodal-old-password-input"
                   style={adminStyles.inputText}
                   value={newWorkEnd}
                   onChangeText={setNewWorkEnd}
@@ -172,8 +152,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                 <Text style={adminStyles.timeLabel}>Lunch Start:</Text>
                 <TextInput
-                  accessibilityLabel="SettingsModal New Password"
-                  testID="settingsmodal-new-password-input"
                   style={adminStyles.inputText}
                   value={newLunchStart}
                   onChangeText={setNewLunchStart}
@@ -181,8 +159,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 />
                 <Text style={adminStyles.timeLabel}>Lunch End:</Text>
                 <TextInput
-                  accessibilityLabel="SettingsModal Confirm Password"
-                  testID="settingsmodal-confirm-password-input"
                   style={adminStyles.inputText}
                   value={newLunchEnd}
                   onChangeText={setNewLunchEnd}
@@ -197,45 +173,49 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
             {/* Business Code Management (Admin Only) */}
             {user?.role === 'admin' && (
-              <View style={adminStyles.settingsCard}>
-                <Text style={adminStyles.settingsTitle}>Business Code</Text>
-                
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                  <TouchableOpacity
-                    style={[adminStyles.addBtn, { opacity: businessCodeLoading ? 0.6 : 1 }]} 
-                    onPress={handleGetBusinessCode}
-                    disabled={businessCodeLoading}
-                  >
-                    <Text style={adminStyles.addBtnText}>
-                      {businessCodeLoading ? 'Loading...' : 'Get Code'}
-                    </Text>
-                  </TouchableOpacity>
-                  {/* No generate new code button. Code is set at business signup. */}
-                </View>
-                
-                {businessCode && (
-                  <View style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, marginBottom: 8, flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ fontSize: 14, color: '#666', marginBottom: 4, textAlign: 'center' }}>Business Code:</Text>
-                    <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1976d2', textAlign: 'center', marginBottom: 12 }}>{businessCode}</Text>
-                    <TouchableOpacity style={[adminStyles.addBtn, { width: 180, alignSelf: 'center' }]} onPress={handleCopyBusinessCode}>
+              <>
+                <View style={adminStyles.settingsCard}>
+                  <Text style={adminStyles.settingsTitle}>Business Code</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <TouchableOpacity style={[adminStyles.addBtn, { flex: 1, marginRight: 8 }]} onPress={handleGetBusinessCode}>
                       <Text style={adminStyles.addBtnText}>
-                        {showCodeCopied ? 'Copied!' : 'Copy Code'}
+                        {businessCodeLoading ? 'Loading...' : 'Get Code'}
                       </Text>
                     </TouchableOpacity>
                   </View>
-                )}
-              </View>
+                  {businessCode && (
+                    <View style={{ backgroundColor: '#f5f5f5', borderRadius: 8, padding: 12, marginBottom: 8 }}>
+                      <Text style={{ fontSize: 14, color: '#666', marginBottom: 4 }}>Business Code:</Text>
+                      <Text style={{ fontSize: 16, fontWeight: 'bold', color: '#1976d2' }}>{businessCode}</Text>
+                      <TouchableOpacity style={[adminStyles.addBtn, { marginTop: 8 }]} onPress={handleCopyBusinessCode}>
+                        <Text style={adminStyles.addBtnText}>
+                          {showCodeCopied ? 'Copied!' : 'Copy Code'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+                {/* Employee Dashboard Switch */}
+                <View style={adminStyles.settingsCard}>
+                  <Text style={adminStyles.settingsTitle}>Switch Dashboard</Text>
+                  <TouchableOpacity
+                    style={[adminStyles.addBtn, { backgroundColor: '#1976d2', marginTop: 8 }]}
+                    onPress={() => {
+                      if (onSwitchDashboard) onSwitchDashboard();
+                    }}
+                  >
+                    <Text style={adminStyles.addBtnText}>Go to Employee Dashboard</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
             )}
 
-            {/* Dashboard Switch Section */}
-            <View style={{ marginTop: 16, alignItems: 'center', justifyContent: 'center' }}>
-              <TouchableOpacity style={[adminStyles.logoutBtn, { width: 180, marginBottom: 14 }]} onPress={onLogout}>
+            {/* Logout Section */}
+            <View style={{ marginTop: 16 }}>
+              <TouchableOpacity style={adminStyles.logoutBtn} onPress={onLogout}>
                 <Text style={adminStyles.logoutBtnText}>Logout</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[adminStyles.addBtn, { width: 180, marginBottom: 14 }]} onPress={onSwitchDashboard}>
-                <Text style={adminStyles.addBtnText}>Switch to Employee Dashboard</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[adminStyles.closeBtn, { width: 180 }]} onPress={onClose}>
+              <TouchableOpacity style={adminStyles.closeBtn} onPress={onClose}>
                 <Text style={adminStyles.closeBtnText}>Close</Text>
               </TouchableOpacity>
             </View>

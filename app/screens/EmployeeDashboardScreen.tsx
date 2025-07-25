@@ -69,13 +69,16 @@ interface Employee {
 interface Material {
   id: string;
   name: string;
+  type: string;
+  quantity: number;
   unit: string;
+  business_id: string;
 }
 // Demo materials (managed by admin)
 const initialMaterials: Material[] = [
-  { id: 'm1', name: 'Steel', unit: 'kg' },
-  { id: 'm2', name: 'Paint', unit: 'liters' },
-  { id: 'm3', name: 'Oil', unit: 'liters' },
+  { id: 'm1', name: 'Steel', type: 'metal', quantity: 100, unit: 'kg', business_id: 'demo' },
+  { id: 'm2', name: 'Paint', type: 'liquid', quantity: 50, unit: 'liters', business_id: 'demo' },
+  { id: 'm3', name: 'Oil', type: 'liquid', quantity: 30, unit: 'liters', business_id: 'demo' },
 ];
 
 interface Task {
@@ -163,9 +166,26 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
         const { data: taskData, error: taskError } = await supabase.from('tasks').select('*');
         if (taskError) throw taskError;
         setTasks(taskData || []);
-        const { data: matData, error: matError } = await supabase.from('materials').select('*');
+        let { data: matData, error: matError } = await supabase.from('materials').select('*').eq('business_id', user?.business_id);
+        console.log('[DEBUG] Materials fetched for business', user?.business_id, ':', matData);
         if (matError) throw matError;
-        setMaterials(matData || []);
+        if (!matData || matData.length === 0) {
+          // Fallback: try fetching all materials (no business_id filter) for debugging
+          const fallback = await supabase.from('materials').select('*');
+          console.log('[DEBUG] Fallback: All materials:', fallback.data);
+          matData = fallback.data;
+        }
+        // Defensive mapping to ensure all required fields exist
+        const mappedMaterials = (matData || []).map((mat: any) => ({
+          id: mat.id,
+          name: mat.name || '',
+          type: mat.type || '',
+          quantity: typeof mat.quantity === 'number' ? mat.quantity : 0,
+          unit: mat.unit || '',
+          business_id: mat.business_id || '',
+        }));
+        setMaterials(mappedMaterials);
+        console.log('[DEBUG] Materials mapped for dropdown:', mappedMaterials);
       } catch (err) {
         Alert.alert('Error', 'Failed to load data from cloud.');
       }
@@ -616,9 +636,16 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
                     loading={addTaskLoading}
                     error={addTaskError}
                     setError={setAddTaskError}
+                    materials={materials}
                   />
                   {addTaskError && (
                     <Text style={{ color: 'red', marginTop: 8, textAlign: 'center' }}>{addTaskError}</Text>
+                  )}
+                  {materials.length === 0 && (
+                    <View style={{ margin: 16, padding: 12, backgroundColor: '#fffbe6', borderRadius: 8, borderWidth: 1, borderColor: '#ffe082' }}>
+                      <Text style={{ color: '#b71c1c', fontWeight: 'bold', marginBottom: 4 }}>DEBUG: No materials found for business_id: {user?.business_id || 'N/A'}</Text>
+                      <Text style={{ fontSize: 12, color: '#333' }}>If you see this, check your Supabase materials table for business_id values.</Text>
+                    </View>
                   )}
                 </>
               )}

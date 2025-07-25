@@ -1,6 +1,7 @@
 
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 import LoginScreen from './screens/LoginScreen';
 
@@ -30,7 +31,12 @@ export default function Index() {
   }, [router]);
 
   if (checkingAuth) {
-    return null; // Or a loading spinner if you prefer
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f6fa' }}>
+        <ActivityIndicator size="large" color="#1976d2" />
+        <Text style={{ fontSize: 18, color: '#1976d2', marginTop: 16 }}>Checking authentication...</Text>
+      </View>
+    );
   }
 
   return <LoginScreen />;
