@@ -298,33 +298,33 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
   return (
     <DashboardErrorBoundary>
     <SafeAreaView style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff', paddingHorizontal: 16 }}>
-        {/* Header with centered title and notification bell */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: darkMode ? '#333950' : '#e3f2fd', position: 'relative' }}>
+        {/* Header with flex row, no absolute positioning, for mobile safety */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: darkMode ? '#333950' : '#e3f2fd' }}>
           {/* Left: Notification bell */}
-          <TouchableOpacity onPress={() => setNotificationPanelVisible(true)} style={{ position: 'absolute', left: 0, padding: 8 }}>
+          <TouchableOpacity onPress={() => setNotificationPanelVisible(true)} style={{ padding: 8 }}>
             <FontAwesome5 name="bell" size={24} color={darkMode ? '#b3c0e0' : '#1976d2'} />
           </TouchableOpacity>
           {/* Center: Title */}
-          <Text style={{ fontSize: 24, fontWeight: 'bold', color: darkMode ? '#b3c0e0' : '#1976d2', textAlign: 'center', flex: 1 }}>Admin Dashboard</Text>
+          <Text style={{ fontSize: 22, fontWeight: 'bold', color: darkMode ? '#b3c0e0' : '#1976d2', textAlign: 'center', flex: 1, marginHorizontal: 8 }} numberOfLines={1} ellipsizeMode="tail">Admin Dashboard</Text>
           {/* Right: Dark mode and settings */}
-          <View style={{ position: 'absolute', right: 0, flexDirection: 'row', alignItems: 'center' }}>
-            <TouchableOpacity onPress={() => setDarkMode((d) => !d)} style={{ padding: 8, marginRight: 8, flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', minWidth: 90, justifyContent: 'flex-end' }}>
+            <TouchableOpacity onPress={() => setDarkMode((d) => !d)} style={{ padding: 8, marginRight: 2, flexDirection: 'row', alignItems: 'center' }}>
               <FontAwesome5
                 name={darkMode ? 'moon' : 'sun'}
-                size={28}
+                size={24}
                 color={darkMode ? '#FFD700' : '#FFB300'}
                 style={{
-                  marginRight: 8,
+                  marginRight: 4,
                   textShadowColor: '#FFD700',
-                  textShadowOffset: { width: 2, height: 2 },
-                  textShadowRadius: 6,
-                  elevation: 4,
+                  textShadowOffset: { width: 1, height: 1 },
+                  textShadowRadius: 4,
+                  elevation: 2,
                 }}
               />
-              <Text style={{ color: darkMode ? '#FFD700' : '#FFB300', fontWeight: 'bold', fontSize: 15 }}>{darkMode ? 'Night' : 'Day'}</Text>
+              <Text style={{ color: darkMode ? '#FFD700' : '#FFB300', fontWeight: 'bold', fontSize: 14 }}>{darkMode ? 'Night' : 'Day'}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => setSettingsModalVisible(true)} style={{ padding: 8 }}>
-              <FontAwesome5 name="cog" size={24} color={darkMode ? '#b3c0e0' : '#1976d2'} />
+              <FontAwesome5 name="cog" size={22} color={darkMode ? '#b3c0e0' : '#1976d2'} />
             </TouchableOpacity>
           </View>
         </View>
