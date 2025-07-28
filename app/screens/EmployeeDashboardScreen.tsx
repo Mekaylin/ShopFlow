@@ -219,8 +219,10 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
     const pad = (n: number) => n.toString().padStart(2, '0');
     const nowHM = pad(nowDate.getHours()) + ':' + pad(nowDate.getMinutes());
     let action: 'in' | 'out' | 'lunch' | 'lunchBack' = 'in';
-    // Always treat clock events between 12:00 and 14:00 as lunch
-    if (nowHM >= '12:00' && nowHM <= '14:00') {
+    // Force all clock events before 12:00 to be clock in
+    if (nowHM < '12:00') {
+      action = 'in';
+    } else if (nowHM >= '12:00' && nowHM <= '14:00') {
       action = 'lunch';
     } else if (employee.work_start && employee.work_end && employee.lunch_start && employee.lunch_end) {
       // Helper to compare HH:mm
@@ -238,10 +240,15 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       }
     } else {
       // Fallback to previous logic if schedule not set
-      if (clockedIn && !onLunch) action = 'out';
-      else if (clockedIn && !onLunch) action = 'lunch';
-      else if (clockedIn && onLunch) action = 'lunchBack';
-      else action = 'in';
+      if (!clockedIn && !onLunch) {
+        action = 'in';
+      } else if (clockedIn && !onLunch) {
+        action = 'out';
+      } else if (clockedIn && onLunch) {
+        action = 'lunchBack';
+      } else {
+        action = 'in';
+      }
     }
     console.log('[ClockIn] Action auto-detected:', action, 'Current time:', nowHM, 'Schedule:', {
       work_start: employee.work_start,
@@ -297,14 +304,9 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       ]);
       if (action === 'in') {
         setClockedIn(true); setOnLunch(false);
-        // Custom greeting: before 3pm = welcome, after 3pm = goodbye
-        const nowHour = new Date().getHours();
+        // Always show welcome greeting after clock in (unless lunch)
         if (!(nowHM >= '12:00' && nowHM <= '14:00')) {
-          if (nowHour < 15) {
-            triggerGreeting('welcome', employee.name);
-          } else {
-            triggerGreeting('goodbye', employee.name);
-          }
+          triggerGreeting('welcome', employee.name);
         }
         Alert.alert('Clocked In', `${employee.name} clocked in at ${new Date().toLocaleTimeString()}`);
         // Robust error log after successful clock in
@@ -318,6 +320,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       }
       else if (action === 'out') {
         setClockedIn(false); setOnLunch(false);
+        // Always show goodbye greeting after clock out (unless lunch)
         if (!(nowHM >= '12:00' && nowHM <= '14:00')) {
           triggerGreeting('goodbye', employee.name);
         }
@@ -514,54 +517,61 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       </View>
       {activeTab === 'clock' ? (
         // --- CLOCK IN/OUT TAB ---
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', width: '100%' }}>
-          <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 30, fontWeight: 'bold', color: theme.primary, marginBottom: 8, letterSpacing: 0.5 }}>Clock Events</Text>
-            <Text style={{ color: theme.subtext, fontSize: 16, marginBottom: 18, textAlign: 'center', maxWidth: 340 }}>
-              Enter your employee code to clock in, out, or manage lunch. Your action is auto-detected based on your schedule.
-            </Text>
-            <View style={{ width: 350, backgroundColor: theme.card, borderRadius: 20, padding: 28, shadowColor: theme.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.13, shadowRadius: 10, elevation: 4, alignItems: 'center', marginBottom: 18 }}>
-              <TextInput
-                style={{ borderWidth: 1, borderColor: clockInError ? theme.error : '#bbb', borderRadius: 10, padding: 16, width: '100%', fontSize: 22, marginBottom: 14, backgroundColor: isDark ? '#232A36' : '#f8fafd', textAlign: 'center', letterSpacing: 1 }}
-                placeholder="Enter Employee Code"
-                value={codePrompt}
-                onChangeText={setCodePrompt}
-                keyboardType="number-pad"
-                autoCapitalize="none"
-                autoCorrect={false}
-                placeholderTextColor={theme.subtext}
-                returnKeyType="done"
-                onSubmitEditing={handleClockInOut}
-                accessibilityLabel="Employee Code Input"
-              />
-              {clockInError ? (
-                <Text style={{ color: theme.error, marginBottom: 10, fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>{clockInError}</Text>
+        <View style={{ flex: 1, justifyContent: 'flex-start', alignItems: 'center', width: '100%' }}>
+          {/* Heading and description OUTSIDE the card */}
+          <Text style={{ fontSize: 30, fontWeight: 'bold', color: theme.primary, marginBottom: 8, letterSpacing: 0.5, marginTop: 8 }}>Clock Events</Text>
+          <Text style={{ color: theme.subtext, fontSize: 16, marginBottom: 18, textAlign: 'center', maxWidth: 340 }}>
+            Enter your employee code to clock in, out, or manage lunch. Your action is auto-detected based on your schedule.
+          </Text>
+          <View style={{ width: 350, backgroundColor: theme.card, borderRadius: 20, padding: 28, shadowColor: theme.shadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.13, shadowRadius: 10, elevation: 4, alignItems: 'center', marginBottom: 18 }}>
+            <TextInput
+              style={{ borderWidth: 1, borderColor: clockInError ? theme.error : '#bbb', borderRadius: 10, padding: 16, width: '100%', fontSize: 22, marginBottom: 14, backgroundColor: isDark ? '#232A36' : '#f8fafd', textAlign: 'center', letterSpacing: 1 }}
+              placeholder="Enter Employee Code"
+              value={codePrompt}
+              onChangeText={setCodePrompt}
+              keyboardType="number-pad"
+              autoCapitalize="none"
+              autoCorrect={false}
+              placeholderTextColor={theme.subtext}
+              returnKeyType="done"
+              onSubmitEditing={handleClockInOut}
+              accessibilityLabel="Employee Code Input"
+            />
+            {clockInError ? (
+              <Text style={{ color: theme.error, marginBottom: 10, fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>{clockInError}</Text>
+            ) : null}
+            <TouchableOpacity
+              style={{ backgroundColor: theme.primary, width: '100%', borderRadius: 10, paddingVertical: 18, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 0, shadowColor: theme.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 4, elevation: 2 }}
+              onPress={handleClockInOut}
+              disabled={clockLoading}
+              accessibilityLabel="Submit Clock Event"
+            >
+              {clockLoading ? (
+                <ActivityIndicator color="#fff" size="small" style={{ marginRight: 8 }} />
               ) : null}
-              <TouchableOpacity
-                style={{ backgroundColor: theme.primary, width: '100%', borderRadius: 10, paddingVertical: 18, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: 0, shadowColor: theme.shadow, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.10, shadowRadius: 4, elevation: 2 }}
-                onPress={handleClockInOut}
-                disabled={clockLoading}
-                accessibilityLabel="Submit Clock Event"
-              >
-                {clockLoading ? (
-                  <ActivityIndicator color="#fff" size="small" style={{ marginRight: 8 }} />
-                ) : null}
-                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 22, letterSpacing: 1 }}>
-                  {clockedIn ? (onLunch ? 'End Lunch' : 'Clock Out') : 'Clock In'}
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 22, letterSpacing: 1 }}>
+                {(() => {
+                  const now = new Date();
+                  const pad = (n: number) => n.toString().padStart(2, '0');
+                  const nowHM = pad(now.getHours()) + ':' + pad(now.getMinutes());
+                  if (nowHM < '12:00') {
+                    return 'Clock In';
+                  }
+                  return clockedIn ? (onLunch ? 'End Lunch' : 'Clock Out') : 'Clock In';
+                })()}
+              </Text>
+            </TouchableOpacity>
+            {/* Last event summary */}
+            {employees.length > 0 && codePrompt && employees.find(e => e.code.toLowerCase() === codePrompt.trim().toLowerCase()) && (
+              <View style={{ marginTop: 18, width: '100%', alignItems: 'center' }}>
+                <Text style={{ color: theme.subtext, fontSize: 15, marginBottom: 2 }}>Last Event:</Text>
+                {/* You could fetch and display the last event here if desired */}
+                {/* For now, just show status */}
+                <Text style={{ color: theme.primary, fontWeight: 'bold', fontSize: 16 }}>
+                  {clockedIn ? (onLunch ? 'On Lunch' : 'Clocked In') : 'Clocked Out'}
                 </Text>
-              </TouchableOpacity>
-              {/* Last event summary */}
-              {employees.length > 0 && codePrompt && employees.find(e => e.code.toLowerCase() === codePrompt.trim().toLowerCase()) && (
-                <View style={{ marginTop: 18, width: '100%', alignItems: 'center' }}>
-                  <Text style={{ color: theme.subtext, fontSize: 15, marginBottom: 2 }}>Last Event:</Text>
-                  {/* You could fetch and display the last event here if desired */}
-                  {/* For now, just show status */}
-                  <Text style={{ color: theme.primary, fontWeight: 'bold', fontSize: 16 }}>
-                    {clockedIn ? (onLunch ? 'On Lunch' : 'Clocked In') : 'Clocked Out'}
-                  </Text>
-                </View>
-              )}
-            </View>
+              </View>
+            )}
           </View>
         </View>
       ) : (

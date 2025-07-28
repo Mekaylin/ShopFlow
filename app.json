@@ -4,7 +4,7 @@
     "slug": "ShopFlowFinal",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/ShopLogo.jpeg",
+    "icon": "./assets/images/1-2943d931.png",
     "scheme": "shopflowfinal",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -14,7 +14,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/ShopLogo.jpeg",
+        "foregroundImage": "./assets/images/1-2943d931.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
@@ -23,7 +23,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/ShopLogo.jpeg",
+      "favicon": "./assets/images/1-2943d931.png",
       "meta": [
         {
           "name": "mobile-web-app-capable",
@@ -36,7 +36,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/ShopLogo.jpeg",
+        "image": "./assets/images/1-2943d931.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
