@@ -219,7 +219,10 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
     const pad = (n: number) => n.toString().padStart(2, '0');
     const nowHM = pad(nowDate.getHours()) + ':' + pad(nowDate.getMinutes());
     let action: 'in' | 'out' | 'lunch' | 'lunchBack' = 'in';
-    if (employee.work_start && employee.work_end && employee.lunch_start && employee.lunch_end) {
+    // Always treat clock events between 12:00 and 14:00 as lunch
+    if (nowHM >= '12:00' && nowHM <= '14:00') {
+      action = 'lunch';
+    } else if (employee.work_start && employee.work_end && employee.lunch_start && employee.lunch_end) {
       // Helper to compare HH:mm
       const isBetween = (start: string, end: string, time: string) => {
         return start <= time && time <= end;
@@ -294,7 +297,15 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       ]);
       if (action === 'in') {
         setClockedIn(true); setOnLunch(false);
-        triggerGreeting('welcome', employee.name);
+        // Custom greeting: before 3pm = welcome, after 3pm = goodbye
+        const nowHour = new Date().getHours();
+        if (!(nowHM >= '12:00' && nowHM <= '14:00')) {
+          if (nowHour < 15) {
+            triggerGreeting('welcome', employee.name);
+          } else {
+            triggerGreeting('goodbye', employee.name);
+          }
+        }
         Alert.alert('Clocked In', `${employee.name} clocked in at ${new Date().toLocaleTimeString()}`);
         // Robust error log after successful clock in
         console.info('[ClockIn][Success]', {
@@ -307,7 +318,9 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       }
       else if (action === 'out') {
         setClockedIn(false); setOnLunch(false);
-        triggerGreeting('goodbye', employee.name);
+        if (!(nowHM >= '12:00' && nowHM <= '14:00')) {
+          triggerGreeting('goodbye', employee.name);
+        }
         Alert.alert('Clocked Out', `${employee.name} clocked out at ${new Date().toLocaleTimeString()}`);
       }
       else if (action === 'lunch') { setOnLunch(true); Alert.alert('Lunch', `${employee.name} started lunch at ${new Date().toLocaleTimeString()}`); }
