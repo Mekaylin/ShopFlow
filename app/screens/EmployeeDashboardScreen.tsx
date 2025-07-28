@@ -224,6 +224,9 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       action = 'in';
     } else if (nowHM >= '12:00' && nowHM <= '14:00') {
       action = 'lunch';
+    } else if (nowHM >= '15:00') {
+      // Force all clock events after 3pm to be clock out
+      action = 'out';
     } else if (employee.work_start && employee.work_end && employee.lunch_start && employee.lunch_end) {
       // Helper to compare HH:mm
       const isBetween = (start: string, end: string, time: string) => {
@@ -556,6 +559,8 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
                   const nowHM = pad(now.getHours()) + ':' + pad(now.getMinutes());
                   if (nowHM < '12:00') {
                     return 'Clock In';
+                  } else if (nowHM >= '15:00') {
+                    return 'Clock Out';
                   }
                   return clockedIn ? (onLunch ? 'End Lunch' : 'Clock Out') : 'Clock In';
                 })()}
