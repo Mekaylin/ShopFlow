@@ -22,6 +22,7 @@
     "@sentry/react-native": "^6.16.1",
     "@supabase/supabase-js": "^2.50.3",
     "expo": "~53.0.16",
+    "expo-barcode-scanner": "^13.0.1",
     "expo-blur": "~14.1.5",
     "expo-constants": "~17.1.6",
     "expo-font": "~13.3.2",

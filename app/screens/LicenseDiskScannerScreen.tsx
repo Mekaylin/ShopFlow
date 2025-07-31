@@ -23,7 +23,15 @@ interface VehicleData {
   ID: string;
 }
 
-const LicenseDiskScannerScreen: React.FC = () => {
+interface LicenseDiskScannerScreenProps {
+  onScanComplete?: (vehicleData: VehicleData) => void;
+  onClose?: () => void;
+}
+
+const LicenseDiskScannerScreen: React.FC<LicenseDiskScannerScreenProps> = ({ 
+  onScanComplete,
+  onClose 
+}) => {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
   const [scanning, setScanning] = useState(true);
@@ -89,10 +97,11 @@ const LicenseDiskScannerScreen: React.FC = () => {
     if (scanned) return;
     
     setScanned(true);
-    console.log(`Bar code with type ${type} and data ${data} has been scanned!`);
+    console.log('📷 Barcode scanned!', { type, data });
 
     // Parse the vehicle data
     const parsedData = parseVehicleData(data);
+    console.log('🔍 Parsed vehicle data:', parsedData);
     
     if (parsedData) {
       setEditableData(parsedData);
@@ -126,19 +135,25 @@ const LicenseDiskScannerScreen: React.FC = () => {
   };
 
   const handleConfirm = () => {
-    Alert.alert(
-      'Data Confirmed',
-      'Vehicle data has been confirmed and can now be processed.',
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            // Here you would typically save the data or pass it to another screen
-            console.log('Confirmed vehicle data:', editableData);
-          }
-        }
-      ]
-    );
+    if (editableData) {
+      if (onScanComplete) {
+        console.log('✅ Calling onScanComplete with data:', editableData);
+        onScanComplete(editableData);
+      } else {
+        Alert.alert(
+          'Data Confirmed',
+          'Vehicle data has been confirmed and can now be processed.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                console.log('Confirmed vehicle data:', editableData);
+              }
+            }
+          ]
+        );
+      }
+    }
   };
 
   const updateField = (field: keyof VehicleData, value: string) => {

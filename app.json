@@ -36,7 +36,7 @@
       [
         "expo-splash-screen",
         {
-        "image": "./assets/images/1-2943d931.png",
+          "image": "./assets/images/1-2943d931.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -50,7 +50,8 @@
           "project": "react-native",
           "organization": "shopflow-fm"
         }
-      ]
+      ],
+      "expo-barcode-scanner"
     ],
     "experiments": {
       "typedRoutes": true

@@ -6,6 +6,7 @@ import ClockEventsTab from '../../components/admin/ClockEventsTab';
 import EmployeesTab from '../../components/admin/EmployeesTab';
 import ExportModal from '../../components/admin/ExportModal';
 import HomeTab from '../../components/admin/HomeTab';
+import LicenseScannerTab from '../../components/admin/LicenseScannerTab';
 import MaterialsTab from '../../components/admin/MaterialsTab';
 import type { Notification } from '../../components/admin/NotificationPanel';
 import NotificationPanel from '../../components/admin/NotificationPanel';
@@ -181,7 +182,7 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
   };
 
   // Tab state
-  const [tab, setTab] = useState<'home' | 'employees' | 'tasks' | 'materials' | 'clock' | 'performance'>('home');
+  const [tab, setTab] = useState<'home' | 'employees' | 'tasks' | 'materials' | 'clock' | 'performance' | 'scanner'>('home');
 
   // Main data state
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -304,6 +305,7 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
     { name: 'materials', icon: 'boxes', label: 'Materials' },
     { name: 'clock', icon: 'clock', label: 'Clock Events' },
     { name: 'performance', icon: 'chart-line', label: 'Performance' },
+    { name: 'scanner', icon: 'camera', label: 'License Scanner' },
   ];
   const renderTabBar = () => (
     <View style={adminStyles.tabBar}>
@@ -488,6 +490,12 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
                 darkMode={darkMode}
                 materials={materials}
                 departments={departments}
+              />
+            )}
+            {tab === 'scanner' && isUser(user) && (
+              <LicenseScannerTab
+                user={user}
+                darkMode={darkMode}
               />
             )}
           </Suspense>

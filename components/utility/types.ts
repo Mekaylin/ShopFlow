@@ -422,4 +422,40 @@ export interface AnalyticsData {
     start: string;
     end: string;
   };
+}
+
+export interface VehicleScan {
+  id: string;
+  business_id: string;
+  scanned_by: string;
+  license_number: string;
+  make: string;
+  model: string;
+  year: string;
+  vin: string;
+  owner_name: string;
+  owner_id_number: string;
+  scanned_at: string;
+  scan_quality: 'good' | 'fair' | 'poor';
+  notes?: string;
+  verified: boolean;
+  verified_by?: string;
+  verified_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VehicleScanWithUserInfo extends VehicleScan {
+  scanned_by_email: string;
+  verified_by_email?: string;
+  business_name: string;
+}
+
+export interface ScanStatistics {
+  total_scans: number;
+  scans_today: number;
+  scans_this_week: number;
+  scans_this_month: number;
+  unique_scanners: number;
+  unique_vehicles: number;
 } 
