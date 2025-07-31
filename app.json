@@ -4,26 +4,29 @@
     "slug": "ShopFlowFinal",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/1-2943d931.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "shopflowfinal",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.ShopFlowFinal"
+      "bundleIdentifier": "com.mekaylin.shopflowfinal"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/1-2943d931.png",
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.ShopFlowFinal"
+      "package": "com.mekaylin.shopflowfinal",
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/1-2943d931.png",
+      "favicon": "./assets/images/icon.png",
       "meta": [
         {
           "name": "mobile-web-app-capable",
@@ -36,7 +39,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/1-2943d931.png",
+          "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -50,15 +53,18 @@
           "project": "react-native",
           "organization": "shopflow-fm"
         }
-      ],
-      "expo-barcode-scanner"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
       "EXPO_PUBLIC_SUPABASE_URL": "https://qdfhklikmkyeqsiuapjg.supabase.co",
-      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkZmhrbGlrbWt5ZXFzaXVhcGpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE4MTgxNTQsImV4cCI6MjA2NzM5NDE1NH0.peZxjF2MbN9kBg4VVpQoSGjQblSTa24z4s0iiWqHfxA"
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkZmhrbGlrbWt5ZXFzaXVhcGpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE4MTgxNTQsImV4cCI6MjA2NzM5NDE1NH0.peZxjF2MbN9kBg4VVpQoSGjQblSTa24z4s0iiWqHfxA",
+      "router": {},
+      "eas": {
+        "projectId": "96e870ba-9060-4b94-be28-392d1f5176db"
+      }
     }
   }
 }

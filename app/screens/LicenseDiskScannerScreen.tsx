@@ -1,580 +1,310 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Alert,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  SafeAreaView,
-  ActivityIndicator,
-} from 'react-native';
-import { BarCodeScanner, BarCodeScannerResult } from 'expo-barcode-scanner';
-import { FontAwesome5 } from '@expo/vector-icons';
-
-interface VehicleData {
-  License: string;
-  Make: string;
-  VIN: string;
-  Model: string;
-  Year: string;
-  Owner: string;
-  ID: string;
-}
+import { View, Text, StyleSheet, Alert, TouchableOpacity, SafeAreaView } from 'react-native';
+import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
+import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '../../lib/supabase';
 
 interface LicenseDiskScannerScreenProps {
-  onScanComplete?: (vehicleData: VehicleData) => void;
+  onScanComplete?: (licenseData: any) => void;
   onClose?: () => void;
 }
 
 const LicenseDiskScannerScreen: React.FC<LicenseDiskScannerScreenProps> = ({ 
-  onScanComplete,
+  onScanComplete, 
   onClose 
 }) => {
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [facing, setFacing] = useState<CameraType>('back');
+  const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
-  const [scanning, setScanning] = useState(true);
-  const [editableData, setEditableData] = useState<VehicleData | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
-      setHasPermission(status === 'granted');
-    })();
-  }, []);
-
-  // Parse the scanned barcode string
-  const parseVehicleData = (data: string): VehicleData | null => {
-    try {
-      // Split by pipe character and create key-value pairs
-      const parts = data.split('|');
-      const parsed: Partial<VehicleData> = {};
-
-      parts.forEach(part => {
-        const [key, value] = part.split(':');
-        if (key && value) {
-          switch (key.trim()) {
-            case 'L':
-              parsed.License = value.trim();
-              break;
-            case 'M':
-              parsed.Make = value.trim();
-              break;
-            case 'V':
-              parsed.VIN = value.trim();
-              break;
-            case 'C':
-              parsed.Model = value.trim();
-              break;
-            case 'Y':
-              parsed.Year = value.trim();
-              break;
-            case 'R':
-              parsed.Owner = value.trim();
-              break;
-            case 'ID':
-              parsed.ID = value.trim();
-              break;
-          }
-        }
-      });
-
-      // Validate that we have the required fields
-      if (parsed.License && parsed.Make && parsed.VIN && parsed.Model && parsed.Year && parsed.Owner && parsed.ID) {
-        return parsed as VehicleData;
-      }
-      
-      return null;
-    } catch (error) {
-      console.error('Error parsing vehicle data:', error);
-      return null;
-    }
-  };
-
-  const handleBarCodeScanned = ({ type, data }: BarCodeScannerResult) => {
-    if (scanned) return;
-    
-    setScanned(true);
-    console.log('📷 Barcode scanned!', { type, data });
-
-    // Parse the vehicle data
-    const parsedData = parseVehicleData(data);
-    console.log('🔍 Parsed vehicle data:', parsedData);
-    
-    if (parsedData) {
-      setEditableData(parsedData);
-      setScanning(false);
-      Alert.alert(
-        'Scan Successful',
-        'Vehicle license disk data has been scanned and parsed successfully!',
-        [{ text: 'OK' }]
-      );
-    } else {
-      Alert.alert(
-        'Invalid Barcode',
-        'The scanned barcode does not contain valid South African vehicle license disk data. Please try again.',
-        [
-          {
-            text: 'Scan Again',
-            onPress: () => {
-              setScanned(false);
-            }
-          }
-        ]
-      );
-    }
-  };
-
-  const handleScanAgain = () => {
-    setScanned(false);
-    setScanning(true);
-    setEditableData(null);
-    setIsEditing(false);
-  };
-
-  const handleConfirm = () => {
-    if (editableData) {
-      if (onScanComplete) {
-        console.log('✅ Calling onScanComplete with data:', editableData);
-        onScanComplete(editableData);
-      } else {
-        Alert.alert(
-          'Data Confirmed',
-          'Vehicle data has been confirmed and can now be processed.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                console.log('Confirmed vehicle data:', editableData);
-              }
-            }
-          ]
-        );
-      }
-    }
-  };
-
-  const updateField = (field: keyof VehicleData, value: string) => {
-    if (editableData) {
-      setEditableData({
-        ...editableData,
-        [field]: value
-      });
-    }
-  };
-
-  if (hasPermission === null) {
+  if (!permission) {
+    // Camera permissions are still loading
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.centerContent}>
-          <ActivityIndicator size="large" color="#1976d2" />
-          <Text style={styles.loadingText}>Requesting camera permission...</Text>
+        <View style={styles.loadingContainer}>
+          <Text>Loading camera...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  if (hasPermission === false) {
+  if (!permission.granted) {
+    // Camera permissions are not granted yet
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.centerContent}>
-          <FontAwesome5 name="camera" size={64} color="#c62828" style={styles.icon} />
-          <Text style={styles.errorText}>No access to camera</Text>
-          <Text style={styles.errorSubtext}>
-            Camera permission is required to scan vehicle license disks
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (scanning) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Scan License Disk</Text>
-          <Text style={styles.headerSubtitle}>
-            Point your camera at the PDF417 barcode on the vehicle license disk
-          </Text>
-        </View>
-        
-        <View style={styles.scannerContainer}>
-          <BarCodeScanner
-            onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-            style={styles.scanner}
-            barCodeTypes={[BarCodeScanner.Constants.BarCodeType.pdf417]}
-          />
-          
-          <View style={styles.overlay}>
-            <View style={styles.scanFrame} />
-            <Text style={styles.scanText}>
-              Align the barcode within the frame
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={() => {
-              // Navigate back or close scanner
-              console.log('Cancel scanning');
-            }}
-          >
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+        <View style={styles.permissionContainer}>
+          <Text style={styles.message}>We need your permission to show the camera</Text>
+          <TouchableOpacity style={styles.button} onPress={requestPermission}>
+            <Text style={styles.buttonText}>Grant Permission</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
 
-  // Show the parsed data form
+  const toggleCameraFacing = () => {
+    setFacing(current => (current === 'back' ? 'front' : 'back'));
+  };
+
+  const handleBarcodeScanned = async ({ type, data }: { type: string; data: string }) => {
+    if (scanned) return;
+    
+    setScanned(true);
+    
+    try {
+      // Process the scanned license data
+      const licenseData = parseLicenseData(data);
+      
+      if (licenseData) {
+        // Save to database
+        const { error } = await supabase
+          .from('license_scans')
+          .insert([{
+            license_number: licenseData.licenseNumber,
+            scan_data: data,
+            scan_type: type,
+            scanned_at: new Date().toISOString()
+          }]);
+
+        if (error) {
+          console.error('Error saving license scan:', error);
+          Alert.alert('Error', 'Failed to save license data');
+        } else {
+          Alert.alert(
+            'License Scanned',
+            `License Number: ${licenseData.licenseNumber}`,
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  onScanComplete?.(licenseData);
+                  onClose?.();
+                }
+              }
+            ]
+          );
+        }
+      } else {
+        Alert.alert(
+          'Invalid License',
+          'Could not parse license data. Please try again.',
+          [
+            {
+              text: 'Try Again',
+              onPress: () => setScanned(false)
+            }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Error processing license scan:', error);
+      Alert.alert(
+        'Error',
+        'Failed to process license data',
+        [
+          {
+            text: 'Try Again',
+            onPress: () => setScanned(false)
+          }
+        ]
+      );
+    }
+  };
+
+  const parseLicenseData = (data: string) => {
+    // This is a simple parser for license data
+    // In a real implementation, you'd have specific parsing logic based on your license format
+    try {
+      // Example: assuming data contains license number in some format
+      const lines = data.split('\n');
+      let licenseNumber = '';
+      
+      // Look for patterns that might indicate a license number
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        // Look for patterns like "DL" followed by numbers, or just a series of numbers/letters
+        if (trimmedLine.match(/^[A-Z0-9]{6,}$/)) {
+          licenseNumber = trimmedLine;
+          break;
+        }
+        if (trimmedLine.includes('DL') || trimmedLine.includes('LIC')) {
+          const match = trimmedLine.match(/[A-Z0-9]{6,}/);
+          if (match) {
+            licenseNumber = match[0];
+            break;
+          }
+        }
+      }
+      
+      if (licenseNumber) {
+        return {
+          licenseNumber,
+          rawData: data,
+          scannedAt: new Date().toISOString()
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error parsing license data:', error);
+      return null;
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Vehicle Information</Text>
-        <Text style={styles.headerSubtitle}>
-          Review and confirm the scanned data
-        </Text>
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Ionicons name="close" size={30} color="white" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Scan License</Text>
+        <TouchableOpacity style={styles.flipButton} onPress={toggleCameraFacing}>
+          <Ionicons name="camera-reverse" size={30} color="white" />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.formContainer} contentContainerStyle={styles.formContent}>
-        <View style={styles.dataCard}>
-          <View style={styles.cardHeader}>
-            <FontAwesome5 name="car" size={24} color="#1976d2" />
-            <Text style={styles.cardTitle}>Scanned Vehicle Data</Text>
-            <TouchableOpacity
-              style={styles.editButton}
-              onPress={() => setIsEditing(!isEditing)}
-            >
-              <FontAwesome5 
-                name={isEditing ? "check" : "edit"} 
-                size={16} 
-                color="#1976d2" 
-              />
-              <Text style={styles.editButtonText}>
-                {isEditing ? "Done" : "Edit"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {editableData && (
-            <View style={styles.fieldsContainer}>
-              <DataField
-                label="License Number"
-                value={editableData.License}
-                isEditing={isEditing}
-                onChangeText={(value) => updateField('License', value)}
-              />
-              <DataField
-                label="Make"
-                value={editableData.Make}
-                isEditing={isEditing}
-                onChangeText={(value) => updateField('Make', value)}
-              />
-              <DataField
-                label="Model"
-                value={editableData.Model}
-                isEditing={isEditing}
-                onChangeText={(value) => updateField('Model', value)}
-              />
-              <DataField
-                label="Year"
-                value={editableData.Year}
-                isEditing={isEditing}
-                onChangeText={(value) => updateField('Year', value)}
-                keyboardType="numeric"
-              />
-              <DataField
-                label="VIN"
-                value={editableData.VIN}
-                isEditing={isEditing}
-                onChangeText={(value) => updateField('VIN', value)}
-              />
-              <DataField
-                label="Owner"
-                value={editableData.Owner}
-                isEditing={isEditing}
-                onChangeText={(value) => updateField('Owner', value)}
-              />
-              <DataField
-                label="ID Number"
-                value={editableData.ID}
-                isEditing={isEditing}
-                onChangeText={(value) => updateField('ID', value)}
-              />
-            </View>
-          )}
+      <CameraView
+        style={styles.camera}
+        facing={facing}
+        onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
+        barcodeScannerSettings={{
+          barcodeTypes: ['pdf417', 'code128', 'code39', 'qr', 'datamatrix'],
+        }}
+      >
+        <View style={styles.overlay}>
+          <View style={styles.scanFrame} />
+          <Text style={styles.instructionText}>
+            Position the license within the frame
+          </Text>
         </View>
-      </ScrollView>
+      </CameraView>
 
-      <View style={styles.actionButtons}>
+      {scanned && (
+        <View style={styles.scannedOverlay}>
+          <Text style={styles.scannedText}>Processing...</Text>
+        </View>
+      )}
+
+      <View style={styles.footer}>
         <TouchableOpacity
-          style={styles.scanAgainButton}
-          onPress={handleScanAgain}
+          style={styles.rescanButton}
+          onPress={() => setScanned(false)}
+          disabled={!scanned}
         >
-          <FontAwesome5 name="camera" size={16} color="#666" />
-          <Text style={styles.scanAgainButtonText}>Scan Again</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={styles.confirmButton}
-          onPress={handleConfirm}
-        >
-          <FontAwesome5 name="check" size={16} color="#fff" />
-          <Text style={styles.confirmButtonText}>Confirm Data</Text>
+          <Text style={[styles.rescanButtonText, { opacity: scanned ? 1 : 0.5 }]}>
+            Scan Again
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 };
 
-// Component for individual data fields
-interface DataFieldProps {
-  label: string;
-  value: string;
-  isEditing: boolean;
-  onChangeText: (text: string) => void;
-  keyboardType?: 'default' | 'numeric';
-}
-
-const DataField: React.FC<DataFieldProps> = ({
-  label,
-  value,
-  isEditing,
-  onChangeText,
-  keyboardType = 'default'
-}) => {
-  return (
-    <View style={styles.fieldContainer}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      {isEditing ? (
-        <TextInput
-          style={styles.fieldInput}
-          value={value}
-          onChangeText={onChangeText}
-          keyboardType={keyboardType}
-          autoCapitalize="characters"
-        />
-      ) : (
-        <Text style={styles.fieldValue}>{value}</Text>
-      )}
-    </View>
-  );
-};
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f6fa',
+    backgroundColor: 'black',
   },
-  centerContent: {
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'white',
+  },
+  permissionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
     padding: 20,
   },
-  loadingText: {
-    marginTop: 16,
+  message: {
+    textAlign: 'center',
+    paddingBottom: 20,
     fontSize: 16,
-    color: '#1976d2',
   },
-  icon: {
-    marginBottom: 16,
+  button: {
+    backgroundColor: '#007AFF',
+    padding: 15,
+    borderRadius: 8,
   },
-  errorText: {
-    fontSize: 20,
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#c62828',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  errorSubtext: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 24,
   },
   header: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+  },
+  closeButton: {
+    padding: 5,
   },
   headerTitle: {
-    fontSize: 24,
+    color: 'white',
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#1976d2',
-    marginBottom: 4,
   },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#666',
-    lineHeight: 22,
+  flipButton: {
+    padding: 5,
   },
-  scannerContainer: {
-    flex: 1,
-    position: 'relative',
-  },
-  scanner: {
+  camera: {
     flex: 1,
   },
   overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  scanFrame: {
+    width: 300,
+    height: 200,
+    borderWidth: 2,
+    borderColor: 'white',
+    borderRadius: 10,
+    backgroundColor: 'transparent',
+  },
+  instructionText: {
+    color: 'white',
+    fontSize: 16,
+    marginTop: 20,
+    textAlign: 'center',
+  },
+  scannedOverlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  scanFrame: {
-    width: 280,
-    height: 120,
-    borderWidth: 2,
-    borderColor: '#fff',
-    borderRadius: 8,
-    backgroundColor: 'transparent',
-  },
-  scanText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 20,
-    textAlign: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-  },
-  buttonContainer: {
-    padding: 20,
-    backgroundColor: '#fff',
-  },
-  cancelButton: {
-    backgroundColor: '#f5f5f5',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#666',
-  },
-  formContainer: {
-    flex: 1,
-  },
-  formContent: {
-    padding: 16,
-  },
-  dataCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  cardTitle: {
+  scannedText: {
+    color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#1976d2',
-    marginLeft: 12,
-    flex: 1,
   },
-  editButton: {
-    flexDirection: 'row',
+  footer: {
+    padding: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: '#f0f8ff',
   },
-  editButtonText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#1976d2',
-    marginLeft: 4,
-  },
-  fieldsContainer: {
-    gap: 16,
-  },
-  fieldContainer: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    paddingBottom: 8,
-  },
-  fieldLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 4,
-  },
-  fieldValue: {
-    fontSize: 16,
-    color: '#333',
-    fontWeight: '500',
-  },
-  fieldInput: {
-    fontSize: 16,
-    color: '#333',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#f9f9f9',
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    padding: 16,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-  },
-  scanAgainButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+  rescanButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 30,
+    paddingVertical: 15,
     borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    flex: 1,
-    justifyContent: 'center',
   },
-  scanAgainButtonText: {
+  rescanButtonText: {
+    color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#666',
-    marginLeft: 8,
-  },
-  confirmButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1976d2',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    flex: 2,
-    justifyContent: 'center',
-  },
-  confirmButtonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginLeft: 8,
   },
 });
 

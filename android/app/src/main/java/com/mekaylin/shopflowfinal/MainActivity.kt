@@ -1,4 +1,4 @@
-package com.anonymous.ShopFlowFinal
+package com.mekaylin.shopflowfinal
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

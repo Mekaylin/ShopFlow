@@ -1,4 +1,4 @@
-package com.anonymous.ShopFlowFinal
+package com.mekaylin.shopflowfinal
 
 import android.app.Application
 import android.content.res.Configuration

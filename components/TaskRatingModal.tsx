@@ -50,7 +50,7 @@ export default function TaskRatingModal({
           feedback: feedback.trim() || null,
           business_id: business.id,
           period_type: period, // new field
-          period_date: period === 'task' ? (task.completedAt || null) : new Date().toISOString(),
+          period_date: period === 'task' ? (task.completed_at || null) : new Date().toISOString(),
         });
 
       if (error) throw error;
@@ -104,7 +104,7 @@ export default function TaskRatingModal({
             <Text style={styles.taskName}>{task?.name}</Text>
             <Text style={styles.employeeName}>Completed by: {employee?.name}</Text>
             <Text style={styles.completionDate}>
-              Completed: {task?.completedAt ? new Date(task.completedAt).toLocaleDateString() : 'N/A'}
+              Completed: {task?.completed_at ? new Date(task.completed_at).toLocaleDateString() : 'N/A'}
             </Text>
           </View>
 
