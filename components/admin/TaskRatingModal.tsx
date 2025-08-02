@@ -1,8 +1,8 @@
 import { FontAwesome } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import type { Task } from '../utility/types';
 import { Colors } from '../../constants/Colors';
+import type { Task } from '../utility/types';
 
 interface TaskRatingModalProps {
   visible: boolean;

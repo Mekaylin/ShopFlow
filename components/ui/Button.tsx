@@ -1,7 +1,7 @@
-import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, type TouchableOpacityProps, ViewStyle, TextStyle } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import { buttonStyles } from '@/constants/ModernStyles';
+import React from 'react';
+import { ActivityIndicator, Text, TextStyle, TouchableOpacity, type TouchableOpacityProps, ViewStyle } from 'react-native';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'destructive';
 export type ButtonSize = 'sm' | 'md' | 'lg';

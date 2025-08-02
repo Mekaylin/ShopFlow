@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useMemo, memo } from 'react';
-import { LayoutAnimation, Platform, ScrollView, Text, TouchableOpacity, UIManager, View, ActivityIndicator } from 'react-native';
+import React, { memo, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Colors } from '../../constants/Colors';
 import { supabase } from '../../lib/supabase';
 import { ClockEvent, Employee } from '../utility/types';
-import { Colors } from '../../constants/Colors';
 
 interface ClockEventsTabProps {
   user: any;
@@ -20,17 +20,28 @@ const ClockEventsTab = ({ user, employees, darkMode }: ClockEventsTabProps) => {
   const [hasMore, setHasMore] = useState(true);
   const pageSize = 50; // Reduce page size for better performance
 
-  // Fetch clock events for all employees in this business with pagination
+  // Web-compatible animation setup
   useEffect(() => {
+    // Only enable layout animation on native platforms
     if (Platform.OS === 'android') {
-      if (UIManager.setLayoutAnimationEnabledExperimental) {
-        UIManager.setLayoutAnimationEnabledExperimental(true);
+      try {
+        const { UIManager } = require('react-native');
+        if (UIManager?.setLayoutAnimationEnabledExperimental) {
+          UIManager.setLayoutAnimationEnabledExperimental(true);
+        }
+      } catch (e) {
+        // Silently fail on web
+        console.log('Layout animation not available on this platform');
       }
     }
-    
+  }, []);
+
+  // Fetch clock events for all employees in this business with pagination
+  useEffect(() => {
     async function fetchClockEvents() {
       if (!user?.business_id) {
         setInitialLoading(false);
+        setError('No business ID found');
         return;
       }
       
@@ -38,15 +49,17 @@ const ClockEventsTab = ({ user, employees, darkMode }: ClockEventsTabProps) => {
       setError(null);
       
       try {
-        // Get recent events first (last 7 days) for better performance
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        console.log('Fetching clock events for business:', user.business_id);
+        
+        // Get recent events first (last 30 days) for better performance on web
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         
         const { data, error } = await supabase
           .from('clock_events')
           .select('*')
           .eq('business_id', user.business_id)
-          .gte('created_at', sevenDaysAgo.toISOString())
+          .gte('created_at', thirtyDaysAgo.toISOString())
           .order('created_at', { ascending: false })
           .limit(pageSize);
           
@@ -103,7 +116,15 @@ const ClockEventsTab = ({ user, employees, darkMode }: ClockEventsTabProps) => {
 
   const [expanded, setExpanded] = useState<string | null>(null);
   const handleExpand = (id: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    // Use web-compatible animation
+    if (Platform.OS !== 'web') {
+      try {
+        const { LayoutAnimation } = require('react-native');
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      } catch (e) {
+        // Silently fail if LayoutAnimation is not available
+      }
+    }
     setExpanded(expanded === id ? null : id);
   };
 

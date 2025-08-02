@@ -1,9 +1,9 @@
 
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View, Image } from 'react-native';
-import LoginScreen from './screens/LoginScreen';
+import { ActivityIndicator, Image, Text, View } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import LoginScreen from './screens/LoginScreen';
 
 export default function Index() {
   const router = useRouter();

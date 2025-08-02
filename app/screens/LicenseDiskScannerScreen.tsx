@@ -1,8 +1,8 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '../../lib/supabase';
+import React, { useCallback, useState } from 'react';
+import { Alert, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import PlatformCamera from '../../components/camera/PlatformCamera';
+import { supabase } from '../../lib/supabase';
 
 interface LicenseDiskScannerScreenProps {
   onScanComplete?: (licenseData: any) => void;

@@ -1,7 +1,7 @@
 // components/camera/WebCamera.tsx
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
+import React, { useEffect, useRef, useState } from 'react';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface WebCameraProps {
   onCodeScanned: (data: string) => void;

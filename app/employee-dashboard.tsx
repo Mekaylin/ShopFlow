@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Text, View, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 import EmployeeDashboardScreen from './screens/EmployeeDashboardScreen';
 

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { View, TextInput, Text, type TextInputProps, ViewStyle, TextStyle } from 'react-native';
-import { inputStyles } from '@/constants/ModernStyles';
 import { Colors } from '@/constants/Colors';
+import { inputStyles } from '@/constants/ModernStyles';
+import React, { useState } from 'react';
+import { Text, TextInput, type TextInputProps, TextStyle, View } from 'react-native';
 
 export interface InputProps extends TextInputProps {
   label?: string;

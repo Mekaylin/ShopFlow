@@ -1,13 +1,13 @@
 import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import React from 'react';
 import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Colors } from '../../constants/Colors';
 import { adminStyles } from '../utility/styles';
 import { Task as BaseTask, Employee, Material, PerformanceMetrics } from '../utility/types';
 import {
-    getBestPerformers,
-    limitLines
+  getBestPerformers,
+  limitLines
 } from '../utility/utils';
-import { Colors } from '../../constants/Colors';
 
 import type { ClockEvent, MaterialType, User } from '../utility/types';
 // Extend Task type locally to include optional rating property for performance metrics

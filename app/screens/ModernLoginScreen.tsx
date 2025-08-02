@@ -4,13 +4,13 @@ import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ThemedText } from '../../components/ThemedText';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Input } from '../../components/ui/Input';
-import { ThemedText } from '../../components/ThemedText';
-import { supabase } from '../../lib/supabase';
-import { layoutStyles } from '../../constants/ModernStyles';
 import { spacing } from '../../constants/DesignTokens';
+import { layoutStyles } from '../../constants/ModernStyles';
+import { supabase } from '../../lib/supabase';
 
 export default function ModernLoginScreen() {
   const router = useRouter();

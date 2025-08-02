@@ -1,8 +1,8 @@
 // services/vehicleScanService.ts
 // Service for managing vehicle license disk scans with Supabase
 
+import type { ScanStatistics, VehicleScan, VehicleScanWithUserInfo } from '../components/utility/types';
 import { supabase } from '../lib/supabase';
-import type { VehicleScan, VehicleScanWithUserInfo, ScanStatistics } from '../components/utility/types';
 
 export interface CreateVehicleScanData {
   license_number: string;

@@ -1,7 +1,7 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
-import React, { Suspense, useEffect, useMemo, useState, useCallback, memo } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Modal, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import ClockEventsTab from '../../components/admin/ClockEventsTab';
 import EmployeesTab from '../../components/admin/EmployeesTab';
 import ExportModal from '../../components/admin/ExportModal';
@@ -311,11 +311,13 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
     } finally {
       setInitialLoading(false);
     }
-  }, [businessId]);
+  }, [businessId, isCacheValid]);
 
   useEffect(() => {
-    fetchAllInitialData();
-  }, [fetchAllInitialData]);
+    if (businessId) {
+      fetchAllInitialData();
+    }
+  }, [businessId]); // Only depend on businessId, not the function
 
   // Check for late tasks and show notifications
   // Late task notification cooldown (avoid repeated alerts)

@@ -230,12 +230,14 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       console.error('Error fetching data:', err);
       Alert.alert('Error', 'Failed to load data from cloud.');
     }
-  }, [user?.business_id, isCacheValid, dataCache]);
+  }, [user?.business_id]);
 
   // Fetch employees, tasks, and materials from Supabase on mount
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (user?.business_id) {
+      fetchData();
+    }
+  }, [user?.business_id]); // Only depend on business_id
 
   // --- CLOCK IN/OUT LOGIC ---
   const [clockLoading, setClockLoading] = useState(false);

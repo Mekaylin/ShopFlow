@@ -1,8 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../../lib/supabase';
 import { Colors } from '../../constants/Colors';
+import { supabase } from '../../lib/supabase';
 import { SearchAndFilterBar } from '../ui/SearchAndFilterBar';
 import { adminStyles } from '../utility/styles';
 import AdminModal from './AdminModal';

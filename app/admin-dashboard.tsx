@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
-import AdminDashboardScreen from './screens/AdminDashboardScreen';
 import { useAuth } from '../contexts/AuthContext';
+import AdminDashboardScreen from './screens/AdminDashboardScreen';
 
 export default function AdminDashboard() {
   const router = useRouter();

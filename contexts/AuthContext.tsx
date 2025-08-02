@@ -1,8 +1,9 @@
 // contexts/AuthContext.tsx
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '../lib/supabase';
 import type { User } from '@supabase/supabase-js';
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
+import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -23,6 +24,34 @@ export const useAuth = () => {
   return context;
 };
 
+// Web-compatible storage wrapper
+const storageWrapper = {
+  async getItem(key: string): Promise<string | null> {
+    try {
+      if (Platform.OS === 'web') {
+        return localStorage.getItem(key);
+      } else {
+        return await AsyncStorage.getItem(key);
+      }
+    } catch (error) {
+      console.error('Storage getItem error:', error);
+      return null;
+    }
+  },
+  
+  async setItem(key: string, value: string): Promise<void> {
+    try {
+      if (Platform.OS === 'web') {
+        localStorage.setItem(key, value);
+      } else {
+        await AsyncStorage.setItem(key, value);
+      }
+    } catch (error) {
+      console.error('Storage setItem error:', error);
+    }
+  }
+};
+
 interface AuthProviderProps {
   children: ReactNode;
 }
@@ -37,7 +66,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const loadDarkMode = async () => {
       try {
-        const stored = await AsyncStorage.getItem('darkMode');
+        const stored = await storageWrapper.getItem('darkMode');
         if (stored !== null) {
           setDarkModeState(JSON.parse(stored));
         }
@@ -52,7 +81,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const setDarkMode = async (value: boolean) => {
     try {
       setDarkModeState(value);
-      await AsyncStorage.setItem('darkMode', JSON.stringify(value));
+      await storageWrapper.setItem('darkMode', JSON.stringify(value));
     } catch (error) {
       console.error('Error saving dark mode preference:', error);
     }

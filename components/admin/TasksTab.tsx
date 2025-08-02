@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../../lib/supabase';
 import { Colors } from '../../constants/Colors';
+import { supabase } from '../../lib/supabase';
 import AddTaskModal from '../ui/AddTaskModal';
 import type { Employee, Material, User } from '../utility/types';
 import AdminModal from './AdminModal';

@@ -1,6 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { Colors } from '../constants/Colors';
-import { spacing, borderRadius, typography, shadows, layout } from '../constants/DesignTokens';
+import { borderRadius, layout, shadows, spacing, typography } from '../constants/DesignTokens';
 
 /**
  * Modern Component Styles

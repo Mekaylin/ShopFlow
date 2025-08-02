@@ -1,7 +1,6 @@
-
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,7 +17,7 @@ interface LoginScreenProps {
   setSession?: (key: string, value: string) => Promise<void>;
 }
 
-export default function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
+export default function ModernizedLoginScreen({ onLogin, setSession }: LoginScreenProps) {
   const router = useRouter();
 
   // Registration state (admin only)
@@ -213,6 +212,7 @@ export default function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
                 <Button
                   variant="ghost"
                   onPress={() => setShowRegister(false)}
+                  disabled={regLoading}
                 >
                   Back to Login
                 </Button>
@@ -302,6 +302,7 @@ export default function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
               <Button
                 variant="ghost"
                 onPress={() => setShowRegister(true)}
+                disabled={loading}
               >
                 Don't have an account? Sign Up
               </Button>
@@ -312,4 +313,3 @@ export default function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
     </SafeAreaView>
   );
 }
-

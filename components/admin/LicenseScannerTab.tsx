@@ -1,19 +1,19 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  FlatList,
-  Alert,
-  Modal,
-  RefreshControl,
-  ActivityIndicator,
-} from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
+import React, { useCallback, useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Modal,
+    RefreshControl,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import LicenseDiskScannerScreen from '../../app/screens/LicenseDiskScannerScreen';
-import type { User, VehicleScanWithUserInfo, ScanStatistics } from '../utility/types';
 import vehicleScanService from '../../services/vehicleScanService';
+import type { ScanStatistics, User, VehicleScanWithUserInfo } from '../utility/types';
 
 interface LicenseScannerTabProps {
   user: User;

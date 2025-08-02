@@ -1,10 +1,10 @@
 // Example integration: Add this button to your Employee or Admin Dashboard
 // to navigate to the License Disk Scanner
 
-import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 
 interface ScanLicenseDiskButtonProps {
   style?: any;

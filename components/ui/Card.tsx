@@ -1,6 +1,6 @@
+import { cardStyles } from '@/constants/ModernStyles';
 import React from 'react';
 import { View, type ViewProps } from 'react-native';
-import { cardStyles } from '@/constants/ModernStyles';
 
 export type CardVariant = 'default' | 'elevated' | 'outlined';
 
