@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
+import { Colors } from '../../constants/Colors';
 import AddTaskModal from '../ui/AddTaskModal';
 import type { Employee, Material, User } from '../utility/types';
 import AdminModal from './AdminModal';
@@ -37,6 +38,7 @@ export const TasksTab: React.FC<TasksTabProps> = ({
   setLateTaskNotifiedIds,
   onRateTask,
 }) => {
+  const themeColors = darkMode ? Colors.dark : Colors.light;
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [addTaskLoading, setAddTaskLoading] = useState(false);
   const [addTaskError, setAddTaskError] = useState('');
@@ -178,9 +180,9 @@ export const TasksTab: React.FC<TasksTabProps> = ({
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tasks</Text>
-      <TouchableOpacity style={styles.addBtn} onPress={() => setShowAddTaskModal(true)}>
+    <View style={[styles.container, { backgroundColor: themeColors.background }]}>
+      <Text style={[styles.title, { color: themeColors.primary }]}>Tasks</Text>
+      <TouchableOpacity style={[styles.addBtn, { backgroundColor: themeColors.primary }]} onPress={() => setShowAddTaskModal(true)}>
         <Text style={styles.addBtnText}>+ Add Task</Text>
       </TouchableOpacity>
       {/* Employee Picker Modal */}
@@ -190,10 +192,17 @@ export const TasksTab: React.FC<TasksTabProps> = ({
             {employees.map(emp => (
               <TouchableOpacity
                 key={emp.id}
-                style={{ padding: 12, borderBottomWidth: 1, borderColor: '#eee' }}
+                style={{ 
+                  padding: 12, 
+                  borderBottomWidth: 1, 
+                  borderColor: themeColors.border 
+                }}
                 onPress={() => setSelectedEmployee(emp)}
               >
-                <Text style={{ fontSize: 16 }}>{emp.name}</Text>
+                <Text style={{ 
+                  fontSize: 16, 
+                  color: themeColors.text 
+                }}>{emp.name}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -204,17 +213,17 @@ export const TasksTab: React.FC<TasksTabProps> = ({
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity onPress={() => setTaskToEdit(item)} activeOpacity={0.8}>
-            <View style={styles.taskItem}>
-              <Text style={styles.taskName}>{item.name}</Text>
-              <Text style={styles.taskMeta}>Assigned to: {employees.find(e => e.id === item.assigned_to)?.name || 'Unknown'}</Text>
-              <Text style={styles.taskMeta}>Start: {item.start} | Due: {item.deadline}</Text>
-              <Text style={styles.taskStatus}>{item.completed ? 'Completed' : 'In Progress'}</Text>
+            <View style={[styles.taskItem, { backgroundColor: themeColors.surface }]}>
+              <Text style={[styles.taskName, { color: themeColors.text }]}>{item.name}</Text>
+              <Text style={[styles.taskMeta, { color: themeColors.textSecondary }]}>Assigned to: {employees.find(e => e.id === item.assigned_to)?.name || 'Unknown'}</Text>
+              <Text style={[styles.taskMeta, { color: themeColors.textSecondary }]}>Start: {item.start} | Due: {item.deadline}</Text>
+              <Text style={[styles.taskStatus, { color: item.completed ? themeColors.success : themeColors.warning }]}>{item.completed ? 'Completed' : 'In Progress'}</Text>
               {item.completed && item.completed_at && (
-                <Text style={styles.completedAt}>Completed at: {new Date(item.completed_at).toLocaleString()}</Text>
+                <Text style={[styles.completedAt, { color: themeColors.textSecondary }]}>Completed at: {new Date(item.completed_at).toLocaleString()}</Text>
               )}
               {!item.completed && (
                 <TouchableOpacity
-                  style={{ backgroundColor: '#388e3c', borderRadius: 8, padding: 10, alignItems: 'center', marginTop: 8 }}
+                  style={styles.completeButton}
                   onPress={async () => {
                     try {
                       await handleEditTask(item.id, { completed: true, completed_at: new Date().toISOString() });
@@ -224,25 +233,25 @@ export const TasksTab: React.FC<TasksTabProps> = ({
                     }
                   }}
                 >
-                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Mark as Completed</Text>
+                  <Text style={styles.buttonText}>Mark as Completed</Text>
                 </TouchableOpacity>
               )}
               {item.completed && (
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6 }}>
-                  <Text style={{ color: '#888', marginRight: 8 }}>
+                <View style={styles.actionButtonsContainer}>
+                  <Text style={[styles.ratingText, { color: themeColors.textSecondary }]}>
                     Rating: {typeof taskRatings[item.id] === 'number' ? taskRatings[item.id] : 'Not rated'}
                   </Text>
                   <TouchableOpacity
-                    style={{ backgroundColor: '#FFD700', borderRadius: 6, padding: 4, paddingHorizontal: 10, marginRight: 8 }}
+                    style={[styles.actionButton, { backgroundColor: themeColors.warning }]}
                     onPress={() => {
                       setTaskToRate(item);
                       setShowRatingModal(true);
                     }}
                   >
-                    <Text style={{ color: '#333', fontWeight: 'bold' }}>Rate</Text>
+                    <Text style={[styles.actionButtonText, { color: themeColors.background }]}>Rate</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={{ backgroundColor: '#1976d2', borderRadius: 6, padding: 4, paddingHorizontal: 10, marginRight: 8 }}
+                    style={[styles.actionButton, { backgroundColor: themeColors.primary }]}
                     onPress={async () => {
                       // Auto-rate logic: 5 if completed on/before deadline, 3 if late
                       const deadline = new Date(item.deadline);
@@ -252,10 +261,10 @@ export const TasksTab: React.FC<TasksTabProps> = ({
                       await handleSubmitRating(autoRating);
                     }}
                   >
-                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Auto Rate</Text>
+                    <Text style={styles.buttonText}>Auto Rate</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={{ backgroundColor: '#e53935', borderRadius: 6, padding: 4, paddingHorizontal: 10, marginLeft: 8, flexDirection: 'row', alignItems: 'center' }}
+                    style={[styles.deleteButton, { backgroundColor: themeColors.danger }]}
                     onPress={() => {
                       if (deleteTaskLoading) return;
                       if (Platform.OS === 'web') {
@@ -277,19 +286,16 @@ export const TasksTab: React.FC<TasksTabProps> = ({
                     disabled={deleteTaskLoading}
                   >
                     {deleteTaskLoading ? (
-                      <ActivityIndicator size="small" color="#fff" style={{ marginRight: 6 }} />
+                      <ActivityIndicator size="small" color={themeColors.primaryForeground} style={{ marginRight: 6 }} />
                     ) : null}
-                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Delete</Text>
+                    <Text style={styles.buttonText}>Delete</Text>
                   </TouchableOpacity>
-      {deleteTaskError ? (
-        <Text style={{ color: 'red', marginTop: 8, textAlign: 'center' }}>{deleteTaskError}</Text>
-      ) : null}
                 </View>
               )}
             </View>
           </TouchableOpacity>
         )}
-        ListEmptyComponent={<Text style={styles.emptyText}>No tasks found.</Text>}
+        ListEmptyComponent={<Text style={[styles.emptyText, { color: themeColors.textSecondary }]}>No tasks found.</Text>}
       />
       <AddTaskModal
         visible={!!selectedEmployee || !!taskToEdit}
@@ -306,14 +312,18 @@ export const TasksTab: React.FC<TasksTabProps> = ({
         setError={msg => { setAddTaskError(msg); setEditTaskError(msg); }}
         taskToEdit={taskToEdit}
         materials={materials}
+        darkMode={darkMode}
       />
       {(addTaskError || editTaskError) && (
-        <Text style={{ color: 'red', marginTop: 8, textAlign: 'center' }}>{addTaskError || editTaskError}</Text>
+        <Text style={[styles.errorText, { color: themeColors.danger }]}>{addTaskError || editTaskError}</Text>
       )}
       {materials.length === 0 && (
-        <View style={{ margin: 16, padding: 12, backgroundColor: '#fffbe6', borderRadius: 8, borderWidth: 1, borderColor: '#ffe082' }}>
-          <Text style={{ color: '#b71c1c', fontWeight: 'bold', marginBottom: 4 }}>DEBUG: No materials found for this business.</Text>
-          <Text style={{ fontSize: 12, color: '#333' }}>If you see this, check your Supabase materials table for business_id values.</Text>
+        <View style={[styles.debugContainer, { 
+          backgroundColor: themeColors.backgroundSecondary, 
+          borderColor: themeColors.border 
+        }]}>
+          <Text style={[styles.debugTitle, { color: themeColors.danger }]}>DEBUG: No materials found for this business.</Text>
+          <Text style={[styles.debugText, { color: themeColors.textSecondary }]}>If you see this, check your Supabase materials table for business_id values.</Text>
         </View>
       )}
       {showRatingModal && (
@@ -322,27 +332,131 @@ export const TasksTab: React.FC<TasksTabProps> = ({
           onClose={() => setShowRatingModal(false)}
           onSubmit={handleSubmitRating}
           task={taskToRate}
+          darkMode={darkMode}
         />
       )}
       {ratingError ? (
-        <Text style={{ color: 'red', marginTop: 8, textAlign: 'center' }}>{ratingError}</Text>
+        <Text style={[styles.errorText, { color: themeColors.danger }]}>{ratingError}</Text>
       ) : null}
       {deleteTaskError ? (
-        <Text style={{ color: 'red', marginTop: 8, textAlign: 'center' }}>{deleteTaskError}</Text>
+        <Text style={[styles.errorText, { color: themeColors.danger }]}>{deleteTaskError}</Text>
       ) : null}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 16, color: '#1976d2' },
-  addBtn: { backgroundColor: '#1976d2', borderRadius: 20, padding: 10, alignItems: 'center', marginBottom: 16 },
-  addBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 18 },
-  taskItem: { backgroundColor: '#e3f2fd', borderRadius: 10, padding: 16, marginBottom: 12 },
-  taskName: { fontSize: 18, fontWeight: 'bold', color: '#263238' },
-  taskMeta: { fontSize: 14, color: '#666', marginBottom: 2 },
-  taskStatus: { fontSize: 14, color: '#388e3c', fontWeight: 'bold' },
-  completedAt: { color: '#888', fontSize: 13, marginBottom: 4 },
-  emptyText: { color: '#888', fontStyle: 'italic', textAlign: 'center', marginTop: 32 },
+  container: { 
+    flex: 1, 
+    padding: 16
+  },
+  title: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    marginBottom: 16
+  },
+  addBtn: { 
+    borderRadius: 20, 
+    padding: 10, 
+    alignItems: 'center', 
+    marginBottom: 16 
+  },
+  addBtnText: { 
+    color: '#ffffff', 
+    fontWeight: 'bold', 
+    fontSize: 18 
+  },
+  taskItem: { 
+    borderRadius: 10, 
+    padding: 16, 
+    marginBottom: 12,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  taskName: { 
+    fontSize: 18, 
+    fontWeight: 'bold'
+  },
+  taskMeta: { 
+    fontSize: 14, 
+    marginBottom: 2 
+  },
+  taskStatus: { 
+    fontSize: 14, 
+    fontWeight: 'bold' 
+  },
+  completedAt: { 
+    fontSize: 13, 
+    marginBottom: 4 
+  },
+  completeButton: {
+    backgroundColor: '#22c55e',
+    borderRadius: 8,
+    padding: 10,
+    alignItems: 'center',
+    marginTop: 8
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontSize: 14
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    flexWrap: 'wrap'
+  },
+  ratingText: {
+    marginRight: 8,
+    marginBottom: 4,
+    fontSize: 14
+  },
+  actionButton: {
+    borderRadius: 6,
+    padding: 6,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    marginBottom: 4
+  },
+  actionButtonText: {
+    fontWeight: 'bold',
+    fontSize: 12
+  },
+  deleteButton: {
+    borderRadius: 6,
+    padding: 6,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4
+  },
+  errorText: {
+    marginTop: 8,
+    textAlign: 'center',
+    fontSize: 14
+  },
+  debugContainer: {
+    margin: 16,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1
+  },
+  debugTitle: {
+    fontWeight: 'bold',
+    marginBottom: 4,
+    fontSize: 14
+  },
+  debugText: {
+    fontSize: 12
+  },
+  emptyText: { 
+    fontStyle: 'italic', 
+    textAlign: 'center', 
+    marginTop: 32,
+    fontSize: 16
+  },
 });

@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AddTaskModal from '../../components/ui/AddTaskModal';
 // --- Welcome/Goodbye Animation State ---
 import { ActivityIndicator, Alert, Animated, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
@@ -156,42 +156,86 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
     }
   };
   const router = useRouter();
+  // Data caching for employee dashboard
+  const [dataCache, setDataCache] = useState({
+    employees: [] as any[],
+    tasks: [] as any[],
+    materials: [] as any[],
+    lastFetch: 0
+  });
+
+  // Cache TTL (5 minutes)
+  const CACHE_TTL = 5 * 60 * 1000;
+
+  // Check if cache is valid
+  const isCacheValid = useMemo(() => {
+    return Date.now() - dataCache.lastFetch < CACHE_TTL;
+  }, [dataCache.lastFetch]);
+
+  // Optimized data fetching with business filtering and caching
+  const fetchData = useCallback(async (forceRefresh = false) => {
+    // Use cached data if valid and not forcing refresh
+    if (!forceRefresh && isCacheValid && dataCache.employees.length > 0) {
+      setEmployees(dataCache.employees);
+      setTasks(dataCache.tasks);
+      setMaterials(dataCache.materials);
+      return;
+    }
+
+    try {
+      const businessId = user?.business_id;
+      if (!businessId) {
+        Alert.alert('Error', 'No business ID found. Please log in again.');
+        return;
+      }
+
+      // Fetch data in parallel with business filtering
+      const [empRes, taskRes, matRes] = await Promise.all([
+        supabase.from('employees').select('*').eq('business_id', businessId),
+        supabase.from('tasks').select('*').eq('business_id', businessId),
+        supabase.from('materials').select('*').eq('business_id', businessId)
+      ]);
+
+      if (empRes.error) throw empRes.error;
+      if (taskRes.error) throw taskRes.error;
+      if (matRes.error) throw matRes.error;
+
+      const employees = empRes.data || [];
+      const tasks = taskRes.data || [];
+      
+      // Defensive mapping to ensure all required fields exist
+      const mappedMaterials = (matRes.data || []).map((mat: any) => ({
+        id: mat.id,
+        name: mat.name || '',
+        type: mat.type || '',
+        quantity: typeof mat.quantity === 'number' ? mat.quantity : 0,
+        unit: mat.unit || '',
+        business_id: mat.business_id || '',
+      }));
+
+      setEmployees(employees);
+      setTasks(tasks);
+      setMaterials(mappedMaterials);
+
+      // Update cache
+      setDataCache({
+        employees,
+        tasks,
+        materials: mappedMaterials,
+        lastFetch: Date.now()
+      });
+
+      console.log('[DEBUG] Data fetched and cached for business:', businessId);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      Alert.alert('Error', 'Failed to load data from cloud.');
+    }
+  }, [user?.business_id, isCacheValid, dataCache]);
+
   // Fetch employees, tasks, and materials from Supabase on mount
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const { data: empData, error: empError } = await supabase.from('employees').select('*');
-        if (empError) throw empError;
-        setEmployees(empData || []);
-        const { data: taskData, error: taskError } = await supabase.from('tasks').select('*');
-        if (taskError) throw taskError;
-        setTasks(taskData || []);
-        let { data: matData, error: matError } = await supabase.from('materials').select('*').eq('business_id', user?.business_id);
-        console.log('[DEBUG] Materials fetched for business', user?.business_id, ':', matData);
-        if (matError) throw matError;
-        if (!matData || matData.length === 0) {
-          // Fallback: try fetching all materials (no business_id filter) for debugging
-          const fallback = await supabase.from('materials').select('*');
-          console.log('[DEBUG] Fallback: All materials:', fallback.data);
-          matData = fallback.data;
-        }
-        // Defensive mapping to ensure all required fields exist
-        const mappedMaterials = (matData || []).map((mat: any) => ({
-          id: mat.id,
-          name: mat.name || '',
-          type: mat.type || '',
-          quantity: typeof mat.quantity === 'number' ? mat.quantity : 0,
-          unit: mat.unit || '',
-          business_id: mat.business_id || '',
-        }));
-        setMaterials(mappedMaterials);
-        console.log('[DEBUG] Materials mapped for dropdown:', mappedMaterials);
-      } catch (err) {
-        Alert.alert('Error', 'Failed to load data from cloud.');
-      }
-    };
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   // --- CLOCK IN/OUT LOGIC ---
   const [clockLoading, setClockLoading] = useState(false);

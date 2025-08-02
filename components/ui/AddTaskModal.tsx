@@ -5,6 +5,7 @@ import { Picker } from '@react-native-picker/picker';
 import AdminModal from '../admin/AdminModal';
 import { fetchMaterialTypes } from '../utility/fetchMaterialTypes';
 import { Employee, MaterialType } from '../utility/types';
+import { Colors } from '../../constants/Colors';
 
 // Unified AddTaskModal for both admin and employee flows
 import { Material } from '../utility/types';
@@ -24,6 +25,7 @@ export type AddTaskModalProps = {
   setError: (msg: string) => void;
   taskToEdit?: any;
   materials?: Material[]; // Pass materials for dropdown
+  darkMode?: boolean; // Add darkMode support
 
 };
 const AddTaskModal: React.FC<AddTaskModalProps> = (props) => {
@@ -41,7 +43,12 @@ const AddTaskModal: React.FC<AddTaskModalProps> = (props) => {
     setError,
     taskToEdit,
     materials = [],
+    darkMode = false,
   } = props;
+  
+  // Theme colors based on darkMode
+  const themeColors = darkMode ? Colors.dark : Colors.light;
+  
   // Determine which employee to use (must be before any hook that uses it)
   const employee = currentEmployee || selectedEmployee; // Only declare these once
   const [showMaterials, setShowMaterials] = useState(false);
@@ -139,24 +146,54 @@ const AddTaskModal: React.FC<AddTaskModalProps> = (props) => {
     <AdminModal visible={visible} onClose={() => { if (setSelectedEmployee) setSelectedEmployee(null); onClose(); }} title={`${taskToEdit ? 'Edit Task' : 'Add Task'} for ${employee?.name || ''}`}>
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
         <TextInput
-          style={{ borderWidth: 1, borderColor: '#bbb', borderRadius: 8, padding: 12, marginBottom: 10, fontSize: 16 }}
+          style={{ 
+            borderWidth: 1, 
+            borderColor: themeColors.border, 
+            borderRadius: 8, 
+            padding: 12, 
+            marginBottom: 10, 
+            fontSize: 16,
+            backgroundColor: themeColors.surface,
+            color: themeColors.text
+          }}
           placeholder="Task Title"
+          placeholderTextColor={themeColors.textSecondary}
           value={newTaskName}
           onChangeText={setNewTaskName}
           accessibilityLabel="Task Title"
           testID="task-title-input"
         />
         <TextInput
-          style={{ borderWidth: 1, borderColor: '#bbb', borderRadius: 8, padding: 12, marginBottom: 10, fontSize: 16 }}
+          style={{ 
+            borderWidth: 1, 
+            borderColor: themeColors.border, 
+            borderRadius: 8, 
+            padding: 12, 
+            marginBottom: 10, 
+            fontSize: 16,
+            backgroundColor: themeColors.surface,
+            color: themeColors.text
+          }}
           placeholder="Start Time (e.g. 09:00)"
+          placeholderTextColor={themeColors.textSecondary}
           value={newTaskStart}
           onChangeText={setNewTaskStart}
           accessibilityLabel="Start Time"
           testID="task-start-input"
         />
         <TextInput
-          style={{ borderWidth: 1, borderColor: '#bbb', borderRadius: 8, padding: 12, marginBottom: 10, fontSize: 16 }}
+          style={{ 
+            borderWidth: 1, 
+            borderColor: themeColors.border, 
+            borderRadius: 8, 
+            padding: 12, 
+            marginBottom: 10, 
+            fontSize: 16,
+            backgroundColor: themeColors.surface,
+            color: themeColors.text
+          }}
           placeholder="Deadline (e.g. 17:00)"
+          placeholderTextColor={themeColors.textSecondary}
           value={newTaskDeadline}
           onChangeText={setNewTaskDeadline}
           accessibilityLabel="Deadline"
@@ -164,17 +201,30 @@ const AddTaskModal: React.FC<AddTaskModalProps> = (props) => {
         />
         {/* Optional: Materials section, collapsible */}
         <TouchableOpacity
-          style={{ marginTop: 10, marginBottom: 4, backgroundColor: '#e3f2fd', borderRadius: 8, padding: 8, alignItems: 'center' }}
+          style={{ 
+            marginTop: 10, 
+            marginBottom: 4, 
+            backgroundColor: themeColors.backgroundSecondary, 
+            borderRadius: 8, 
+            padding: 8, 
+            alignItems: 'center' 
+          }}
           onPress={() => setShowMaterials(prev => !prev)}
         >
-          <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>{showMaterials ? 'Hide Materials' : 'Add Materials (Optional)'}</Text>
+          <Text style={{ color: themeColors.primary, fontWeight: 'bold' }}>{showMaterials ? 'Hide Materials' : 'Add Materials (Optional)'}</Text>
         </TouchableOpacity>
         {showMaterials && (
           <View style={{ marginBottom: 8 }}>
             {/* Material Dropdown */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-              <Text style={{ marginRight: 6 }}>Material:</Text>
-              <View style={{ flex: 1, borderWidth: 1, borderColor: '#bbb', borderRadius: 6, backgroundColor: '#fff' }}>
+              <Text style={{ marginRight: 6, color: themeColors.text }}>Material:</Text>
+              <View style={{ 
+                flex: 1, 
+                borderWidth: 1, 
+                borderColor: themeColors.border, 
+                borderRadius: 6, 
+                backgroundColor: themeColors.surface 
+              }}>
                 <Picker
                   selectedValue={selectedMaterialId}
                   onValueChange={setSelectedMaterialId}
@@ -197,8 +247,14 @@ const AddTaskModal: React.FC<AddTaskModalProps> = (props) => {
             {/* Type Dropdown */}
             {materialTypes.length > 0 && selectedMaterialId && (
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                <Text style={{ marginRight: 6 }}>Type (optional):</Text>
-                <View style={{ flex: 1, borderWidth: 1, borderColor: '#bbb', borderRadius: 6, backgroundColor: '#fff' }}>
+                <Text style={{ marginRight: 6, color: themeColors.text }}>Type (optional):</Text>
+                <View style={{ 
+                  flex: 1, 
+                  borderWidth: 1, 
+                  borderColor: themeColors.border, 
+                  borderRadius: 6, 
+                  backgroundColor: themeColors.surface 
+                }}>
                   <Picker
                     selectedValue={selectedMaterialTypeId}
                     onValueChange={setSelectedMaterialTypeId}
@@ -217,10 +273,19 @@ const AddTaskModal: React.FC<AddTaskModalProps> = (props) => {
             )}
             {/* Quantity Textbox */}
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-              <Text style={{ marginRight: 6 }}>Quantity:</Text>
+              <Text style={{ marginRight: 6, color: themeColors.text }}>Quantity:</Text>
               <TextInput
-                style={{ borderWidth: 1, borderColor: '#bbb', borderRadius: 6, padding: 6, flex: 1, backgroundColor: '#fff' }}
+                style={{ 
+                  borderWidth: 1, 
+                  borderColor: themeColors.border, 
+                  borderRadius: 6, 
+                  padding: 6, 
+                  flex: 1, 
+                  backgroundColor: themeColors.surface,
+                  color: themeColors.text
+                }}
                 placeholder="Quantity"
+                placeholderTextColor={themeColors.textSecondary}
                 value={materialQuantity}
                 onChangeText={setMaterialQuantity}
                 keyboardType="numeric"

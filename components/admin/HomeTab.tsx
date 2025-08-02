@@ -7,6 +7,7 @@ import {
     getBestPerformers,
     limitLines
 } from '../utility/utils';
+import { Colors } from '../../constants/Colors';
 
 import type { ClockEvent, MaterialType, User } from '../utility/types';
 // Extend Task type locally to include optional rating property for performance metrics
@@ -54,6 +55,9 @@ const HomeTab: React.FC<HomeTabProps> = ({
   onExport,
   refetchDashboardData,
 }) => {
+  // Theme colors based on darkMode
+  const themeColors = darkMode ? Colors.dark : Colors.light;
+  
   // --- New feature states ---
   const [showNotifications, setShowNotifications] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -330,10 +334,10 @@ const HomeTab: React.FC<HomeTabProps> = ({
         />
       </View>
       {/* DEBUG INFO - REMOVE IN PRODUCTION */}
-      <View style={{ backgroundColor: darkMode ? '#232a36' : '#fffbe6', borderRadius: 8, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: darkMode ? '#333950' : '#ffe082' }}>
-        <Text style={{ color: '#c62828', fontWeight: 'bold', marginBottom: 4 }}>DATA COUNTS</Text>
+      <View style={{ backgroundColor: themeColors.backgroundSecondary, borderRadius: 8, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: themeColors.border }}>
+        <Text style={{ color: themeColors.danger, fontWeight: 'bold', marginBottom: 4 }}>DATA COUNTS</Text>
         {debugInfo.map((line, idx) => (
-          <Text key={idx} style={{ color: '#333', fontSize: 13 }}>{line}</Text>
+          <Text key={idx} style={{ color: themeColors.text, fontSize: 13 }}>{line}</Text>
         ))}
       </View>
       {/* Range Selector */}

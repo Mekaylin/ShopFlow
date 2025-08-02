@@ -1,6 +1,6 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import * as LocalAuthentication from 'expo-local-authentication';
-import React, { Suspense, useEffect, useMemo, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useState, useCallback, memo } from 'react';
 import { ActivityIndicator, Alert, FlatList, Modal, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
 import ClockEventsTab from '../../components/admin/ClockEventsTab';
 import EmployeesTab from '../../components/admin/EmployeesTab';
@@ -16,6 +16,8 @@ import { TasksTab } from '../../components/admin/TasksTab';
 import PerformanceManagement from '../../components/PerformanceManagement';
 import TaskRatingModal from '../../components/TaskRatingModal';
 import { adminStyles, tabButton, tabButtonText } from '../../components/utility/styles';
+import { Colors } from '../../constants/Colors';
+import { useAuth } from '../../contexts/AuthContext';
 
 import type { Business, ClockEvent, Employee, Material, MaterialType, PerformanceSettings, Task, User } from '../../components/utility/types';
 import { supabase } from '../../lib/supabase';
@@ -68,6 +70,12 @@ function isBusiness(obj: any): obj is Business {
 }
 
 function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
+  // Use global auth context for dark mode
+  const { darkMode, setDarkMode } = useAuth();
+  
+  // Get theme colors based on current mode
+  const themeColors = darkMode ? Colors.dark : Colors.light;
+  
   // Top-level error/loading fallback
   const [initError, setInitError] = useState<string | null>(null);
   const [initLoading, setInitLoading] = useState(false);
@@ -145,8 +153,7 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
 
 
 
-  // Dark mode and settings modal state
-  const [darkMode, setDarkMode] = useState(false); // Prepare for toggle
+  // Settings modal state
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
 
   // Shared styles for modal overlays and tab bar (future: move to styles file)
@@ -218,13 +225,45 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
   // Initial loading state
   const [initialLoading, setInitialLoading] = useState(true);
 
-  // Fetch all initial data in parallel
-  const fetchAllInitialData = React.useCallback(async () => {
+  // Data caching to prevent refetching on tab switches
+  const [dataCache, setDataCache] = useState({
+    employees: [] as Employee[],
+    tasks: [] as Task[],
+    materials: [] as Material[],
+    departments: [] as any[],
+    performanceSettings: null as any,
+    clockEvents: [] as ClockEvent[],
+    lastFetch: 0
+  });
+
+  // Cache TTL (5 minutes)
+  const CACHE_TTL = 5 * 60 * 1000;
+
+  // Check if cache is valid
+  const isCacheValid = useMemo(() => {
+    return Date.now() - dataCache.lastFetch < CACHE_TTL;
+  }, [dataCache.lastFetch]);
+
+  // Fetch all initial data in parallel with caching
+  const fetchAllInitialData = useCallback(async (forceRefresh = false) => {
     if (!businessId) {
       Alert.alert('Error', 'No business ID found. Please log in again or contact support.');
       setInitialLoading(false);
       return;
     }
+
+    // Use cached data if valid and not forcing refresh
+    if (!forceRefresh && isCacheValid && dataCache.employees.length > 0) {
+      setEmployees(dataCache.employees);
+      setTasks(dataCache.tasks);
+      setMaterials(dataCache.materials);
+      setDepartments(dataCache.departments);
+      setPerformanceSettings(dataCache.performanceSettings);
+      setClockEvents(dataCache.clockEvents);
+      setInitialLoading(false);
+      return;
+    }
+
     setInitialLoading(true);
     try {
       const [empRes, taskRes, matRes, deptRes, perfRes, clockRes] = await Promise.all([
@@ -251,6 +290,21 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
         defaultRating: perfRes.data?.default_rating ?? 3,
       });
       setClockEvents(clockRes.data ?? []);
+
+      // Update cache with fresh data
+      setDataCache({
+        employees: empRes.data ?? [],
+        tasks: taskRes.data ?? [],
+        materials: matRes.data ?? [],
+        departments: deptRes.data ? deptRes.data.map((d: any) => d.name) : [],
+        performanceSettings: {
+          ratingSystemEnabled: perfRes.data?.rating_system_enabled ?? false,
+          autoRateCompletedTasks: perfRes.data?.auto_rate_completed_tasks ?? false,
+          defaultRating: perfRes.data?.default_rating ?? 3,
+        },
+        clockEvents: clockRes.data ?? [],
+        lastFetch: Date.now()
+      });
     } catch (err: any) {
       Alert.alert('Error', `Failed to load dashboard data: ${err.message || err}`);
       console.error('Error fetching initial data:', err);
@@ -318,7 +372,7 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
           <FontAwesome5
             name={tabObj.icon}
             size={16}
-            color={tab === tabObj.name ? '#fff' : (darkMode ? '#b3c0e0' : '#1976d2')}
+            color={tab === tabObj.name ? '#fff' : themeColors.primary}
             style={adminStyles.tabIcon}
           />
           <Text style={tabButtonText(tab === tabObj.name, darkMode) as import('react-native').TextStyle}>
@@ -343,7 +397,7 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
   // Main dashboard render with error boundary and Suspense fallback
   return (
     <DashboardErrorBoundary>
-    <SafeAreaView style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff', paddingHorizontal: 0 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: themeColors.background, paddingHorizontal: 0 }}>
       {/* Responsive Header */}
       <View
         style={{
@@ -353,7 +407,7 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
           paddingHorizontal: 12,
           paddingVertical: 12,
           borderBottomWidth: 1,
-          borderBottomColor: darkMode ? '#333950' : '#e3f2fd',
+          borderBottomColor: themeColors.border,
           minHeight: 60,
           gap: 4,
         }}
@@ -361,14 +415,14 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
         {/* Left: Notification bell */}
         <View style={{ minWidth: 40, alignItems: 'flex-start', flexShrink: 0 }}>
           <TouchableOpacity onPress={() => setNotificationPanelVisible(true)} style={{ padding: 8 }}>
-            <FontAwesome5 name="bell" size={24} color={darkMode ? '#b3c0e0' : '#1976d2'} />
+            <FontAwesome5 name="bell" size={24} color={themeColors.icon} />
           </TouchableOpacity>
         </View>
 
         {/* Center: Title (shrinks/ellipsizes if needed) */}
         <View style={{ flex: 1, paddingHorizontal: 8, minWidth: 0 }}>
           <Text
-            style={{ fontSize: 20, fontWeight: 'bold', color: darkMode ? '#b3c0e0' : '#1976d2', textAlign: 'center' }}
+            style={{ fontSize: 20, fontWeight: 'bold', color: themeColors.primary, textAlign: 'center' }}
             numberOfLines={1}
             ellipsizeMode="tail"
             adjustsFontSizeToFit
@@ -379,7 +433,7 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
 
         {/* Right: Dark mode toggle + settings, never shrink off-screen */}
         <View style={{ flexDirection: 'row', alignItems: 'center', minWidth: 80, flexShrink: 0, justifyContent: 'flex-end' }}>
-          <TouchableOpacity onPress={() => setDarkMode((d) => !d)} style={{ padding: 4, marginRight: 4, alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => setDarkMode(!darkMode)} style={{ padding: 4, marginRight: 4, alignItems: 'center' }}>
             <FontAwesome5
               name={darkMode ? 'moon' : 'sun'}
               size={20}
@@ -391,7 +445,7 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
             </Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setSettingsModalVisible(true)} style={{ padding: 8, marginLeft: 4 }}>
-            <FontAwesome5 name="cog" size={20} color={darkMode ? '#b3c0e0' : '#1976d2'} />
+            <FontAwesome5 name="cog" size={20} color={themeColors.icon} />
           </TouchableOpacity>
         </View>
       </View>
@@ -403,7 +457,7 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
         {/* Tab Bar */}
         {renderTabBar()}
 
-        {/* Tab Content - Use FlatList for large lists, memoized tab content, and shared styles */}
+        {/* Tab Content - Optimized with memoization and lazy loading */}
         <View style={adminStyles.tabContentContainer}>
           <Suspense fallback={<View style={adminStyles.suspenseFallback}><ActivityIndicator size="large" color="#1976d2" /><Text style={adminStyles.suspenseText}>Loading...</Text></View>}>
             {tab === 'home' && isUser(user) && (
@@ -466,18 +520,10 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
               />
             )}
             {tab === 'clock' && isUser(user) && (
-              <FlatList
-                data={employees}
-                keyExtractor={item => item.id}
-                renderItem={({ item }) => (
-                  <ClockEventsTab
-                    user={user}
-                    employees={[item]}
-                    darkMode={darkMode}
-                  />
-                )}
-                contentContainerStyle={adminStyles.flatListContent}
-                ListEmptyComponent={<Text style={adminStyles.emptyListText}>No clock events found.</Text>}
+              <ClockEventsTab
+                user={user}
+                employees={employees}
+                darkMode={darkMode}
               />
             )}
             {tab === 'performance' && isUser(user) && (
