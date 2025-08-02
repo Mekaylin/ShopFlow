@@ -23,12 +23,14 @@
         "backgroundColor": "#1976d2"
       },
       "icon": "./assets/images/icon.png",
+      "edgeToEdgeEnabled": true,
       "package": "com.mekaylin.shopflowfinal",
       "versionCode": 2,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "jsEngine": "hermes"
     },
     "web": {
       "bundler": "metro",

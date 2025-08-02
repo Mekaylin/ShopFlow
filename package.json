@@ -67,7 +67,11 @@
   "expo": {
     "doctor": {
       "reactNativeDirectoryCheck": {
-        "exclude": ["expo-barcode-scanner", "vision-camera-code-scanner", "uuid"],
+        "exclude": [
+          "expo-barcode-scanner",
+          "vision-camera-code-scanner",
+          "uuid"
+        ],
         "listUnknownPackages": false
       }
     }
