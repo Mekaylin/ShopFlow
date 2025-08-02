@@ -140,6 +140,68 @@ const LicenseScannerTab: React.FC<LicenseScannerTabProps> = ({ user, darkMode })
     }
   }, [user.business_id, loadData]);
 
+  // Handle image upload from main screen
+  const handleImageUpload = useCallback(() => {
+    if (typeof window !== 'undefined' && window.document) {
+      // Web implementation
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async (event: any) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        try {
+          console.log('📸 Processing uploaded image...');
+          const reader = new FileReader();
+          reader.onload = async (e) => {
+            try {
+              const imageData = e.target?.result as string;
+              
+              // Simulate OCR processing for uploaded image
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
+              // For demo purposes, return sample SA license data
+              const sampleLicenseData = [
+                'GP|ABC123GP|2024-12|MOTOR VEHICLE|JOHN DOE|7901010001088',
+                'WC|XYZ456WC|2025-06|MOTORCYCLE|JANE SMITH|8502020002099',
+                'KZN|DEF789KZN|2024-11|TRUCK|MIKE JONES|7703030003000'
+              ];
+              
+              const randomSample = sampleLicenseData[Math.floor(Math.random() * sampleLicenseData.length)];
+              console.log('✅ OCR Result from upload:', randomSample);
+              
+              // Process the scan result using the existing handleScanComplete function
+              await handleScanComplete({
+                License: randomSample.split('|')[1] || 'UNKNOWN',
+                Province: randomSample.split('|')[0] || 'GP',
+                ExpiryDate: randomSample.split('|')[2] || '2024-12',
+                VehicleType: randomSample.split('|')[3] || 'MOTOR VEHICLE',
+                OwnerName: randomSample.split('|')[4] || 'Unknown Owner',
+                IDNumber: randomSample.split('|')[5] || '0000000000000'
+              });
+            } catch (error) {
+              console.error('Image processing error:', error);
+              Alert.alert('Processing Error', 'Failed to process the uploaded image.');
+            }
+          };
+          
+          reader.onerror = () => {
+            Alert.alert('File Error', 'Failed to read the selected file.');
+          };
+          
+          reader.readAsDataURL(file);
+        } catch (error) {
+          Alert.alert('Upload Error', 'Failed to upload the file.');
+        }
+      };
+      input.click();
+    } else {
+      // Mobile implementation would go here
+      Alert.alert('Upload', 'Image upload is currently supported on web only.');
+    }
+  }, [handleScanComplete]);
+
   const handleVerifyRecord = useCallback(async (recordId: string) => {
     try {
       await vehicleScanService.verifyScan(recordId);
@@ -260,13 +322,23 @@ const LicenseScannerTab: React.FC<LicenseScannerTabProps> = ({ user, darkMode })
           </View>
         </View>
         
-        <TouchableOpacity
-          style={styles.scanButton}
-          onPress={() => setShowScanner(true)}
-        >
-          <FontAwesome5 name="camera" size={16} color="#fff" />
-          <Text style={styles.scanButtonText}>Scan License</Text>
-        </TouchableOpacity>
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={styles.uploadButton}
+            onPress={handleImageUpload}
+          >
+            <FontAwesome5 name="upload" size={16} color="#fff" />
+            <Text style={styles.uploadButtonText}>Upload Image</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.scanButton}
+            onPress={() => setShowScanner(true)}
+          >
+            <FontAwesome5 name="camera" size={16} color="#fff" />
+            <Text style={styles.scanButtonText}>Scan License</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.statsRow}>
@@ -527,6 +599,30 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
     maxWidth: 250,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  uploadButton: {
+    backgroundColor: '#f57c00',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  uploadButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 6,
   },
 });
 

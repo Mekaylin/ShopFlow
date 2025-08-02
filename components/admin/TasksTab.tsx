@@ -211,13 +211,32 @@ export const TasksTab: React.FC<TasksTabProps> = ({
       <FlatList
         data={tasks}
         keyExtractor={item => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContainer}
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => setTaskToEdit(item)} activeOpacity={0.8}>
-            <View style={[styles.taskItem, { backgroundColor: themeColors.surface }]}>
-              <Text style={[styles.taskName, { color: themeColors.text }]}>{item.name}</Text>
-              <Text style={[styles.taskMeta, { color: themeColors.textSecondary }]}>Assigned to: {employees.find(e => e.id === item.assigned_to)?.name || 'Unknown'}</Text>
-              <Text style={[styles.taskMeta, { color: themeColors.textSecondary }]}>Start: {item.start} | Due: {item.deadline}</Text>
-              <Text style={[styles.taskStatus, { color: item.completed ? themeColors.success : themeColors.warning }]}>{item.completed ? 'Completed' : 'In Progress'}</Text>
+          <TouchableOpacity onPress={() => setTaskToEdit(item)} activeOpacity={0.7}>
+            <View style={[styles.taskItem, { 
+              backgroundColor: themeColors.surface,
+              borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'
+            }]}>
+              <View style={styles.taskHeader}>
+                <Text style={[styles.taskName, { color: themeColors.text }]}>{item.name}</Text>
+                <View style={[styles.statusBadge, { 
+                  backgroundColor: item.completed ? themeColors.success : themeColors.warning 
+                }]}>
+                  <Text style={styles.statusBadgeText}>
+                    {item.completed ? 'Completed' : 'In Progress'}
+                  </Text>
+                </View>
+              </View>
+              <View style={styles.taskDetails}>
+                <Text style={[styles.taskMeta, { color: themeColors.textSecondary }]}>
+                  👤 {employees.find(e => e.id === item.assigned_to)?.name || 'Unknown'}
+                </Text>
+                <Text style={[styles.taskMeta, { color: themeColors.textSecondary }]}>
+                  📅 Start: {item.start} | Due: {item.deadline}
+                </Text>
+              </View>
               {item.completed && item.completed_at && (
                 <Text style={[styles.completedAt, { color: themeColors.textSecondary }]}>Completed at: {new Date(item.completed_at).toLocaleString()}</Text>
               )}
@@ -368,18 +387,25 @@ const styles = StyleSheet.create({
     fontSize: 18 
   },
   taskItem: { 
-    borderRadius: 10, 
-    padding: 16, 
-    marginBottom: 12,
-    ...createShadowStyle(shadowPresets.medium)
+    borderRadius: 12, 
+    padding: 20, 
+    marginBottom: 16,
+    marginHorizontal: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.08)',
+    ...createShadowStyle(shadowPresets.card)
   },
   taskName: { 
     fontSize: 18, 
-    fontWeight: 'bold'
+    fontWeight: 'bold',
+    lineHeight: 24,
+    flex: 1,
+    marginRight: 8
   },
   taskMeta: { 
     fontSize: 14, 
-    marginBottom: 2 
+    marginBottom: 4,
+    lineHeight: 20
   },
   taskStatus: { 
     fontSize: 14, 
@@ -466,5 +492,28 @@ const styles = StyleSheet.create({
     marginVertical: 2,
     borderRadius: 8,
     ...createShadowStyle(shadowPresets.small)
+  },
+  listContainer: {
+    paddingBottom: 20
+  },
+  taskHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12
+  },
+  taskDetails: {
+    marginBottom: 12
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start'
+  },
+  statusBadgeText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 'bold'
   },
 });
