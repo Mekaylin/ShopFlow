@@ -238,29 +238,31 @@ const WebCamera: React.FC<WebCameraProps> = ({ onCodeScanned, isActive, style, c
         </View>
         
         <View style={styles.buttonContainer}>
-          <TouchableOpacity 
-            style={[styles.captureButton, processing && styles.disabledButton]}
-            onPress={capturePhoto}
-            disabled={processing}
-          >
-            <FontAwesome5 
-              name={processing ? "spinner" : "camera"} 
-              size={24} 
-              color="white" 
-            />
-            <Text style={styles.buttonText}>
-              {processing ? 'Processing...' : 'Capture & Scan'}
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.uploadButton, { marginTop: 10 }]}
-            onPress={() => fileInputRef.current?.click()}
-            disabled={processing}
-          >
-            <FontAwesome5 name="upload" size={20} color="white" />
-            <Text style={styles.buttonText}>Upload Image</Text>
-          </TouchableOpacity>
+          <View style={styles.buttonRow}>
+            <TouchableOpacity 
+              style={[styles.captureButton, processing && styles.disabledButton]}
+              onPress={capturePhoto}
+              disabled={processing}
+            >
+              <FontAwesome5 
+                name={processing ? "spinner" : "camera"} 
+                size={24} 
+                color="white" 
+              />
+              <Text style={styles.buttonText}>
+                {processing ? 'Processing...' : 'Capture & Scan'}
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.uploadButton, { marginLeft: 10 }]}
+              onPress={() => fileInputRef.current?.click()}
+              disabled={processing}
+            >
+              <FontAwesome5 name="upload" size={20} color="white" />
+              <Text style={styles.buttonText}>Upload Image</Text>
+            </TouchableOpacity>
+          </View>
         </View>
         
         <input
@@ -314,9 +316,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
-    borderRadius: 8,
-    marginVertical: 10,
+    padding: 15,
+    borderRadius: 25,
+    flex: 1,
+    maxWidth: 160,
   },
   uploadButtonText: {
     color: 'white',
@@ -355,6 +358,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 20,
   },
+  buttonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   captureButton: {
     backgroundColor: '#1976d2',
     flexDirection: 'row',
@@ -362,7 +370,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 15,
     borderRadius: 25,
-    minWidth: 200,
+    flex: 1,
+    maxWidth: 180,
   },
   disabledButton: {
     backgroundColor: '#666',

@@ -7,6 +7,7 @@ import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } fro
 import { v4 as uuidv4 } from 'uuid';
 import { Colors } from '../../constants/Colors';
 import { supabase } from '../../lib/supabase';
+import { createShadowStyle, shadowPresets } from '../../utils/shadowUtils';
 import { SearchAndFilterBar } from '../ui/SearchAndFilterBar';
 import { adminStyles } from '../utility/styles';
 import AdminModal from './AdminModal';
@@ -415,12 +416,12 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
                 alignItems: 'center',
                 minWidth: 0,
                 maxWidth: '100%',
+                ...createShadowStyle(shadowPresets.medium)
               }}
             >
               <AdminRow
                 icon={((emp as any).photo_url || emp.photoUri) ? undefined : 'user'}
                 title={emp.name}
-                // ...existing code...
               />
             </TouchableOpacity>
           ))}

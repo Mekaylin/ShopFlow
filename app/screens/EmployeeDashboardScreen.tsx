@@ -6,6 +6,7 @@ import { ActivityIndicator, Alert, Animated, FlatList, Modal, StyleSheet, Text, 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import NotificationPanel, { Notification } from '../../components/admin/NotificationPanel';
 import { supabase } from '../../lib/supabase';
+import { createShadowStyle, shadowPresets } from '../../utils/shadowUtils';
 // Helper: Welcome/Goodbye animation state must be inside the component
 // Helper to queue clock events locally
 type ClockEvent = {
@@ -156,8 +157,8 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
     }
   };
   const router = useRouter();
-  // Data caching for employee dashboard
-  const [dataCache, setDataCache] = useState({
+  // Data caching for employee dashboard - use ref to avoid dependency issues
+  const dataCacheRef = useRef({
     employees: [] as any[],
     tasks: [] as any[],
     materials: [] as any[],
@@ -167,27 +168,28 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
   // Cache TTL (5 minutes)
   const CACHE_TTL = 5 * 60 * 1000;
 
-  // Check if cache is valid
-  const isCacheValid = useMemo(() => {
-    return Date.now() - dataCache.lastFetch < CACHE_TTL;
-  }, [dataCache.lastFetch]);
-
   // Optimized data fetching with business filtering and caching
   const fetchData = useCallback(async (forceRefresh = false) => {
-    // Use cached data if valid and not forcing refresh
-    if (!forceRefresh && isCacheValid && dataCache.employees.length > 0) {
-      setEmployees(dataCache.employees);
-      setTasks(dataCache.tasks);
-      setMaterials(dataCache.materials);
-      return;
-    }
-
     try {
       const businessId = user?.business_id;
       if (!businessId) {
         Alert.alert('Error', 'No business ID found. Please log in again.');
         return;
       }
+
+      // Check cache validity using ref to avoid dependency issues
+      const isDataStale = Date.now() - dataCacheRef.current.lastFetch > CACHE_TTL;
+      
+      // Use cached data if valid and not forcing refresh
+      if (!forceRefresh && !isDataStale && dataCacheRef.current.employees.length > 0) {
+        setEmployees(dataCacheRef.current.employees);
+        setTasks(dataCacheRef.current.tasks);
+        setMaterials(dataCacheRef.current.materials);
+        console.log('[DEBUG] Using cached data for business:', businessId);
+        return;
+      }
+
+      console.log('[DEBUG] Fetching fresh data for business:', businessId);
 
       // Fetch data in parallel with business filtering
       const [empRes, taskRes, matRes] = await Promise.all([
@@ -217,27 +219,27 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       setTasks(tasks);
       setMaterials(mappedMaterials);
 
-      // Update cache
-      setDataCache({
+      // Update cache using ref
+      dataCacheRef.current = {
         employees,
         tasks,
         materials: mappedMaterials,
         lastFetch: Date.now()
-      });
+      };
 
       console.log('[DEBUG] Data fetched and cached for business:', businessId);
     } catch (err) {
       console.error('Error fetching data:', err);
       Alert.alert('Error', 'Failed to load data from cloud.');
     }
-  }, [user?.business_id]);
+  }, [user?.business_id, CACHE_TTL]);
 
   // Fetch employees, tasks, and materials from Supabase on mount
   useEffect(() => {
     if (user?.business_id) {
       fetchData();
     }
-  }, [user?.business_id]); // Only depend on business_id
+  }, [user?.business_id, fetchData]);
 
   // --- CLOCK IN/OUT LOGIC ---
   const [clockLoading, setClockLoading] = useState(false);

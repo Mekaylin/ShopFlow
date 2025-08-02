@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { supabase } from '../../lib/supabase';
+import { createShadowStyle, shadowPresets } from '../../utils/shadowUtils';
 import AddTaskModal from '../ui/AddTaskModal';
 import type { Employee, Material, User } from '../utility/types';
 import AdminModal from './AdminModal';
@@ -370,11 +371,7 @@ const styles = StyleSheet.create({
     borderRadius: 10, 
     padding: 16, 
     marginBottom: 12,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3
+    ...createShadowStyle(shadowPresets.medium)
   },
   taskName: { 
     fontSize: 18, 

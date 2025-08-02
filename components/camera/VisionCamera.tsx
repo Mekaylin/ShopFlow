@@ -14,10 +14,12 @@ const VisionCamera: React.FC<VisionCameraProps> = ({ onCodeScanned, isActive, st
   const [hasPermission, setHasPermission] = useState(false);
   const device = useCameraDevice('back');
 
+  // Enhanced code scanner configuration for SA license disks
   const codeScanner = useCodeScanner({
     codeTypes: ['pdf-417', 'code-128', 'code-39', 'ean-13', 'ean-8', 'qr'],
     onCodeScanned: (codes) => {
       if (codes.length > 0 && codes[0].value) {
+        console.log('📱 Barcode detected:', codes[0].value);
         onCodeScanned(codes[0].value);
       }
     },
