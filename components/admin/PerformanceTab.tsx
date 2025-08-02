@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
+import { Colors } from '../../constants/Colors';
 import { AnalyticsCharts } from '../ui/AnalyticsCharts';
 import { SearchAndFilterBar } from '../ui/SearchAndFilterBar';
 import { adminStyles } from '../utility/styles';
@@ -32,6 +33,7 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
   materials,
   departments,
 }) => {
+  const themeColors = darkMode ? Colors.dark : Colors.light;
   const router = useRouter();
   const params = useLocalSearchParams();
 

@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import { Alert, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../../lib/supabase';
+import { Colors } from '../../constants/Colors';
 import { SearchAndFilterBar } from '../ui/SearchAndFilterBar';
 import { adminStyles } from '../utility/styles';
 import AdminModal from './AdminModal';
@@ -35,6 +36,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   biometricEnabled = false,
   biometricLoggedIn = false,
 }) => {
+  const themeColors = darkMode ? Colors.dark : Colors.light;
   // --- State ---
   const [search, setSearch] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
@@ -360,7 +362,7 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
   // (filteredEmployees already declared above)
 
   return (
-    <View style={{ flex: 1, backgroundColor: darkMode ? '#181a20' : '#f5faff' }}>
+    <View style={{ flex: 1, backgroundColor: themeColors.background }}>
       <View style={{ paddingHorizontal: 8, marginTop: 8, marginBottom: 4 }}>
         <SearchAndFilterBar
           searchValue={search}
@@ -401,14 +403,14 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
               }}
               activeOpacity={0.85}
               style={{
-                backgroundColor: darkMode ? '#23263a' : '#fff',
+                backgroundColor: themeColors.surface,
                 borderRadius: 10,
                 marginBottom: 7,
                 marginHorizontal: 2,
                 paddingVertical: 8,
                 paddingHorizontal: 6,
                 borderWidth: 1.2,
-                borderColor: '#1976d2',
+                borderColor: themeColors.primary,
                 flexDirection: 'row',
                 alignItems: 'center',
                 minWidth: 0,
@@ -429,11 +431,11 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: darkMode ? '#181a20' : '#f5faff',
+        backgroundColor: themeColors.background,
         padding: 16,
         paddingBottom: 32,
         borderTopWidth: 1,
-        borderTopColor: darkMode ? '#333' : '#e0e0e0'
+        borderTopColor: themeColors.border
       }}>
         <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
           <TouchableOpacity 

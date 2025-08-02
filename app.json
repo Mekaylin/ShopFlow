@@ -43,6 +43,27 @@
           "name": "mobile-web-app-capable",
           "content": "yes"
         }
+      ],
+      "plugins": [
+        "expo-router",
+        [
+          "expo-splash-screen",
+          {
+            "image": "./assets/images/splash-icon.png",
+            "imageWidth": 200,
+            "resizeMode": "contain",
+            "backgroundColor": "#1976d2"
+          }
+        ],
+        "expo-secure-store",
+        [
+          "@sentry/react-native/expo",
+          {
+            "url": "https://sentry.io/",
+            "project": "react-native",
+            "organization": "shopflow-fm"
+          }
+        ]
       ]
     },
     "plugins": [
@@ -57,6 +78,13 @@
         }
       ],
       "expo-secure-store",
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "$(PRODUCT_NAME) needs access to your Camera to scan license disks.",
+          "enableMicrophonePermission": false
+        }
+      ],
       [
         "@sentry/react-native/expo",
         {

@@ -1,63 +1,50 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
-import { supabase } from '../lib/supabase';
 import AdminDashboardScreen from './screens/AdminDashboardScreen';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const params = useLocalSearchParams();
-  const [user, setUser] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, userProfile, loading: authLoading, signOut } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
+  // Redirect if not authenticated or not an admin
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        // Get the authenticated user
-        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-        if (authError || !authUser) {
-          setError(authError?.message || 'No authenticated user found.');
-          setLoading(false);
-          return;
-        }
-
-        // Fetch user record from users table
-        const { data: userRecord, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', authUser.id)
-          .single();
-        if (userError || !userRecord) {
-          setError(userError?.message || 'User not found in users table.');
-          setLoading(false);
-          return;
-        }
-
-        // Ensure user has admin role
-        if (userRecord.role !== 'admin') {
-          setError('User is not an admin.');
-          setLoading(false);
-          return;
-        }
-
-        setUser(userRecord);
-        setLoading(false);
-      } catch (error: any) {
-        setError(error?.message || 'Error fetching user.');
-        setLoading(false);
+    if (!authLoading) {
+      if (!user) {
+        router.replace('/');
+        return;
       }
-    };
-    fetchUser();
-  }, [router]);
-
-  useEffect(() => {
-    if (error || !user || !user.business_id) {
-      Alert.alert('Error', error || (!user ? 'No user found.' : 'Missing business ID.'));
+      
+      if (!userProfile) {
+        setError('Could not load user profile');
+        return;
+      }
+      
+      if (userProfile.role !== 'admin') {
+        setError('Access denied: Admin privileges required');
+        return;
+      }
+      
+      if (!userProfile.business_id) {
+        setError('No business associated with this account');
+        return;
+      }
     }
-  }, [error, user]);
+  }, [user, userProfile, authLoading, router]);
 
-  if (loading) {
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      router.replace('/');
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      Alert.alert('Error', 'Failed to log out. Please try again.');
+    }
+  };
+
+  if (authLoading) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f6fa' }}>
         <ActivityIndicator size="large" color="#1976d2" />
@@ -66,38 +53,22 @@ export default function AdminDashboard() {
     );
   }
 
-  if (error || !user || !user.business_id) {
+  if (error || !user || !userProfile || userProfile.role !== 'admin' || !userProfile.business_id) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f6fa' }}>
         <Text style={{ fontSize: 20, color: '#c62828', marginBottom: 16 }}>
-          Error: {error || (!user ? 'No user found.' : 'Missing business ID.')}
+          Error: {error || 'Access denied'}
         </Text>
-        <Text style={{ color: '#888', marginBottom: 8 }}>Please try again or contact support.</Text>
+        <Text style={{ color: '#888', marginBottom: 8 }}>Please try logging in again.</Text>
         <TouchableOpacity
           style={{ backgroundColor: '#1976d2', borderRadius: 8, paddingVertical: 12, paddingHorizontal: 24, marginTop: 18 }}
-          onPress={() => {
-            setLoading(true);
-            setError(null);
-            // Re-trigger fetchUser by updating loading state
-            // The useEffect will run again
-          }}
+          onPress={handleLogout}
         >
-          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Retry</Text>
+          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Back to Login</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  return <AdminDashboardScreen onLogout={async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('[Logout] Error signing out:', error);
-      }
-    } catch (e) {
-      console.error('[Logout] Exception during signOut:', e);
-    } finally {
-      router.replace('/');
-    }
-  }} user={user} />;
+  return <AdminDashboardScreen onLogout={handleLogout} user={userProfile} />;
 }

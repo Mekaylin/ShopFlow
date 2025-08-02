@@ -56,8 +56,31 @@ export default function EmployeeDashboard() {
   // Loading overlay
   if (loading || !user) {
     return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f6fa' }}>
-        <Text style={{ fontSize: 20, color: '#222', marginBottom: 16 }}>Loading...</Text>
+      <View style={{ 
+        flex: 1, 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        backgroundColor: '#1976d2',
+        paddingHorizontal: 20
+      }}>
+        <ActivityIndicator size="large" color="#ffffff" />
+        <Text style={{ 
+          fontSize: 18, 
+          color: '#ffffff', 
+          marginTop: 16, 
+          fontWeight: '600',
+          textAlign: 'center'
+        }}>
+          Loading Dashboard...
+        </Text>
+        <Text style={{ 
+          fontSize: 14, 
+          color: 'rgba(255,255,255,0.8)', 
+          marginTop: 8,
+          textAlign: 'center'
+        }}>
+          Preparing your workspace
+        </Text>
       </View>
     );
   }

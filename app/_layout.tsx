@@ -4,7 +4,12 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import * as SplashScreen from 'expo-splash-screen';
+import React, { useCallback, useEffect } from 'react';
+import { AuthProvider } from '../contexts/AuthContext';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -12,23 +17,24 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
+  const onLayoutRootView = useCallback(async () => {
+    if (loaded || error) {
+      await SplashScreen.hideAsync();
+    }
+  }, [loaded, error]);
+
+  useEffect(() => {
+    if (loaded || error) {
+      onLayoutRootView();
+    }
+  }, [loaded, error, onLayoutRootView]);
+
   if (!loaded && !error) {
-    return (
-      <>
-        <Head>
-          <title>ShopFlow - Loading...</title>
-          <meta name="description" content="ShopFlow: Cloud-based business management for teams. Fast, modern, and mobile-friendly." />
-          <meta name="theme-color" content="#1976d2" />
-        </Head>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <StatusBar style="auto" />
-        </ThemeProvider>
-      </>
-    );
+    return null;
   }
 
   return (
-    <>
+    <AuthProvider>
       <Head>
         <title>ShopFlow - Cloud Business Dashboard</title>
         <meta name="description" content="ShopFlow: Cloud-based business management for teams. Fast, modern, and mobile-friendly." />
@@ -50,6 +56,6 @@ export default function RootLayout() {
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>
-    </>
+    </AuthProvider>
   );
 }

@@ -27,95 +27,60 @@ const LicenseDiskScannerScreen: React.FC<LicenseDiskScannerScreenProps> = ({
 
   const parseSouthAfricanLicenseData = (rawData: string): LicenseData | null => {
     try {
-      console.log('🔍 Parsing SA license data:', rawData);
+      console.log('Raw license data:', rawData);
       
-      // Enhanced South African license disk parsing
-      // SA license disks use PDF417 barcodes with structured data
+      // South African license disk PDF417 typically contains pipe-separated values
+      // Format example: "GP|ABC123GP|2024-12|CAR|..."
+      const parts = rawData.split('|');
       
-      // Remove special characters and normalize
-      const cleanData = rawData.replace(/[^\w\s|\/\-:.]/g, '');
-      
-      // Try pipe-separated format first (standard PDF417)
-      const parts = cleanData.split('|');
-      
-      if (parts.length >= 4) {
-        // Standard SA format: Province|LicenseNumber|ExpiryDate|VehicleType|...
-        const [province, licenseNumber, expiryDate, vehicleType, ...rest] = parts;
+      if (parts.length < 2) {
+        // Try alternative parsing for different formats
+        const lines = rawData.split('\n').map(line => line.trim()).filter(line => line);
         
-        return {
-          licenseNumber: licenseNumber?.trim() || 'Unknown',
-          province: mapProvinceCode(province?.trim()) || 'Unknown',
-          expiryDate: formatSADate(expiryDate?.trim()) || 'Unknown',
-          vehicleType: mapVehicleType(vehicleType?.trim()) || 'Motor Vehicle',
-          rawData,
-          scannedAt: new Date().toISOString()
-        };
-      }
-      
-      // Alternative parsing for non-standard formats
-      const lines = cleanData.split(/[\n\r|]/).map(line => line.trim()).filter(line => line);
-      
-      let licenseNumber = '';
-      let province = '';
-      let expiryDate = '';
-      let vehicleType = 'Motor Vehicle';
-      
-      for (const line of lines) {
-        // Enhanced SA license number patterns
-        // Examples: ABC123GP, 123ABC456, CA123456, DDD123WC
-        const licensePatterns = [
-          /([A-Z]{2,3}\d{3,6}[A-Z]{2})/,  // ABC123GP format
-          /(\d{3}[A-Z]{3}\d{3})/,         // 123ABC456 format
-          /([A-Z]{2}\d{6})/,              // CA123456 format
-          /([A-Z]{3}\d{3}[A-Z]{2})/       // DDD123WC format
-        ];
+        // Look for license number patterns (e.g., ABC123GP, 123ABC456)
+        let licenseNumber = '';
+        let province = '';
+        let expiryDate = '';
         
-        for (const pattern of licensePatterns) {
-          const match = line.match(pattern);
-          if (match && !licenseNumber) {
-            licenseNumber = match[1];
+        for (const line of lines) {
+          // License number pattern: letters + numbers + optional province code
+          const licenseMatch = line.match(/([A-Z]{2,3}\d{3,6}[A-Z]{0,2})/);
+          if (licenseMatch && !licenseNumber) {
+            licenseNumber = licenseMatch[1];
             
-            // Extract province code from license number
-            const provinceFromLicense = extractProvinceFromLicense(licenseNumber);
-            if (provinceFromLicense) {
-              province = provinceFromLicense;
+            // Extract province from license number
+            const provinceMatch = licenseNumber.match(/([A-Z]{2})$/);
+            if (provinceMatch) {
+              province = provinceMatch[1];
             }
-            break;
+          }
+          
+          // Date pattern: YYYY-MM or MM/YYYY
+          const dateMatch = line.match(/(\d{4}-\d{2}|\d{2}\/\d{4})/);
+          if (dateMatch && !expiryDate) {
+            expiryDate = dateMatch[1];
           }
         }
         
-        // Enhanced date patterns for SA format
-        const datePatterns = [
-          /(\d{4}[-\/]\d{2}[-\/]\d{2})/,    // YYYY-MM-DD or YYYY/MM/DD
-          /(\d{2}[-\/]\d{2}[-\/]\d{4})/,    // DD-MM-YYYY or DD/MM/YYYY
-          /(\d{4}[-\/]\d{2})/,              // YYYY-MM
-          /(\d{2}[-\/]\d{4})/               // MM/YYYY
-        ];
-        
-        for (const pattern of datePatterns) {
-          const match = line.match(pattern);
-          if (match && !expiryDate) {
-            expiryDate = formatSADate(match[1]);
-            break;
-          }
+        if (licenseNumber) {
+          return {
+            licenseNumber,
+            province: province || 'Unknown',
+            expiryDate: expiryDate || 'Unknown',
+            vehicleType: 'Motor Vehicle',
+            rawData,
+            scannedAt: new Date().toISOString()
+          };
         }
+      } else {
+        // Standard pipe-separated format
+        const [province, licenseNumber, expiryDate, vehicleType] = parts;
         
-        // Vehicle type detection
-        const vehicleTypes = ['MOTOR VEHICLE', 'MOTORCYCLE', 'TRAILER', 'BUS', 'TRUCK', 'TAXI'];
-        const foundType = vehicleTypes.find(type => 
-          line.toUpperCase().includes(type)
-        );
-        if (foundType) {
-          vehicleType = foundType;
-        }
-      }
-      
-      if (licenseNumber) {
         return {
-          licenseNumber,
+          licenseNumber: licenseNumber || 'Unknown',
           province: province || 'Unknown',
           expiryDate: expiryDate || 'Unknown',
-          vehicleType,
+          vehicleType: vehicleType || 'Motor Vehicle',
           rawData,
           scannedAt: new Date().toISOString()
         };
@@ -123,90 +88,9 @@ const LicenseDiskScannerScreen: React.FC<LicenseDiskScannerScreenProps> = ({
       
       return null;
     } catch (error) {
-      console.error('❌ Error parsing license data:', error);
+      console.error('Error parsing license data:', error);
       return null;
     }
-  };
-
-  // Helper function to map SA province codes
-  const mapProvinceCode = (code: string): string => {
-    const provinceCodes: Record<string, string> = {
-      'GP': 'Gauteng',
-      'WC': 'Western Cape',
-      'KZN': 'KwaZulu-Natal',
-      'EC': 'Eastern Cape',
-      'FS': 'Free State',
-      'LP': 'Limpopo',
-      'MP': 'Mpumalanga',
-      'NC': 'Northern Cape',
-      'NW': 'North West'
-    };
-    return provinceCodes[code?.toUpperCase()] || code || 'Unknown';
-  };
-
-  // Helper function to extract province from license number
-  const extractProvinceFromLicense = (license: string): string => {
-    const provincePatterns = [
-      { pattern: /GP$/, province: 'Gauteng' },
-      { pattern: /WC$/, province: 'Western Cape' },
-      { pattern: /KZN$/, province: 'KwaZulu-Natal' },
-      { pattern: /EC$/, province: 'Eastern Cape' },
-      { pattern: /FS$/, province: 'Free State' },
-      { pattern: /LP$/, province: 'Limpopo' },
-      { pattern: /MP$/, province: 'Mpumalanga' },
-      { pattern: /NC$/, province: 'Northern Cape' },
-      { pattern: /NW$/, province: 'North West' }
-    ];
-    
-    for (const { pattern, province } of provincePatterns) {
-      if (pattern.test(license)) {
-        return province;
-      }
-    }
-    return '';
-  };
-
-  // Helper function to format SA dates
-  const formatSADate = (dateStr: string): string => {
-    try {
-      if (!dateStr) return 'Unknown';
-      
-      // Handle different date formats
-      if (dateStr.match(/^\d{4}-\d{2}$/)) {
-        return dateStr; // Already in YYYY-MM format
-      }
-      
-      if (dateStr.match(/^\d{2}\/\d{4}$/)) {
-        const [month, year] = dateStr.split('/');
-        return `${year}-${month.padStart(2, '0')}`;
-      }
-      
-      if (dateStr.match(/^\d{4}[-\/]\d{2}[-\/]\d{2}$/)) {
-        return dateStr.replace(/\//g, '-');
-      }
-      
-      if (dateStr.match(/^\d{2}[-\/]\d{2}[-\/]\d{4}$/)) {
-        const parts = dateStr.split(/[-\/]/);
-        return `${parts[2]}-${parts[1]}-${parts[0]}`;
-      }
-      
-      return dateStr;
-    } catch {
-      return dateStr || 'Unknown';
-    }
-  };
-
-  // Helper function to map vehicle types
-  const mapVehicleType = (type: string): string => {
-    const typeMap: Record<string, string> = {
-      'MV': 'Motor Vehicle',
-      'MC': 'Motorcycle',
-      'TR': 'Trailer',
-      'BUS': 'Bus',
-      'TRUCK': 'Truck',
-      'TAXI': 'Taxi'
-    };
-    return typeMap[type?.toUpperCase()] || type || 'Motor Vehicle';
   };
 
   const handleCodeScanned = useCallback((data: string) => {

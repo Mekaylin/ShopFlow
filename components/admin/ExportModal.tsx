@@ -27,71 +27,124 @@ const ExportModal: React.FC<ExportModalProps> = ({
 }) => {
   const [exportType, setExportType] = useState<'tasks' | 'materials' | 'employees' | 'attendance' | 'all'>('all');
   const [metricsTab, setMetricsTab] = useState<'day' | 'week' | 'month'>('day');
-  // Calculate date range based on tab
-  const today = new Date();
-  let startDate = today.toISOString().split('T')[0];
-  let endDate = today.toISOString().split('T')[0];
-  if (metricsTab === 'week') {
-    const first = new Date(today);
-    first.setDate(today.getDate() - today.getDay()); // Sunday
-    startDate = first.toISOString().split('T')[0];
-    endDate = today.toISOString().split('T')[0];
-  } else if (metricsTab === 'month') {
-    const first = new Date(today.getFullYear(), today.getMonth(), 1);
-    startDate = first.toISOString().split('T')[0];
-    endDate = today.toISOString().split('T')[0];
-  }
+  
+  // Calculate date range based on tab selection
+  const getDateRange = (tab: 'day' | 'week' | 'month') => {
+    const today = new Date();
+    let startDate = today.toISOString().split('T')[0];
+    let endDate = today.toISOString().split('T')[0];
+    
+    if (tab === 'week') {
+      const first = new Date(today);
+      first.setDate(today.getDate() - today.getDay()); // Sunday
+      startDate = first.toISOString().split('T')[0];
+      endDate = today.toISOString().split('T')[0];
+    } else if (tab === 'month') {
+      const first = new Date(today.getFullYear(), today.getMonth(), 1);
+      startDate = first.toISOString().split('T')[0];
+      endDate = today.toISOString().split('T')[0];
+    }
+    
+    return { startDate, endDate };
+  };
+  
+  const { startDate, endDate } = getDateRange(metricsTab);
 
   const handleExport = async () => {
     let data = '';
     let filename = '';
 
-    // Parse startDate and endDate as Date objects
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    // Parse startDate and endDate as Date objects for proper comparison
+    const start = new Date(startDate + 'T00:00:00.000Z');
+    const end = new Date(endDate + 'T23:59:59.999Z');
+    
     // Helper function to check if date is in range
-    const inRange = (date: Date) => {
-      return date >= new Date(startDate) && date <= new Date(endDate);
+    const inRange = (dateStr: string | null | undefined) => {
+      if (!dateStr) return false;
+      const date = new Date(dateStr);
+      return date >= start && date <= end;
     };
 
     if (exportType === 'tasks' || exportType === 'all') {
+      // Filter tasks based on completion date or start date if not completed
       const filtered = tasks.filter(t => {
-        const d = t.completed_at ? new Date(t.completed_at) : (t.deadline ? new Date(t.deadline) : new Date());
-        return inRange(d);
+        // Use completed_at if task is completed, otherwise use start date
+        const relevantDate = t.completed ? t.completed_at : t.start;
+        return inRange(relevantDate);
       });
-      data += 'Task Name,Assigned To,Start,Deadline,Completed,Completed At\n';
+      
+      data += 'Task ID,Task Name,Assigned To,Department,Start Date,Deadline,Status,Completed At,Date,Materials Used\n';
       filtered.forEach(t => {
-        data += `${t.name},${t.assigned_to || ''},${t.start},${t.deadline},${t.completed ? 'Yes' : 'No'},${t.completed_at || ''}\n`;
+        const status = t.completed ? 'Completed' : (new Date(t.deadline) < new Date() ? 'Overdue' : 'In Progress');
+        const assignedEmployee = employees.find(e => e.name === t.assigned_to || e.id === t.assigned_to);
+        const department = assignedEmployee?.department || '';
+        const materialsUsed = t.materials_used ? t.materials_used.map(m => `${m.materialId}:${m.quantity}`).join(';') : '';
+        
+        data += `"${t.id || ''}","${(t.name || '').replace(/"/g, '""')}","${t.assigned_to || ''}","${department}","${t.start || ''}","${t.deadline || ''}","${status}","${t.completed_at || ''}","${t.date || ''}","${materialsUsed}"\n`;
       });
-      filename = 'tasks.csv';
+      filename = `tasks_${startDate}_to_${endDate}.csv`;
     }
+    
     if (exportType === 'materials' || exportType === 'all') {
-      data += '\nMaterial Name,Unit\n';
+      if (data) data += '\n';
+      data += 'Material ID,Material Name,Type,Unit,Quantity,Business ID\n';
       materials.forEach(m => {
-        data += `${m.name},${m.unit}\n`;
+        data += `"${m.id || ''}","${(m.name || '').replace(/"/g, '""')}","${m.type || ''}","${m.unit || ''}","${m.quantity || 0}","${m.business_id || ''}"\n`;
       });
-      filename = 'materials.csv';
+      if (exportType === 'materials') filename = `materials_${startDate}_to_${endDate}.csv`;
     }
+    
     if (exportType === 'employees' || exportType === 'all') {
-      data += '\nEmployee Name,Code,Lunch Start,Lunch End\n';
+      if (data) data += '\n';
+      data += 'Employee ID,Employee Name,Code,Department,Lunch Start,Lunch End,Photo URI,Business ID\n';
       employees.forEach(e => {
-        data += `${e.name},${e.code},${e.lunchStart || ''},${e.lunchEnd || ''}\n`;
+        data += `"${e.id || ''}","${(e.name || '').replace(/"/g, '""')}","${e.code || ''}","${e.department || ''}","${e.lunchStart || ''}","${e.lunchEnd || ''}","${e.photoUri || ''}","${e.business_id || ''}"\n`;
       });
-      filename = 'employees.csv';
+      if (exportType === 'employees') filename = `employees_${startDate}_to_${endDate}.csv`;
     }
+    
     if (exportType === 'attendance' || exportType === 'all') {
-      data += '\nEmployee Name,Clock In,Clock Out\n';
-      employees.forEach(emp => {
-        const events = (clockEvents || []).filter(ev => ev.employee_id === emp.id && inRange(new Date(ev.clock_in)));
-        events.forEach(ev => {
-          const clockIn = ev.clock_in ? new Date(ev.clock_in).toLocaleString() : '';
-          const clockOut = ev.clock_out ? new Date(ev.clock_out).toLocaleString() : '';
-          data += `${emp.name},${clockIn},${clockOut}\n`;
-        });
+      if (data) data += '\n';
+      data += 'Event ID,Employee ID,Employee Name,Clock In,Clock Out,Lunch Start,Lunch End,Total Hours,Date,Business ID\n';
+      
+      // Filter clock events within date range
+      const filteredEvents = clockEvents.filter(ev => inRange(ev.clock_in));
+      
+      filteredEvents.forEach(ev => {
+        const employee = employees.find(emp => emp.id === ev.employee_id);
+        const employeeName = employee?.name || 'Unknown Employee';
+        const clockIn = ev.clock_in ? new Date(ev.clock_in).toLocaleString() : '';
+        const clockOut = ev.clock_out ? new Date(ev.clock_out).toLocaleString() : 'Still Clocked In';
+        const lunchStart = ev.lunch_start ? new Date(ev.lunch_start).toLocaleString() : '';
+        const lunchEnd = ev.lunch_end ? new Date(ev.lunch_end).toLocaleString() : '';
+        
+        // Calculate total hours worked
+        let totalHours = 0;
+        if (ev.clock_in && ev.clock_out) {
+          const hoursWorked = (new Date(ev.clock_out).getTime() - new Date(ev.clock_in).getTime()) / (1000 * 60 * 60);
+          totalHours = Math.round(hoursWorked * 100) / 100;
+        }
+        
+        const eventDate = ev.clock_in ? new Date(ev.clock_in).toLocaleDateString() : '';
+        
+        data += `"${ev.id || ''}","${ev.employee_id || ''}","${employeeName}","${clockIn}","${clockOut}","${lunchStart}","${lunchEnd}","${totalHours}","${eventDate}","${ev.business_id || ''}"\n`;
       });
-      filename = 'attendance.csv';
+      
+      if (exportType === 'attendance') filename = `attendance_${startDate}_to_${endDate}.csv`;
     }
-    if (exportType === 'all') filename = 'all_data.csv';
+    
+    if (exportType === 'all') filename = `shopflow_export_${startDate}_to_${endDate}.csv`;
+
+    // Add summary information at the top for 'all' export
+    if (exportType === 'all') {
+      const summaryData = `ShopFlow Data Export - ${startDate} to ${endDate}\n` +
+        `Generated on: ${new Date().toLocaleString()}\n` +
+        `Total Employees: ${employees.length}\n` +
+        `Total Tasks in Range: ${tasks.filter(t => inRange(t.completed ? t.completed_at : t.start)).length}\n` +
+        `Total Materials: ${materials.length}\n` +
+        `Total Clock Events in Range: ${clockEvents.filter(ev => inRange(ev.clock_in)).length}\n\n`;
+      data = summaryData + data;
+    }
 
     if (Platform.OS === 'web') {
       try {

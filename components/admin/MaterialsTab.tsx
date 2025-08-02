@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
+import { Colors } from '../../constants/Colors';
 import { SearchAndFilterBar } from '../ui/SearchAndFilterBar';
 import { adminStyles } from '../utility/styles';
 import AdminModal from './AdminModal';
@@ -25,6 +26,7 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
   setMaterialTypes,
   darkMode,
 }) => {
+  const themeColors = darkMode ? Colors.dark : Colors.light;
   // Fetch all material types for the business and group by material_id
   useEffect(() => {
     if (!user?.business_id) return;
@@ -285,7 +287,7 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: darkMode ? '#181a20' : '#f5f6fa',
+        backgroundColor: themeColors.background,
         padding: 16,
         paddingBottom: 32,
         borderTopWidth: 1,
