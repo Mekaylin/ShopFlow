@@ -1,13 +1,18 @@
 {
   "expo": {
-    "name": "ShopFlowFinal",
+    "name": "ShopFlow",
     "slug": "ShopFlowFinal",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "shopflowfinal",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1976d2"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mekaylin.shopflowfinal"
@@ -15,13 +20,19 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#1976d2"
       },
+      "icon": "./assets/images/icon.png",
       "edgeToEdgeEnabled": true,
       "package": "com.mekaylin.shopflowfinal",
+      "versionCode": 2,
       "permissions": [
-        "android.permission.CAMERA"
-      ]
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "jsEngine": "hermes",
+      "enableProguardInReleaseBuilds": true,
+      "enableSeparateBuildPerCPUArchitecture": false
     },
     "web": {
       "bundler": "metro",
@@ -42,10 +53,17 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "backgroundColor": "#1976d2"
         }
       ],
       "expo-secure-store",
+      [
+        "react-native-vision-camera",
+        {
+          "cameraPermissionText": "$(PRODUCT_NAME) needs access to your Camera to scan license disks.",
+          "enableMicrophonePermission": false
+        }
+      ],
       [
         "@sentry/react-native/expo",
         {
