@@ -2,6 +2,7 @@ import React, { memo, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { supabase } from '../../lib/supabase';
+import { createShadowStyle, shadowPresets } from '../../utils/shadowUtils';
 import { ClockEvent, Employee } from '../utility/types';
 
 interface ClockEventsTabProps {
@@ -191,7 +192,13 @@ const ClockEventsTab = ({ user, employees, darkMode }: ClockEventsTabProps) => {
           if (events.length === 0) return null;
           
           return (
-          <View key={emp.id} style={{ backgroundColor: themeColors.surface, borderRadius: 16, padding: 20, marginBottom: 18, shadowColor: themeColors.shadow, shadowOpacity: 0.1, shadowRadius: 8, elevation: 3 }}>
+          <View key={emp.id} style={{
+            backgroundColor: themeColors.surface,
+            borderRadius: 16,
+            padding: 20,
+            marginBottom: 18,
+            ...createShadowStyle(shadowPresets.card)
+          }}>
             <TouchableOpacity onPress={() => handleExpand(emp.id)} activeOpacity={0.8} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View>
                 <Text style={{ fontSize: 20, fontWeight: 'bold', color: themeColors.primary, marginBottom: 2 }}>{emp.name}</Text>

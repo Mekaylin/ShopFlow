@@ -3,6 +3,7 @@ import React from 'react';
 import { Modal, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { adminStyles } from '../utility/styles';
+import { createShadowStyle, shadowPresets } from '../../utils/shadowUtils';
 import { Task as BaseTask, Employee, Material, PerformanceMetrics } from '../utility/types';
 import {
   getBestPerformers,
@@ -392,7 +393,13 @@ const HomeTab: React.FC<HomeTabProps> = ({
       <TouchableOpacity
         activeOpacity={canExpand(filteredTasks) ? 0.7 : 1}
         onPress={() => canExpand(filteredTasks) && setShowAllTasksModal(true)}
-        style={{ backgroundColor: darkMode ? '#232a36' : '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: darkMode ? '#000' : '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
+        style={{
+          backgroundColor: darkMode ? '#232a36' : '#fff',
+          borderRadius: 16,
+          padding: 18,
+          marginBottom: 8,
+          ...createShadowStyle(shadowPresets.card)
+        }}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
           <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2' }}>Tasks</Text>
@@ -424,7 +431,13 @@ const HomeTab: React.FC<HomeTabProps> = ({
       <TouchableOpacity
         activeOpacity={canExpand(lateEmployeesDetailed) ? 0.7 : 1}
         onPress={() => canExpand(lateEmployeesDetailed) && setShowAllLateEmpsModal(true)}
-        style={{ backgroundColor: darkMode ? '#232a36' : '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: darkMode ? '#000' : '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
+        style={{
+          backgroundColor: darkMode ? '#232a36' : '#fff',
+          borderRadius: 16,
+          padding: 18,
+          marginBottom: 8,
+          ...createShadowStyle(shadowPresets.card)
+        }}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
           <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#c62828' }}>Late Employees</Text>
@@ -451,7 +464,13 @@ const HomeTab: React.FC<HomeTabProps> = ({
       <TouchableOpacity
         activeOpacity={canExpand(Object.entries(materialsUsed)) ? 0.7 : 1}
         onPress={() => canExpand(Object.entries(materialsUsed)) && setShowAllMaterialsModal(true)}
-        style={{ backgroundColor: darkMode ? '#232a36' : '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: darkMode ? '#000' : '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}
+        style={{
+          backgroundColor: darkMode ? '#232a36' : '#fff',
+          borderRadius: 16,
+          padding: 18,
+          marginBottom: 8,
+          ...createShadowStyle(shadowPresets.card)
+        }}
       >
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
           <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2' }}>Materials Used</Text>
@@ -475,7 +494,13 @@ const HomeTab: React.FC<HomeTabProps> = ({
         )}
       </TouchableOpacity>
       {/* Best Performers Card */}
-      <View style={{ backgroundColor: darkMode ? '#232a36' : '#fff', borderRadius: 16, padding: 18, marginBottom: 8, shadowColor: darkMode ? '#000' : '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}>
+      <View style={{
+        backgroundColor: darkMode ? '#232a36' : '#fff',
+        borderRadius: 16,
+        padding: 18,
+        marginBottom: 8,
+        ...createShadowStyle(shadowPresets.card)
+      }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
           <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2' }}>Best Performers</Text>
           <Text style={{ fontSize: 14, color: '#666' }}>Top 5</Text>
@@ -493,7 +518,13 @@ const HomeTab: React.FC<HomeTabProps> = ({
         )}
       </View>
       {/* Export Section with Date Filter */}
-      <View style={{ marginTop: 16, backgroundColor: darkMode ? '#232a36' : '#fff', borderRadius: 16, padding: 18, shadowColor: darkMode ? '#000' : '#1976d2', shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 }}>
+      <View style={{
+        marginTop: 16,
+        backgroundColor: darkMode ? '#232a36' : '#fff',
+        borderRadius: 16,
+        padding: 18,
+        ...createShadowStyle(shadowPresets.card)
+      }}>
         <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1976d2', marginBottom: 12 }}>Export Data</Text>
         {/* Current Filter Display */}
         <View style={{ backgroundColor: '#f5f9ff', borderRadius: 8, padding: 12, marginBottom: 12 }}>

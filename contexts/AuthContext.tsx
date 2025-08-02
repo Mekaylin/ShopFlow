@@ -130,7 +130,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           // Clear stored session data on sign out
           if (event === 'SIGNED_OUT') {
-            await AsyncStorage.removeItem('supabase.auth.token');
+            try {
+              if (Platform.OS === 'web') {
+                localStorage.removeItem('supabase.auth.token');
+              } else {
+                await AsyncStorage.removeItem('supabase.auth.token');
+              }
+            } catch (error) {
+              console.error('Error clearing stored session:', error);
+            }
           }
         }
         
@@ -173,7 +181,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(null);
         setUserProfile(null);
         // Clear any stored session data
-        await AsyncStorage.removeItem('supabase.auth.token');
+        try {
+          if (Platform.OS === 'web') {
+            localStorage.removeItem('supabase.auth.token');
+          } else {
+            await AsyncStorage.removeItem('supabase.auth.token');
+          }
+        } catch (error) {
+          console.error('Error clearing stored session data:', error);
+        }
       }
     } catch (error) {
       console.error('Error signing out:', error);

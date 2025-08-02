@@ -1,6 +1,7 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { createShadowStyle, shadowPresets } from '../../utils/shadowUtils';
 
 interface AdminRowProps {
   icon?: string;
@@ -35,11 +36,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 12,
     marginBottom: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+    ...createShadowStyle(shadowPresets.small),
   },
   icon: {
     marginRight: 16,

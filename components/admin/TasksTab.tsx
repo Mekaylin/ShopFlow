@@ -193,11 +193,10 @@ export const TasksTab: React.FC<TasksTabProps> = ({
             {employees.map(emp => (
               <TouchableOpacity
                 key={emp.id}
-                style={{ 
-                  padding: 12, 
-                  borderBottomWidth: 1, 
-                  borderColor: themeColors.border 
-                }}
+                style={[styles.employeePickerItem, { 
+                  borderColor: themeColors.border,
+                  backgroundColor: themeColors.surface
+                }]}
                 onPress={() => setSelectedEmployee(emp)}
               >
                 <Text style={{ 
@@ -360,7 +359,8 @@ const styles = StyleSheet.create({
     borderRadius: 20, 
     padding: 10, 
     alignItems: 'center', 
-    marginBottom: 16 
+    marginBottom: 16,
+    ...createShadowStyle(shadowPresets.medium)
   },
   addBtnText: { 
     color: '#ffffff', 
@@ -394,7 +394,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     alignItems: 'center',
-    marginTop: 8
+    marginTop: 8,
+    ...createShadowStyle(shadowPresets.small)
   },
   buttonText: {
     color: '#ffffff',
@@ -417,7 +418,8 @@ const styles = StyleSheet.create({
     padding: 6,
     paddingHorizontal: 12,
     marginRight: 8,
-    marginBottom: 4
+    marginBottom: 4,
+    ...createShadowStyle(shadowPresets.small)
   },
   actionButtonText: {
     fontWeight: 'bold',
@@ -429,7 +431,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4
+    marginBottom: 4,
+    ...createShadowStyle(shadowPresets.small)
   },
   errorText: {
     marginTop: 8,
@@ -455,5 +458,13 @@ const styles = StyleSheet.create({
     textAlign: 'center', 
     marginTop: 32,
     fontSize: 16
+  },
+  employeePickerItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    marginHorizontal: 4,
+    marginVertical: 2,
+    borderRadius: 8,
+    ...createShadowStyle(shadowPresets.small)
   },
 });
