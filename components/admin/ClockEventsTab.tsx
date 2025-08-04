@@ -97,21 +97,27 @@ const ClockEventsTab = ({ user, employees, darkMode }: ClockEventsTabProps) => {
   // Helper: get today's and this week's events for an employee
   function getEventsForDay(events: ClockEvent[], date: Date): ClockEvent[] {
     return events.filter((ev: ClockEvent) => {
-      const ts = ev.clock_in || ev.clock_out || ev.lunch_start || ev.lunch_end;
-      if (!ts) return false;
-      const d = new Date(ts);
-      return d.toDateString() === date.toDateString();
+      const eventDate = new Date(ev.created_at);
+      
+      // Debug logging
+      console.log(`[ClockEvents] Comparing event date ${eventDate.toDateString()} with target date ${date.toDateString()}`);
+      console.log(`[ClockEvents] Event created_at: ${ev.created_at}, Parsed: ${eventDate.toString()}`);
+      
+      // Use date string comparison to avoid timezone issues
+      const eventDateStr = eventDate.toDateString();
+      const targetDateStr = date.toDateString();
+      
+      return eventDateStr === targetDateStr;
     });
   }
+  
   function getEventsForWeek(events: ClockEvent[]): ClockEvent[] {
     const now = new Date();
     const weekAgo = new Date(now);
     weekAgo.setDate(now.getDate() - 6);
     return events.filter((ev: ClockEvent) => {
-      const ts = ev.clock_in || ev.clock_out || ev.lunch_start || ev.lunch_end;
-      if (!ts) return false;
-      const d = new Date(ts);
-      return d >= weekAgo && d <= now;
+      const eventDate = new Date(ev.created_at);
+      return eventDate >= weekAgo && eventDate <= now;
     });
   }
 
@@ -188,6 +194,13 @@ const ClockEventsTab = ({ user, employees, darkMode }: ClockEventsTabProps) => {
           const todayEvents = getEventsForDay(events, new Date());
           const weekEvents = getEventsForWeek(events);
           
+          // Debug logging for clock events
+          if (events.length > 0) {
+            console.log(`[ClockEvents] Employee ${emp.name} has ${events.length} total events`);
+            console.log(`[ClockEvents] Today events for ${emp.name}:`, todayEvents.length, todayEvents);
+            console.log(`[ClockEvents] Sample event structure:`, events[0]);
+          }
+          
           // Only show employees with recent events to improve performance
           if (events.length === 0) return null;
           
@@ -214,10 +227,26 @@ const ClockEventsTab = ({ user, employees, darkMode }: ClockEventsTabProps) => {
               ) : (
                 todayEvents.map((event: ClockEvent, idx: number) => (
                   <View key={event.id || idx} style={{ backgroundColor: themeColors.background, borderRadius: 8, padding: 10, marginBottom: 4 }}>
-                    {event.clock_in && <Text style={{ color: '#388e3c', fontWeight: 'bold' }}>Clock In: <Text style={{ color: themeColors.text, fontWeight: 'normal' }}>{new Date(event.clock_in).toLocaleTimeString()}</Text></Text>}
-                    {event.lunch_start && <Text style={{ color: '#ff9800', fontWeight: 'bold' }}>Lunch Start: <Text style={{ color: themeColors.text, fontWeight: 'normal' }}>{new Date(event.lunch_start).toLocaleTimeString()}</Text></Text>}
-                    {event.lunch_end && <Text style={{ color: '#1976d2', fontWeight: 'bold' }}>Lunch End: <Text style={{ color: themeColors.text, fontWeight: 'normal' }}>{new Date(event.lunch_end).toLocaleTimeString()}</Text></Text>}
-                    {event.clock_out && <Text style={{ color: '#c62828', fontWeight: 'bold' }}>Clock Out: <Text style={{ color: themeColors.text, fontWeight: 'normal' }}>{new Date(event.clock_out).toLocaleTimeString()}</Text></Text>}
+                    <Text style={{ 
+                      color: event.action === 'in' ? '#388e3c' : 
+                             event.action === 'out' ? '#c62828' : 
+                             event.action === 'lunch' ? '#ff9800' : 
+                             event.action === 'lunchBack' ? '#1976d2' : themeColors.text, 
+                      fontWeight: 'bold' 
+                    }}>
+                      {event.action === 'in' ? 'Clock In' :
+                       event.action === 'out' ? 'Clock Out' :
+                       event.action === 'lunch' ? 'Lunch Start' :
+                       event.action === 'lunchBack' ? 'Lunch End' : event.action}: {' '}
+                      <Text style={{ color: themeColors.text, fontWeight: 'normal' }}>
+                        {new Date(event.created_at).toLocaleTimeString()}
+                      </Text>
+                    </Text>
+                    {event.notes && (
+                      <Text style={{ color: themeColors.textSecondary, fontSize: 12, marginTop: 4 }}>
+                        {event.notes}
+                      </Text>
+                    )}
                   </View>
                 ))
               )}

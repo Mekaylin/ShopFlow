@@ -39,12 +39,19 @@ export interface Material {
 
 export interface ClockEvent {
   id: string;
+  business_id: string;
   employee_id: string;
-  clock_in: string;
+  action: 'in' | 'out' | 'lunch' | 'lunchBack';
+  created_at: string;
+  notes?: string;
+  location?: string;
+  updated_at?: string;
+  
+  // Legacy fields for backward compatibility (optional)
+  clock_in?: string;
   clock_out?: string;
   lunch_start?: string;
   lunch_end?: string;
-  business_id: string;
 }
 
 export interface TaskRating {

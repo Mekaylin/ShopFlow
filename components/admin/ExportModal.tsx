@@ -68,68 +68,74 @@ const ExportModal: React.FC<ExportModalProps> = ({
     if (exportType === 'tasks' || exportType === 'all') {
       // Filter tasks based on completion date or start date if not completed
       const filtered = tasks.filter(t => {
-        // Use completed_at if task is completed, otherwise use start date
         const relevantDate = t.completed ? t.completed_at : t.start;
         return inRange(relevantDate);
       });
-      
-      data += 'Task ID,Task Name,Assigned To,Department,Start Date,Deadline,Status,Completed At,Date,Materials Used\n';
+      data += 'Task Name,Assigned To,Department,Start Date,Deadline,Status,Completed At,Materials Used\n';
       filtered.forEach(t => {
         const status = t.completed ? 'Completed' : (new Date(t.deadline) < new Date() ? 'Overdue' : 'In Progress');
         const assignedEmployee = employees.find(e => e.name === t.assigned_to || e.id === t.assigned_to);
         const department = assignedEmployee?.department || '';
         const materialsUsed = t.materials_used ? t.materials_used.map(m => `${m.materialId}:${m.quantity}`).join(';') : '';
-        
-        data += `"${t.id || ''}","${(t.name || '').replace(/"/g, '""')}","${t.assigned_to || ''}","${department}","${t.start || ''}","${t.deadline || ''}","${status}","${t.completed_at || ''}","${t.date || ''}","${materialsUsed}"\n`;
+        data += `"${(t.name || '').replace(/"/g, '""')}","${assignedEmployee?.name || t.assigned_to || ''}","${department}","${t.start || ''}","${t.deadline || ''}","${status}","${t.completed_at || ''}","${materialsUsed}"\n`;
       });
       filename = `tasks_${startDate}_to_${endDate}.csv`;
     }
     
     if (exportType === 'materials' || exportType === 'all') {
       if (data) data += '\n';
-      data += 'Material ID,Material Name,Type,Unit,Quantity,Business ID\n';
+      data += 'Material Name,Type,Unit,Quantity\n';
       materials.forEach(m => {
-        data += `"${m.id || ''}","${(m.name || '').replace(/"/g, '""')}","${m.type || ''}","${m.unit || ''}","${m.quantity || 0}","${m.business_id || ''}"\n`;
+        data += `"${(m.name || '').replace(/"/g, '""')}","${m.type || ''}","${m.unit || ''}","${m.quantity || 0}"\n`;
       });
       if (exportType === 'materials') filename = `materials_${startDate}_to_${endDate}.csv`;
     }
     
     if (exportType === 'employees' || exportType === 'all') {
       if (data) data += '\n';
-      data += 'Employee ID,Employee Name,Code,Department,Lunch Start,Lunch End,Photo URI,Business ID\n';
+      data += 'Employee Name,Department,Lunch Start,Lunch End,Photo URI\n';
       employees.forEach(e => {
-        data += `"${e.id || ''}","${(e.name || '').replace(/"/g, '""')}","${e.code || ''}","${e.department || ''}","${e.lunchStart || ''}","${e.lunchEnd || ''}","${e.photoUri || ''}","${e.business_id || ''}"\n`;
+        data += `"${(e.name || '').replace(/"/g, '""')}","${e.department || ''}","${e.lunchStart || ''}","${e.lunchEnd || ''}","${e.photoUri || ''}"\n`;
       });
       if (exportType === 'employees') filename = `employees_${startDate}_to_${endDate}.csv`;
     }
     
     if (exportType === 'attendance' || exportType === 'all') {
       if (data) data += '\n';
-      data += 'Event ID,Employee ID,Employee Name,Clock In,Clock Out,Lunch Start,Lunch End,Total Hours,Date,Business ID\n';
-      
-      // Filter clock events within date range
+      data += 'Employee Name,Date,Clock In,Clock Out,Lunch Start,Lunch End,Total Hours\n';
+      // Group events by employee
       const filteredEvents = clockEvents.filter(ev => inRange(ev.clock_in));
-      
+      const eventsByEmployee: { [employeeId: string]: typeof filteredEvents } = {};
       filteredEvents.forEach(ev => {
-        const employee = employees.find(emp => emp.id === ev.employee_id);
-        const employeeName = employee?.name || 'Unknown Employee';
-        const clockIn = ev.clock_in ? new Date(ev.clock_in).toLocaleString() : '';
-        const clockOut = ev.clock_out ? new Date(ev.clock_out).toLocaleString() : 'Still Clocked In';
-        const lunchStart = ev.lunch_start ? new Date(ev.lunch_start).toLocaleString() : '';
-        const lunchEnd = ev.lunch_end ? new Date(ev.lunch_end).toLocaleString() : '';
-        
-        // Calculate total hours worked
-        let totalHours = 0;
-        if (ev.clock_in && ev.clock_out) {
-          const hoursWorked = (new Date(ev.clock_out).getTime() - new Date(ev.clock_in).getTime()) / (1000 * 60 * 60);
-          totalHours = Math.round(hoursWorked * 100) / 100;
-        }
-        
-        const eventDate = ev.clock_in ? new Date(ev.clock_in).toLocaleDateString() : '';
-        
-        data += `"${ev.id || ''}","${ev.employee_id || ''}","${employeeName}","${clockIn}","${clockOut}","${lunchStart}","${lunchEnd}","${totalHours}","${eventDate}","${ev.business_id || ''}"\n`;
+        if (!eventsByEmployee[ev.employee_id]) eventsByEmployee[ev.employee_id] = [];
+        eventsByEmployee[ev.employee_id].push(ev);
       });
-      
+      // For each employee, group by period (day/week/month)
+      Object.entries(eventsByEmployee).forEach(([employeeId, events]) => {
+        const employee = employees.find(emp => emp.id === employeeId);
+        const employeeName = employee?.name || 'Unknown Employee';
+        // Group by date string (YYYY-MM-DD)
+        const eventsByDate: { [date: string]: typeof events } = {};
+        events.forEach(ev => {
+          const dateStr = ev.clock_in ? new Date(ev.clock_in).toISOString().split('T')[0] : 'Unknown Date';
+          if (!eventsByDate[dateStr]) eventsByDate[dateStr] = [];
+          eventsByDate[dateStr].push(ev);
+        });
+        Object.entries(eventsByDate).forEach(([date, dayEvents]) => {
+          dayEvents.forEach(ev => {
+            const clockIn = ev.clock_in ? new Date(ev.clock_in).toLocaleTimeString() : '';
+            const clockOut = ev.clock_out ? new Date(ev.clock_out).toLocaleTimeString() : '';
+            const lunchStart = ev.lunch_start ? new Date(ev.lunch_start).toLocaleTimeString() : '';
+            const lunchEnd = ev.lunch_end ? new Date(ev.lunch_end).toLocaleTimeString() : '';
+            let totalHours = 0;
+            if (ev.clock_in && ev.clock_out) {
+              const hoursWorked = (new Date(ev.clock_out).getTime() - new Date(ev.clock_in).getTime()) / (1000 * 60 * 60);
+              totalHours = Math.round(hoursWorked * 100) / 100;
+            }
+            data += `"${employeeName}","${date}","${clockIn}","${clockOut}","${lunchStart}","${lunchEnd}","${totalHours}"\n`;
+          });
+        });
+      });
       if (exportType === 'attendance') filename = `attendance_${startDate}_to_${endDate}.csv`;
     }
     

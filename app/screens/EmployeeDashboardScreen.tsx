@@ -332,17 +332,15 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
           return;
         }
       }
-      // Insert clock event with correct timestamp column based on action
+      // Insert clock event with simplified structure
       const now = new Date().toISOString();
       const event: any = {
         business_id: employee.business_id,
         employee_id: employee.id,
         action,
+        created_at: now
       };
-      if (action === 'in') event.clock_in = now;
-      if (action === 'out') event.clock_out = now;
-      if (action === 'lunch') event.lunch_start = now;
-      if (action === 'lunchBack') event.lunch_end = now;
+      
       console.log('[ClockIn] Inserting event:', event);
       const { error } = await supabase.from('clock_events').insert(event);
       if (error) {

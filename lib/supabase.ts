@@ -26,10 +26,19 @@ export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKe
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: Platform.OS === 'web',
+    // Optimize token refresh to prevent loops
+    storage: Platform.OS === 'web' ? undefined : undefined, // Use default storage
+    flowType: 'pkce', // Use PKCE flow for better security
   },
   global: {
     headers: {
       'X-Client-Info': 'shopflow-final',
+    },
+  },
+  realtime: {
+    // Disable realtime to reduce connection overhead for now
+    params: {
+      eventsPerSecond: 10,
     },
   },
 });

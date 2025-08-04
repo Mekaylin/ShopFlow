@@ -1,7 +1,7 @@
 // contexts/AuthContext.tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User } from '@supabase/supabase-js';
-import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useState, useCallback } from 'react';
 import { Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
 
@@ -87,6 +87,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  // Fetch user profile from the users table
+  const fetchUserProfile = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        setUserProfile(null);
+      } else {
+        setUserProfile(data);
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      setUserProfile(null);
+    }
+  }, []);
+
   // Get session from Supabase and restore user state
   useEffect(() => {
     const getSession = async () => {
@@ -122,8 +143,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('Auth state changed:', event, session?.user?.id);
         
         if (session?.user) {
-          setUser(session.user);
-          await fetchUserProfile(session.user.id);
+          // Prevent unnecessary state updates for token refresh
+          if (event === 'TOKEN_REFRESHED') {
+            // For token refresh, only update profile if user changed
+            setUser(prevUser => {
+              if (!prevUser || prevUser.id !== session.user.id) {
+                fetchUserProfile(session.user.id);
+                return session.user;
+              }
+              // User is the same, no need to refetch profile for token refresh
+              return prevUser;
+            });
+          } else {
+            // For other events (SIGNED_IN, etc.), update user and fetch profile
+            setUser(session.user);
+            await fetchUserProfile(session.user.id);
+          }
         } else {
           setUser(null);
           setUserProfile(null);
@@ -142,33 +177,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         }
         
-        setLoading(false);
+        // Only set loading to false for events other than token refresh
+        if (event !== 'TOKEN_REFRESHED') {
+          setLoading(false);
+        }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, []);
-
-  // Fetch user profile from the users table
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        setUserProfile(null);
-      } else {
-        setUserProfile(data);
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      setUserProfile(null);
-    }
-  };
+  }, [fetchUserProfile]);
 
   // Sign out function
   const signOut = async () => {

@@ -1,6 +1,6 @@
 
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { ActivityIndicator, Image, Text, View } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
 import LoginScreen from './screens/LoginScreen';
@@ -9,11 +9,19 @@ export default function Index() {
   const router = useRouter();
   const { user, userProfile, loading } = useAuth();
   const [redirecting, setRedirecting] = useState(false);
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
+    // Prevent multiple redirections
+    if (hasRedirected.current) {
+      return;
+    }
+
     // Auto-navigate based on auth state
     if (!loading && user && userProfile) {
+      hasRedirected.current = true;
       setRedirecting(true);
+      
       const timer = setTimeout(() => {
         if (userProfile.role === 'admin') {
           router.replace('/admin-dashboard');
@@ -25,6 +33,14 @@ export default function Index() {
       return () => clearTimeout(timer);
     }
   }, [user, userProfile, loading, router]);
+
+  // Reset redirect flag when user logs out
+  useEffect(() => {
+    if (!user && !loading) {
+      hasRedirected.current = false;
+      setRedirecting(false);
+    }
+  }, [user, loading]);
 
   if (loading || redirecting) {
     return (

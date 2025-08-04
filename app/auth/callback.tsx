@@ -9,17 +9,26 @@ export default function AuthCallback() {
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [processed, setProcessed] = useState(false);
 
   useEffect(() => {
+    // Prevent multiple executions
+    if (processed) return;
+    
     // Supabase sends tokens in the URL hash for web
     const hash = typeof window !== 'undefined' ? window.location.hash : '';
     if (hash.includes('type=recovery')) {
       setShowSetPassword(true);
+      setProcessed(true);
       return;
     }
+    
     // Use exchangeCodeForSession for deep linking
     const doExchange = async () => {
+      if (processed) return;
+      setProcessed(true);
       setLoading(true);
+      
       try {
         const { error } = await supabase.auth.exchangeCodeForSession(
           typeof window !== 'undefined' ? window.location.href : ''
@@ -30,24 +39,26 @@ export default function AuthCallback() {
             error.message.includes('invalid')
           ) {
             setError('Link expired. Please request a new confirmation email.');
-            router.replace('/admin-dashboard');
+            setTimeout(() => router.replace('/'), 3000);
           } else {
             setError(error.message);
-            router.replace('/admin-dashboard');
+            setTimeout(() => router.replace('/'), 3000);
           }
         } else {
-          router.replace('/admin-dashboard');
+          // Successful authentication, redirect to main page to let AuthContext handle navigation
+          router.replace('/');
         }
       } catch (e: unknown) {
         const err = e as any;
         setError(err.message || JSON.stringify(err) || 'Unknown error');
-        router.replace('/admin-dashboard');
+        setTimeout(() => router.replace('/'), 3000);
       } finally {
         setLoading(false);
       }
     };
+    
     doExchange();
-  }, [router]);
+  }, [router, processed]);
 
   const handleSetPassword = async () => {
     setLoading(true);
@@ -57,7 +68,8 @@ export default function AuthCallback() {
       if (error) {
         setError(error.message);
       } else {
-        router.replace('/employee-dashboard');
+        // Redirect to main page to let AuthContext handle navigation
+        router.replace('/');
       }
     } catch (err: any) {
       setError(err.message || 'Unknown error');

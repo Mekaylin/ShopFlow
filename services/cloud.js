@@ -207,7 +207,7 @@ export const fetchClockEvents = async (businessId, employeeId = null) => {
       .from('clock_events')
       .select('*')
       .eq('business_id', businessId)
-      .order('clock_in', { ascending: false });
+      .order('created_at', { ascending: false });
     
     if (employeeId) {
       query = query.eq('employee_id', employeeId);
@@ -303,50 +303,36 @@ export const batchUpsert = async (table, rows) => {
 };
 
 /**
- * Log a clock event for an employee (clock in or out).
- * - On 'in': inserts a new event with clock_in timestamp.
- * - On 'out': updates the latest open event (no clock_out) for the employee with clock_out timestamp.
+ * Log a clock event for an employee using the simplified new schema.
  * @param {string} businessId
  * @param {string} employeeId
- * @param {'in'|'out'} action
+ * @param {'in'|'out'|'lunch'|'lunchBack'} action
  * @param {string} [timestamp] - ISO string, defaults to now
+ * @param {string} [notes] - Optional notes for the clock event
  * @returns {Promise<boolean>} true if success, false if error
  */
-export async function logClockEvent(businessId, employeeId, action, timestamp) {
+export async function logClockEvent(businessId, employeeId, action, timestamp, notes = null) {
   const now = timestamp || new Date().toISOString();
   try {
-    if (action === 'in') {
-      // Insert new clock event
-      const { error } = await supabase.from('clock_events').insert([
-        { business_id: businessId, employee_id: employeeId, clock_in: now }
-      ]);
-      if (error) throw error;
-      return true;
-    } else if (action === 'out') {
-      // Update latest open event (no clock_out)
-      const { data: openEvents, error: fetchErr } = await supabase
-        .from('clock_events')
-        .select('id')
-        .eq('business_id', businessId)
-        .eq('employee_id', employeeId)
-        .is('clock_out', null)
-        .order('clock_in', { ascending: false })
-        .limit(1);
-      if (fetchErr) throw fetchErr;
-      if (!openEvents || openEvents.length === 0) {
-        console.warn('No open clock event to close for employee', employeeId);
-        return false;
-      }
-      const eventId = openEvents[0].id;
-      const { error: updateErr } = await supabase
-        .from('clock_events')
-        .update({ clock_out: now })
-        .eq('id', eventId);
-      if (updateErr) throw updateErr;
-      return true;
-    } else {
-      throw new Error('Invalid action for logClockEvent');
+    // Insert new clock event with action type
+    const eventData = { 
+      business_id: businessId, 
+      employee_id: employeeId, 
+      action: action,
+      created_at: now
+    };
+    
+    if (notes) {
+      eventData.notes = notes;
     }
+    
+    const { error } = await supabase.from('clock_events').insert([eventData]);
+    if (error) throw error;
+    
+    // Clear cache to force refresh
+    invalidateCache(`clock_${businessId}`);
+    
+    return true;
   } catch (err) {
     console.error('logClockEvent error:', err);
     return false;
