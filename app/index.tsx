@@ -8,6 +8,8 @@ import LoginScreen from './screens/LoginScreen';
 export default function Index() {
   const router = useRouter();
   const { user, userProfile, loading } = useAuth();
+  // Debug log for auth state
+  console.log('[Index] loading:', loading, 'user:', user, 'userProfile:', userProfile);
   const [redirecting, setRedirecting] = useState(false);
   const hasRedirected = useRef(false);
 

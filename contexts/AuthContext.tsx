@@ -2,7 +2,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User } from '@supabase/supabase-js';
 import React, { createContext, ReactNode, useContext, useEffect, useState, useCallback } from 'react';
-import { Platform } from 'react-native';
+import { Platform, View, Text } from 'react-native';
 import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
@@ -61,6 +61,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [userProfile, setUserProfile] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [darkMode, setDarkModeState] = useState(false);
+  const [sessionError, setSessionError] = useState<string | null>(null);
 
   // Load dark mode preference from storage
   useEffect(() => {
@@ -95,16 +96,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         .select('*')
         .eq('id', userId)
         .single();
-
-      if (error) {
-        console.error('Error fetching user profile:', error);
+      console.log('[AuthContext] fetchUserProfile result:', { data, error });
+      if (error || !data) {
+        console.error('Error fetching user profile or user not found:', error);
         setUserProfile(null);
+        setSessionError('Session expired or user not found. Please log in again.');
+        // Also sign out to clear invalid session
+        await supabase.auth.signOut();
+        setUser(null);
       } else {
         setUserProfile(data);
+        setSessionError(null);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
       setUserProfile(null);
+      setSessionError('Session expired or user not found. Please log in again.');
+      await supabase.auth.signOut();
+      setUser(null);
     }
   }, []);
 
@@ -113,6 +122,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const getSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('[AuthContext] getSession result:', { session, error });
         if (error) {
           console.error('Error getting session:', error);
           setUser(null);
@@ -226,6 +236,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   return (
     <AuthContext.Provider value={value}>
+      {sessionError && (
+        <View style={{ backgroundColor: '#fffbe6', padding: 16, borderRadius: 8, margin: 16 }}>
+          <Text style={{ color: '#d32f2f', fontWeight: 'bold', textAlign: 'center' }}>{sessionError}</Text>
+        </View>
+      )}
       {children}
     </AuthContext.Provider>
   );
