@@ -100,7 +100,7 @@
       "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkZmhrbGlrbWt5ZXFzaXVhcGpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE4MTgxNTQsImV4cCI6MjA2NzM5NDE1NH0.peZxjF2MbN9kBg4VVpQoSGjQblSTa24z4s0iiWqHfxA",
       "router": {},
       "eas": {
-        "projectId": "44e6405a-02bf-42e9-886c-5b3b7fa550ae"
+        "projectId": "5b790a0e-eb4d-42d1-8708-1f20cfeef6b2"
       }
     }
   }

@@ -173,7 +173,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [fetchUserProfile]);
 
   useEffect(() => {
-    getSessionWithRetry();
+    getSessionWithRetry(3);
   }, [getSessionWithRetry, retryCount]);
 
   // Listen for auth state changes
