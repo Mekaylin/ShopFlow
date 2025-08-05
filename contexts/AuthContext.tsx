@@ -95,129 +95,102 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Prevent fetching the same profile multiple times
       if (userProfile && userProfile.id === userId) {
         console.log('[AuthContext] Profile already loaded for user:', userId);
-        return;
+        return userProfile;
       }
       
+      console.log('[AuthContext] Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
+        
       console.log('[AuthContext] fetchUserProfile result:', { data, error });
       if (error || !data) {
         console.error('Error fetching user profile or user not found:', error);
         setUserProfile(null);
-        setSessionError('Session expired or user not found. Please log in again.');
-        // Also sign out to clear invalid session
-        await supabase.auth.signOut();
-        setUser(null);
+        // Don't immediately sign out on profile fetch error - user might not be in users table yet
+        setSessionError('User profile not found. Please contact administrator.');
+        return null;
       } else {
         console.log('[AuthContext] User profile fetched successfully:', data);
         setUserProfile(data);
         setSessionError(null);
+        return data;
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
       setUserProfile(null);
-      setSessionError('Session expired or user not found. Please log in again.');
-      await supabase.auth.signOut();
-      setUser(null);
+      setSessionError('Failed to load user profile. Please try again.');
+      return null;
     }
   }, [userProfile]);
 
-  // Get session from Supabase and restore user state, with loading timeout and retry
-  const getSessionWithRetry = useCallback(async (maxRetries = 2) => {
-    let attempt = 0;
-    let lastError = null;
+  // Simplified session check with faster timeout and fewer retries
+  const getInitialSession = useCallback(async () => {
+    console.log('[AuthContext] Getting initial session...');
     setLoading(true);
     setSessionError(null);
-    while (attempt <= maxRetries) {
-      let didTimeout = false;
-      const timeout = setTimeout(() => {
-        didTimeout = true;
-        setLoading(false);
-        setSessionError('Session check timed out. Please refresh or log in again.');
-        console.warn('[AuthContext] getSession timed out after 7 seconds');
-      }, 7000);
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        console.log(`[AuthContext] getSession attempt ${attempt + 1}:`, { session, error });
-        if (didTimeout) return;
-        if (error) {
-          lastError = error;
-          setUser(null);
-          setUserProfile(null);
-        } else if (session?.user) {
-          setUser(session.user);
-          await fetchUserProfile(session.user.id);
-          setSessionError(null);
-          clearTimeout(timeout);
-          setLoading(false);
-          return;
-        } else {
-          setUser(null);
-          setUserProfile(null);
-        }
-      } catch (error) {
-        if (didTimeout) return;
-        lastError = error;
+    
+    try {
+      // Use a promise race to implement timeout
+      const sessionPromise = supabase.auth.getSession();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Session check timeout')), 3000)
+      );
+      
+      const { data: { session }, error } = await Promise.race([
+        sessionPromise,
+        timeoutPromise
+      ]) as any;
+      
+      console.log('[AuthContext] Initial session result:', { session: !!session, error });
+      
+      if (error) {
+        console.error('[AuthContext] Session error:', error);
         setUser(null);
         setUserProfile(null);
-      } finally {
-        if (!didTimeout) {
-          clearTimeout(timeout);
-        }
+      } else if (session?.user) {
+        setUser(session.user);
+        // Fetch profile asynchronously without blocking the loading state
+        fetchUserProfile(session.user.id);
+      } else {
+        setUser(null);
+        setUserProfile(null);
       }
-      attempt++;
-      if (attempt <= maxRetries) {
-        console.warn(`[AuthContext] getSession retrying... (${attempt})`);
-        await new Promise(res => setTimeout(res, 1000));
+    } catch (error) {
+      console.error('[AuthContext] Failed to get session:', error);
+      setUser(null);
+      setUserProfile(null);
+      if ((error as Error)?.message === 'Session check timeout') {
+        setSessionError('Connection slow. Please refresh if login doesn\'t complete.');
       }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    setSessionError('Failed to restore session. Please log in again.');
-    if (lastError) console.error('[AuthContext] getSession final error:', lastError);
   }, [fetchUserProfile]);
 
   useEffect(() => {
-    getSessionWithRetry(3);
-  }, [getSessionWithRetry, retryCount]);
+    getInitialSession();
+  }, [getInitialSession]);
 
   // Listen for auth state changes
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
+        console.log('[AuthContext] Auth state changed:', event, session?.user?.id);
         
         if (session?.user) {
           const currentUserId = session.user.id;
           
-          // Check if this is a new user or we don't have their profile yet
+          // Only fetch profile if we don't have it or it's for a different user
           const shouldFetchProfile = !userProfile || userProfile.id !== currentUserId;
           
-          if (event === 'TOKEN_REFRESHED') {
-            // For token refresh, only update user if it's different
-            setUser(prevUser => {
-              if (!prevUser || prevUser.id !== currentUserId) {
-                if (shouldFetchProfile) {
-                  fetchUserProfile(currentUserId);
-                }
-                return session.user;
-              }
-              return prevUser;
-            });
-          } else if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-            // For sign in or initial session, always update user and fetch profile if needed
-            setUser(session.user);
-            if (shouldFetchProfile) {
-              await fetchUserProfile(currentUserId);
-            }
-          } else {
-            // For other events, update user but be careful about profile fetching
-            setUser(session.user);
-            if (shouldFetchProfile) {
-              await fetchUserProfile(currentUserId);
-            }
+          setUser(session.user);
+          
+          // Fetch profile asynchronously for certain events
+          if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && shouldFetchProfile) {
+            fetchUserProfile(currentUserId);
           }
         } else {
           setUser(null);
@@ -236,16 +209,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
           }
         }
-        
-        // Only set loading to false for events other than token refresh
-        if (event !== 'TOKEN_REFRESHED') {
-          setLoading(false);
-        }
       }
     );
 
     return () => subscription.unsubscribe();
-  }, [fetchUserProfile]); // Removed userProfile from dependencies
+  }, [fetchUserProfile, userProfile?.id]); // Only depend on profile ID, not entire profile
 
   // Sign out function
   const signOut = async () => {
@@ -291,7 +259,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           <Text style={{ color: '#d32f2f', fontWeight: 'bold', textAlign: 'center', marginBottom: 8 }}>{sessionError}</Text>
           <TouchableOpacity
             style={{ backgroundColor: '#1976d2', paddingHorizontal: 18, paddingVertical: 8, borderRadius: 8 }}
-            onPress={() => setRetryCount(c => c + 1)}
+            onPress={() => {
+              setSessionError(null);
+              getInitialSession();
+            }}
           >
             <Text style={{ color: '#fff', fontWeight: 'bold' }}>Retry</Text>
           </TouchableOpacity>

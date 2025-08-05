@@ -19,22 +19,38 @@ export default function Index() {
       return;
     }
 
-    // Auto-navigate based on auth state
-    if (!loading && user && userProfile) {
-      hasRedirected.current = true;
-      setRedirecting(true);
-      
-      const timer = setTimeout(() => {
-        if (userProfile.role === 'admin') {
-          router.replace('/admin-dashboard');
-        } else {
-          router.replace('/employee-dashboard');
-        }
-      }, 500); // Small delay to show loading state
-      
-      return () => clearTimeout(timer);
+    // Auto-navigate based on auth state - be more lenient about profile loading
+    if (!loading && user) {
+      // If we have a userProfile, use it for role-based routing
+      if (userProfile) {
+        hasRedirected.current = true;
+        setRedirecting(true);
+        
+        const timer = setTimeout(() => {
+          if (userProfile.role === 'admin') {
+            router.replace('/admin-dashboard');
+          } else {
+            router.replace('/employee-dashboard');
+          }
+        }, 300); // Reduced delay for faster UX
+        
+        return () => clearTimeout(timer);
+      } 
+      // If no profile after 3 seconds, default to employee dashboard to avoid infinite loading
+      else {
+        const fallbackTimer = setTimeout(() => {
+          if (!userProfile && !hasRedirected.current) {
+            console.log('[Index] No profile after 3s, defaulting to employee dashboard');
+            hasRedirected.current = true;
+            setRedirecting(true);
+            setTimeout(() => router.replace('/employee-dashboard'), 300);
+          }
+        }, 3000);
+        
+        return () => clearTimeout(fallbackTimer);
+      }
     }
-  }, [loading, user?.id, userProfile?.id, userProfile?.role, router]); // Use stable properties
+  }, [loading, user?.id, userProfile?.id, userProfile?.role, router]);
 
   // Reset redirect flag when user logs out
   useEffect(() => {
@@ -66,7 +82,7 @@ export default function Index() {
           fontWeight: '600',
           textAlign: 'center'
         }}>
-          {redirecting ? 'Welcome back!' : 'Loading ShopFlow...'}
+          {redirecting ? 'Welcome back!' : user ? 'Loading profile...' : 'Loading ShopFlow...'}
         </Text>
         <Text style={{ 
           fontSize: 14, 
@@ -74,7 +90,7 @@ export default function Index() {
           marginTop: 8,
           textAlign: 'center'
         }}>
-          {redirecting ? 'Redirecting to your dashboard' : 'Initializing your workspace'}
+          {redirecting ? 'Redirecting to your dashboard' : user ? 'Getting your workspace ready' : 'Initializing your workspace'}
         </Text>
       </View>
     );

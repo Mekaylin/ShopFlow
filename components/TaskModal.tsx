@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { Alert, Text, TouchableOpacity, View } from 'react-native';
 
 interface Material {
   id: string;
