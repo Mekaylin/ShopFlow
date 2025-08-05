@@ -5,7 +5,9 @@ import AddTaskModal from '../../components/ui/AddTaskModal';
 import { ActivityIndicator, Alert, Animated, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import NotificationPanel, { Notification } from '../../components/admin/NotificationPanel';
+import TaskModal from '../../components/TaskModal';
 import { supabase } from '../../lib/supabase';
+import { getCurrentTimeHM, getCurrentTimestamp, isTimeBetween } from '../../utils/dateUtils';
 // Helper: Welcome/Goodbye animation state must be inside the component
 // Helper to queue clock events locally
 type ClockEvent = {
@@ -100,14 +102,17 @@ const initialTasks: Task[] = [
 // Removed auto-logout for all-day running app
 // const AUTO_LOGOUT_MS = 2 * 60 * 1000; // 2 minutes
 
+// Cache TTL (5 minutes) - moved outside component to prevent re-renders
+const CACHE_TTL = 5 * 60 * 1000;
+
 interface EmployeeDashboardScreenProps {
-  onLogout: () => void;
   user?: any;
+  onLogout?: () => void;
 }
 
 import { useRouter } from 'expo-router';
 
-function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProps) {
+function EmployeeDashboardScreen({ user, onLogout }: EmployeeDashboardScreenProps) {
   // Welcome/Goodbye animation state (moved inside component)
   const [showGreeting, setShowGreeting] = useState<null | 'welcome' | 'goodbye'>(null);
   const greetingAnim = useRef(new Animated.Value(0)).current;
@@ -164,9 +169,6 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
     lastFetch: 0
   });
 
-  // Cache TTL (5 minutes)
-  const CACHE_TTL = 5 * 60 * 1000;
-
   // Optimized data fetching with business filtering and caching
   const fetchData = useCallback(async (forceRefresh = false) => {
     try {
@@ -204,6 +206,10 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       const employees = empRes.data || [];
       const tasks = taskRes.data || [];
       
+      // Debug logging for employees
+      console.log('[DEBUG] Employees fetched:', employees.length, employees);
+      console.log('[DEBUG] Business ID used:', businessId);
+      
       // Defensive mapping to ensure all required fields exist
       const mappedMaterials = (matRes.data || []).map((mat: any) => ({
         id: mat.id,
@@ -231,7 +237,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       console.error('Error fetching data:', err);
       Alert.alert('Error', 'Failed to load data from cloud.');
     }
-  }, [user?.business_id, CACHE_TTL]);
+  }, [user?.business_id]);
 
   // Fetch employees, tasks, and materials from Supabase on mount
   useEffect(() => {
@@ -243,9 +249,16 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
   // --- CLOCK IN/OUT LOGIC ---
   const [clockLoading, setClockLoading] = useState(false);
   const handleClockInOut = async () => {
+    // Prevent duplicate requests
+    if (clockLoading) {
+      console.warn('[ClockIn] Already processing, ignoring duplicate request');
+      return;
+    }
+    
     setClockInError('');
     const code = codePrompt.trim();
     console.log('[ClockIn] Attempting clock in/out with code:', code);
+    console.log('[ClockIn] Available employees:', employees.length, employees.map(e => ({ name: e.name, code: e.code, id: e.id })));
     // Validate code format: must be alphanumeric, 3-10 chars
     if (!code || !/^[a-zA-Z0-9]{3,10}$/.test(code)) {
       console.warn('[ClockIn] Invalid code format:', code);
@@ -260,6 +273,16 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       Alert.alert('Invalid Code', 'The employee code you entered is incorrect. Please try again.');
       return;
     }
+    // Validate employee data before proceeding
+    if (!employee.id || !employee.business_id) {
+      console.error('[ClockIn] Employee data is invalid for code:', code, employee);
+      setClockInError('Employee data is corrupted. Please contact an administrator.');
+      Alert.alert('Data Error', 'The data for this employee is incomplete and the clock-in cannot be processed. Please contact an administrator.');
+      return;
+    }
+    
+    // Set loading state after all validation passes
+    setClockLoading(true);
     // Helper for timeout
     const withTimeout = (promise: Promise<any>, ms: number) => {
       return Promise.race([
@@ -269,9 +292,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
     };
     // Auto-detect action based on working hours and lunch times
     // Assumes employee object has work_start, work_end, lunch_start, lunch_end as 'HH:mm' strings
-    const nowDate = new Date();
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    const nowHM = pad(nowDate.getHours()) + ':' + pad(nowDate.getMinutes());
+    const nowHM = getCurrentTimeHM();
     let action: 'in' | 'out' | 'lunch' | 'lunchBack' = 'in';
     // Force all clock events before 12:00 to be clock in
     if (nowHM < '12:00') {
@@ -282,15 +303,12 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       // Force all clock events after 3pm to be clock out
       action = 'out';
     } else if (employee.work_start && employee.work_end && employee.lunch_start && employee.lunch_end) {
-      // Helper to compare HH:mm
-      const isBetween = (start: string, end: string, time: string) => {
-        return start <= time && time <= end;
-      };
-      if (isBetween(employee.work_start, employee.lunch_start, nowHM)) {
+      // Use shared time comparison utility
+      if (isTimeBetween(employee.work_start, employee.lunch_start, nowHM)) {
         action = 'in';
-      } else if (isBetween(employee.lunch_start, employee.lunch_end, nowHM)) {
+      } else if (isTimeBetween(employee.lunch_start, employee.lunch_end, nowHM)) {
         action = 'lunch';
-      } else if (isBetween(employee.lunch_end, employee.work_end, nowHM)) {
+      } else if (isTimeBetween(employee.lunch_end, employee.work_end, nowHM)) {
         action = 'lunchBack';
       } else {
         action = 'out';
@@ -313,10 +331,9 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       lunch_end: employee.lunch_end,
       work_end: employee.work_end
     });
-    setClockLoading(true);
     // Prevent duplicate clock events within 1 minute
     try {
-      // Timeout for all network requests (10s)
+      // Timeout for all network requests (20s)
       const recentResult = await withTimeout(
         (async () =>
           await supabase
@@ -326,7 +343,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
             .order('created_at', { ascending: false })
             .limit(1)
         )(),
-        10000
+        20000
       );
       const { data: recentEvents, error: recentError } = recentResult;
       if (recentError) {
@@ -346,7 +363,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
         }
       }
       // Insert clock event with simplified structure
-      const now = new Date().toISOString();
+      const now = getCurrentTimestamp();
       const event: any = {
         business_id: employee.business_id,
         employee_id: employee.id,
@@ -358,7 +375,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
         (async () =>
           await supabase.from('clock_events').insert(event)
         )(),
-        10000
+        20000
       );
       const { error } = insertResult;
       if (error) {
@@ -366,7 +383,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
         throw error;
       }
       setNotifications(prev => [
-        { id: Math.random().toString(36).slice(2), message: `Clock ${action} for ${employee.name} at ${new Date().toLocaleTimeString()}`, timestamp: new Date().toISOString(), type: 'info' },
+        { id: Math.random().toString(36).slice(2), message: `Clock ${action} for ${employee.name} at ${new Date().toLocaleTimeString()}`, timestamp: getCurrentTimestamp(), type: 'info' },
         ...prev.slice(0, 19),
       ]);
       if (action === 'in') {
@@ -379,7 +396,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
           employeeId: employee.id,
           employeeName: employee.name,
           action,
-          timestamp: new Date().toISOString(),
+          timestamp: getCurrentTimestamp(),
           event,
         });
       }
@@ -434,7 +451,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
   };
   const handleCompleteTask = async (taskId: string) => {
     try {
-      const completedAt = new Date().toISOString();
+      const completedAt = getCurrentTimestamp();
       const { data, error } = await supabase.from('tasks').update({ completed: true, completed_at: completedAt }).eq('id', taskId).select('*').single();
       if (error || !data) {
         console.error('Supabase error completing task:', error);
@@ -620,9 +637,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
               ) : null}
               <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 22, letterSpacing: 1 }}>
                 {(() => {
-                  const now = new Date();
-                  const pad = (n: number) => n.toString().padStart(2, '0');
-                  const nowHM = pad(now.getHours()) + ':' + pad(now.getMinutes());
+                  const nowHM = getCurrentTimeHM();
                   if (nowHM < '12:00') {
                     return 'Clock In';
                   } else if (nowHM >= '15:00') {
@@ -694,7 +709,7 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
                         style={{ backgroundColor: '#388e3c', borderRadius: 8, padding: 10, alignItems: 'center', marginTop: 8 }}
                         onPress={async () => {
                           try {
-                            const completedAt = new Date().toISOString();
+                            const completedAt = getCurrentTimestamp();
                             const { data, error } = await supabase
                               .from('tasks')
                               .update({ completed: true, completed_at: completedAt })
@@ -757,54 +772,15 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { maxHeight: '90%' }]}> 
             {selectedTask && (
-              <>
-                <Text style={styles.modalTitle}>{selectedTask.name}</Text>
-                <Text style={styles.taskTime}>Start: {selectedTask.start} | Due: {selectedTask.deadline}</Text>
-                <Text style={styles.taskStatus}>{selectedTask.completed ? 'Completed' : 'In Progress'}</Text>
-                {selectedTask.completed && selectedTask.completed_at && (
-                  <Text style={{ color: '#888', fontSize: 13, marginBottom: 4 }}>Completed at: {new Date(selectedTask.completed_at).toLocaleString()}</Text>
-                )}
-                {/* Materials entry UI (only if not completed) */}
-                {!selectedTask.completed && (
-                  <View style={{ marginTop: 10 }}>
-                    <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Materials Used:</Text>
-                    {materials.map(mat => (
-                      <View key={mat.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                        <Text style={{ flex: 1 }}>{mat.name} ({mat.unit}):</Text>
-                        <TextInput
-                          style={{ borderWidth: 1, borderColor: '#bbb', borderRadius: 6, padding: 6, width: 60, marginLeft: 8, backgroundColor: '#fff' }}
-                          placeholder="0"
-                          keyboardType="numeric"
-                          value={taskMaterials[selectedTask.id]?.find(m => m.materialId === mat.id)?.quantity || ''}
-                          onChangeText={val => {
-                            setTaskMaterials(prev => {
-                              const prevArr = prev[selectedTask.id] || [];
-                              const filtered = prevArr.filter(m => m.materialId !== mat.id);
-                              return {
-                                ...prev,
-                                [selectedTask.id]: [...filtered, { materialId: mat.id, quantity: val }],
-                              };
-                            });
-                          }}
-                        />
-                      </View>
-                    ))}
-                    <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.primary, marginTop: 8, paddingVertical: 10 }]} onPress={() => handleSaveMaterials(selectedTask.id)}>
-                      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Save Materials</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.actionBtn, { backgroundColor: theme.accent, marginTop: 8, paddingVertical: 10, opacity: (!selectedTask || selectedTask.completed) ? 0.5 : 1 }]}
-                      onPress={() => selectedTask && !selectedTask.completed && handleCompleteTask(selectedTask.id)}
-                      disabled={!selectedTask || selectedTask.completed}
-                    >
-                      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Mark Complete</Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-                <TouchableOpacity style={[styles.closeBtn, { marginTop: 18 }]} onPress={() => setSelectedTask(null)}>
-                  <Text style={styles.closeBtnText}>Close</Text>
-                </TouchableOpacity>
-              </>
+              <TaskModal
+                task={selectedTask}
+                materials={materials}
+                materialTypes={{}} // Add material types if needed
+                onClose={() => setSelectedTask(null)}
+                onMarkComplete={handleCompleteTask}
+                showCompleteButton={!selectedTask.completed}
+                styles={styles}
+              />
             )}
           </View>
         </View>

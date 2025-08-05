@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, FlatList, Platform, StyleSheet, Text, Touchab
 import { Colors } from '../../constants/Colors';
 import { supabase } from '../../lib/supabase';
 import { createShadowStyle, shadowPresets } from '../../utils/shadowUtils';
+import MaterialSelector from '../MaterialSelector';
 import AddTaskModal from '../ui/AddTaskModal';
 import type { Employee, Material, User } from '../utility/types';
 import AdminModal from './AdminModal';

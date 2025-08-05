@@ -4,50 +4,23 @@ import { Alert } from 'react-native';
 import { ClockEvent, Employee, Material, PerformanceMetrics, Task } from './types';
 
 // Date and time utilities
-export const formatDate = (date: string | Date): string => {
-  const d = new Date(date);
-  return d.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-};
+// Date utilities - imported from centralized utils
+import {
+    formatDate as _formatDate,
+    formatDateTime as _formatDateTime,
+    formatTime as _formatTime,
+    getDaysUntilDeadline as _getDaysUntilDeadline,
+    getTimeDifference as _getTimeDifference,
+    isOverdue as _isOverdue
+} from '../../utils/dateUtils';
 
-export const formatDateTime = (date: string | Date): string => {
-  const d = new Date(date);
-  return d.toLocaleString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
-export const formatTime = (date: string | Date): string => {
-  const d = new Date(date);
-  return d.toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
-export const getTimeDifference = (start: string | Date, end: string | Date): number => {
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  return Math.abs(endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60); // hours
-};
-
-export const isOverdue = (deadline: string | Date): boolean => {
-  return new Date(deadline) < new Date();
-};
-
-export const getDaysUntilDeadline = (deadline: string | Date): number => {
-  const deadlineDate = new Date(deadline);
-  const now = new Date();
-  const diffTime = deadlineDate.getTime() - now.getTime();
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-};
+// Re-export centralized date functions
+export const formatDate = _formatDate;
+export const formatDateTime = _formatDateTime;
+export const formatTime = _formatTime;
+export const getTimeDifference = _getTimeDifference;
+export const isOverdue = _isOverdue;
+export const getDaysUntilDeadline = _getDaysUntilDeadline;
 
 // String utilities
 export const capitalize = (str: string): string => {
@@ -260,6 +233,7 @@ export const getTodayClockEvents = (clockEvents: ClockEvent[]): ClockEvent[] => 
   const todayString = today.toISOString().split('T')[0];
   
   return clockEvents.filter(event => {
+    if (!event.clock_in) return false;
     const eventDate = new Date(event.clock_in).toISOString().split('T')[0];
     return eventDate === todayString;
   });
@@ -269,7 +243,7 @@ export const calculateWorkHours = (clockEvents: ClockEvent[]): number => {
   let totalHours = 0;
   
   clockEvents.forEach(event => {
-    if (event.clock_out) {
+    if (event.clock_out && event.clock_in) {
       const start = new Date(event.clock_in);
       const end = new Date(event.clock_out);
       const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
@@ -456,9 +430,11 @@ export const getLateEmployeesByClockEvents = (clockEvents: ClockEvent[], employe
   employees.forEach(emp => {
     const empEvents = clockEvents.filter(e => e.employee_id === emp.id);
     empEvents.forEach(event => {
-      const clockIn = new Date(event.clock_in);
-      if (clockIn.getHours() >= thresholdHour) {
-        lateEmployees.add(emp.name);
+      if (event.clock_in) {
+        const clockIn = new Date(event.clock_in);
+        if (clockIn.getHours() >= thresholdHour) {
+          lateEmployees.add(emp.name);
+        }
       }
     });
   });

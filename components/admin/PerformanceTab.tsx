@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { supabase } from '../../lib/supabase';
+import SettingsToggle from '../SettingsToggle';
 import { AnalyticsCharts } from '../ui/AnalyticsCharts';
 import { SearchAndFilterBar } from '../ui/SearchAndFilterBar';
 import { adminStyles } from '../utility/styles';
@@ -167,44 +168,26 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({
         {/* Rating System Settings */}
         <View style={adminStyles.mb16}>
           <Text style={adminStyles.ratingTitle}>Rating System</Text>
-          <View style={adminStyles.mb12}>
-            <TouchableOpacity
-              style={[adminStyles.rowCenter, adminStyles.mb8]}
-              onPress={() => updatePerformanceSettings({
-                ...performanceSettings,
-                ratingSystemEnabled: !performanceSettings.ratingSystemEnabled
-              })}
-            >
-              <FontAwesome5
-                name={performanceSettings.ratingSystemEnabled ? 'toggle-on' : 'toggle-off'}
-                size={20}
-                color={performanceSettings.ratingSystemEnabled ? '#4CAF50' : '#ccc'}
-                style={adminStyles.mr8}
-              />
-              <Text style={adminStyles.toggleLabel}>
-                Enable Task Rating System
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <View style={adminStyles.mb12}>
-            <TouchableOpacity
-              style={[adminStyles.rowCenter, adminStyles.mb8]}
-              onPress={() => updatePerformanceSettings({
-                ...performanceSettings,
-                autoRateCompletedTasks: !performanceSettings.autoRateCompletedTasks
-              })}
-            >
-              <FontAwesome5
-                name={performanceSettings.autoRateCompletedTasks ? 'toggle-on' : 'toggle-off'}
-                size={20}
-                color={performanceSettings.autoRateCompletedTasks ? '#4CAF50' : '#ccc'}
-                style={adminStyles.mr8}
-              />
-              <Text style={adminStyles.toggleLabel}>
-                Auto-rate Completed Tasks
-              </Text>
-            </TouchableOpacity>
-          </View>
+          
+          <SettingsToggle
+            label="Enable Task Rating System"
+            value={performanceSettings.ratingSystemEnabled}
+            onValueChange={(value) => updatePerformanceSettings({
+              ...performanceSettings,
+              ratingSystemEnabled: value
+            })}
+          />
+          
+          <SettingsToggle
+            label="Auto-rate Completed Tasks"
+            description="Automatically assign ratings to tasks when completed"
+            value={performanceSettings.autoRateCompletedTasks}
+            onValueChange={(value) => updatePerformanceSettings({
+              ...performanceSettings,
+              autoRateCompletedTasks: value
+            })}
+          />
+          
           <Text style={adminStyles.ratingDesc}>
             Default Rating for Auto-rated Tasks:
           </Text>

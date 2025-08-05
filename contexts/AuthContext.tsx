@@ -2,7 +2,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User } from '@supabase/supabase-js';
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
-import { Platform, Text, View, TouchableOpacity } from 'react-native';
+import { Platform, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
@@ -92,6 +92,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Fetch user profile from the users table
   const fetchUserProfile = useCallback(async (userId: string) => {
     try {
+      // Prevent fetching the same profile multiple times
+      if (userProfile && userProfile.id === userId) {
+        console.log('[AuthContext] Profile already loaded for user:', userId);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -106,6 +112,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         await supabase.auth.signOut();
         setUser(null);
       } else {
+        console.log('[AuthContext] User profile fetched successfully:', data);
         setUserProfile(data);
         setSessionError(null);
       }
@@ -116,7 +123,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       await supabase.auth.signOut();
       setUser(null);
     }
-  }, []);
+  }, [userProfile]);
 
   // Get session from Supabase and restore user state, with loading timeout and retry
   const getSessionWithRetry = useCallback(async (maxRetries = 2) => {
@@ -183,21 +190,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('Auth state changed:', event, session?.user?.id);
         
         if (session?.user) {
-          // Prevent unnecessary state updates for token refresh
+          const currentUserId = session.user.id;
+          
+          // Check if this is a new user or we don't have their profile yet
+          const shouldFetchProfile = !userProfile || userProfile.id !== currentUserId;
+          
           if (event === 'TOKEN_REFRESHED') {
-            // For token refresh, only update profile if user changed
+            // For token refresh, only update user if it's different
             setUser(prevUser => {
-              if (!prevUser || prevUser.id !== session.user.id) {
-                fetchUserProfile(session.user.id);
+              if (!prevUser || prevUser.id !== currentUserId) {
+                if (shouldFetchProfile) {
+                  fetchUserProfile(currentUserId);
+                }
                 return session.user;
               }
-              // User is the same, no need to refetch profile for token refresh
               return prevUser;
             });
-          } else {
-            // For other events (SIGNED_IN, etc.), update user and fetch profile
+          } else if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+            // For sign in or initial session, always update user and fetch profile if needed
             setUser(session.user);
-            await fetchUserProfile(session.user.id);
+            if (shouldFetchProfile) {
+              await fetchUserProfile(currentUserId);
+            }
+          } else {
+            // For other events, update user but be careful about profile fetching
+            setUser(session.user);
+            if (shouldFetchProfile) {
+              await fetchUserProfile(currentUserId);
+            }
           }
         } else {
           setUser(null);
@@ -225,7 +245,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     );
 
     return () => subscription.unsubscribe();
-  }, [fetchUserProfile]);
+  }, [fetchUserProfile]); // Removed userProfile from dependencies
 
   // Sign out function
   const signOut = async () => {

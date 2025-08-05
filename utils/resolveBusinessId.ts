@@ -1,4 +1,4 @@
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../lib/supabase';
 
 /**
  * Resolves a business code to a business ID from the businesses table.

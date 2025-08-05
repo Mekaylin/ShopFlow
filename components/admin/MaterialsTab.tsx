@@ -58,6 +58,29 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
   const [showAddMaterialModal, setShowAddMaterialModal] = useState(false);
   const [addTypeModal, setAddTypeModal] = useState<string | null>(null);
 
+  // Helper function to refetch materials and handle errors
+  const refetchMaterials = async () => {
+    try {
+      const { data: allMaterials, error: fetchError } = await supabase
+        .from('materials')
+        .select('*')
+        .eq('business_id', user.business_id);
+      if (!fetchError && allMaterials) setMaterials(allMaterials);
+      return true;
+    } catch (fetchErr) {
+      console.error('Refetch materials error:', fetchErr);
+      Alert.alert('Error', 'Failed to refresh materials list.');
+      return false;
+    }
+  };
+
+  // Helper function for consistent error handling
+  const handleMaterialError = (operation: string, error: any) => {
+    const message = error?.message || String(error);
+    Alert.alert('Error', `Failed to ${operation}: ${message}`);
+    console.error(`MaterialsTab ${operation} error:`, error);
+  };
+
   // Material CRUD handlers
   const handleAddMaterial = async () => {
     console.log('handleAddMaterial called');
@@ -83,21 +106,15 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
         .insert(payload)
         .select('*');
       if (error) {
-        alert('Failed to add material: ' + error.message);
+        handleMaterialError('add material', error);
         return;
       }
-      // Refetch materials from Supabase
-      const { data: allMaterials, error: fetchError } = await supabase
-        .from('materials')
-        .select('*')
-        .eq('business_id', user.business_id);
-      if (!fetchError && allMaterials) setMaterials(allMaterials);
+      
+      await refetchMaterials();
       setNewMaterialName('');
       setNewMaterialUnit('');
-      // Close modal using local state if needed
     } catch (err: any) {
-      const errMsg = err && typeof err === 'object' && 'message' in err ? (err as any).message : String(err);
-      alert('Unexpected error: ' + errMsg);
+      handleMaterialError('add material', err);
     } finally {
       setLoading(false);
     }
@@ -120,20 +137,16 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
         .eq('id', editMaterial.id)
         .select('*');
       if (error) {
-        alert('Failed to update material: ' + error.message);
+        handleMaterialError('update material', error);
         return;
       }
-      // Refetch materials from Supabase
-      const { data: allMaterials, error: fetchError } = await supabase
-        .from('materials')
-        .select('*')
-        .eq('business_id', user.business_id);
-      if (!fetchError && allMaterials) setMaterials(allMaterials);
+      
+      await refetchMaterials();
       setEditMaterial(null);
       setNewMaterialName('');
       setNewMaterialUnit('');
     } catch (err: any) {
-      alert('Unexpected error: ' + (err?.message || err));
+      handleMaterialError('update material', err);
     } finally {
       setLoading(false);
     }
@@ -151,21 +164,12 @@ const MaterialsTab: React.FC<MaterialsTabProps> = ({
       ]);
       const { error } = result as any;
       if (error) {
-        Alert.alert('Error', error?.message || 'Failed to delete material. This may be due to related records.');
+        handleMaterialError('delete material', error);
       } else {
-        // Refetch materials from Supabase
-        try {
-          const { data: allMaterials, error: fetchError } = await supabase
-            .from('materials')
-            .select('*')
-            .eq('business_id', user.business_id);
-          if (!fetchError && allMaterials) setMaterials(allMaterials);
-        } catch (fetchErr) {
-          console.error('Refetch materials error:', fetchErr);
-        }
+        await refetchMaterials();
       }
     } catch (err) {
-      Alert.alert('Error', err instanceof Error ? err.message : 'Unexpected error');
+      handleMaterialError('delete material', err);
     } finally {
       setLoading(false);
     }

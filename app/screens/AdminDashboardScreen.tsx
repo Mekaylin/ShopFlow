@@ -18,6 +18,7 @@ import TaskRatingModal from '../../components/TaskRatingModal';
 import { adminStyles, tabButton, tabButtonText } from '../../components/utility/styles';
 import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../contexts/AuthContext';
+import { getCurrentDate } from '../../utils/dateUtils';
 
 import type { Business, ClockEvent, Employee, Material, MaterialType, PerformanceSettings, Task, User } from '../../components/utility/types';
 import { supabase } from '../../lib/supabase';
@@ -325,7 +326,7 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
   // Utility: handle late task notifications
   function notifyLateTasks(tasks: Task[], notifiedIds: string[], setNotified: (cb: (prev: string[]) => string[]) => void, cooldown: boolean, setCooldown: (b: boolean) => void) {
     if (cooldown) return;
-    const now = new Date();
+    const now = getCurrentDate();
     const lateTasks = tasks.filter(t => {
       if (t.completed || notifiedIds.includes(t.id)) return false;
       const deadline = new Date(t.deadline);

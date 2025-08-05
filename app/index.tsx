@@ -34,7 +34,7 @@ export default function Index() {
       
       return () => clearTimeout(timer);
     }
-  }, [user, userProfile, loading, router]);
+  }, [loading, user?.id, userProfile?.id, userProfile?.role, router]); // Use stable properties
 
   // Reset redirect flag when user logs out
   useEffect(() => {

@@ -8,6 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Colors } from '../../constants/Colors';
 import { supabase } from '../../lib/supabase';
 import { createShadowStyle, shadowPresets } from '../../utils/shadowUtils';
+import FormInputRow from '../FormInputRow';
 import { SearchAndFilterBar } from '../ui/SearchAndFilterBar';
 import { adminStyles } from '../utility/styles';
 import AdminModal from './AdminModal';
@@ -456,64 +457,54 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       {/* Add Employee Modal */}
       <AdminModal visible={!!showAddEmployeeModal} onClose={() => setShowAddEmployeeModal(false)} title="Add New Employee">
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
-          <View style={adminStyles.addEmployeeInputsRow}>
-            <TextInput
-              style={[adminStyles.inputText, { flex: 1 }]}
-              placeholder="Name"
-              value={newEmployeeName}
-              onChangeText={setNewEmployeeName}
-              accessibilityLabel="Employee Name"
-              testID="employee-name-input"
-            />
-            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-              <TextInput
-                style={[adminStyles.inputText, { flex: 1 }]}
-                placeholder="Code"
-                value={newEmployeeCode}
-                onChangeText={setNewEmployeeCode}
-                accessibilityLabel="Employee Code"
-                testID="employee-code-input"
-              />
-              {biometricEnabled && (
-                <TouchableOpacity
-                  style={{ marginLeft: 8, backgroundColor: biometricLoggedIn ? '#388e3c' : '#1976d2', borderRadius: 8, padding: 8, alignItems: 'center', justifyContent: 'center' }}
-                  onPress={async () => {}}
-                  accessibilityLabel="Fingerprint login"
-                >
-                  <FontAwesome5 name="fingerprint" size={20} color="#fff" />
-                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold', marginTop: 2 }}>{biometricLoggedIn ? 'Clocked In' : 'Clock In'}</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-          <View style={adminStyles.addEmployeeInputsRow}>
-            <TextInput
-              style={[adminStyles.inputText, { flex: 1 }]}
-              placeholder="Lunch Start"
-              value={newEmployeeLunchStart}
-              onChangeText={setNewEmployeeLunchStart}
-              accessibilityLabel="Lunch Start"
-              testID="employee-lunch-start-input"
-            />
-            <TextInput
-              style={[adminStyles.inputText, { flex: 1 }]}
-              placeholder="Lunch End"
-              value={newEmployeeLunchEnd}
-              onChangeText={setNewEmployeeLunchEnd}
-              accessibilityLabel="Lunch End"
-              testID="employee-lunch-end-input"
-            />
-          </View>
-          <View style={adminStyles.addEmployeeInputsRow}>
-            <TextInput
-              style={[adminStyles.inputText, { flex: 1 }]}
-              placeholder="Department"
-              value={newEmployeeDepartment}
-              onChangeText={setNewEmployeeDepartment}
-              accessibilityLabel="Employee Department"
-              testID="employee-department-input"
-            />
-          </View>
+          <FormInputRow
+            inputs={[
+              {
+                placeholder: "Name",
+                value: newEmployeeName,
+                onChangeText: setNewEmployeeName,
+                flex: 1
+              },
+              {
+                placeholder: "Code",
+                value: newEmployeeCode,
+                onChangeText: setNewEmployeeCode,
+                flex: 1
+              }
+            ]}
+            style={{ marginBottom: 12 }}
+            inputStyle={adminStyles.inputText}
+          />
+          
+          <FormInputRow
+            inputs={[
+              {
+                placeholder: "Lunch Start",
+                value: newEmployeeLunchStart,
+                onChangeText: setNewEmployeeLunchStart
+              },
+              {
+                placeholder: "Lunch End", 
+                value: newEmployeeLunchEnd,
+                onChangeText: setNewEmployeeLunchEnd
+              }
+            ]}
+            style={{ marginBottom: 12 }}
+            inputStyle={adminStyles.inputText}
+          />
+          
+          <FormInputRow
+            inputs={[
+              {
+                placeholder: "Department",
+                value: newEmployeeDepartment,
+                onChangeText: setNewEmployeeDepartment
+              }
+            ]}
+            style={{ marginBottom: 12 }}
+            inputStyle={adminStyles.inputText}
+          />
+          
           <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }} onPress={pickEmployeePhoto}>
             {newEmployeePhotoUri ? (
               <Image source={{ uri: newEmployeePhotoUri }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 8 }} />
@@ -573,52 +564,52 @@ const EmployeesTab: React.FC<EmployeesTabProps> = ({
       {/* Edit Employee Modal */}
       <AdminModal visible={!!editEmployee} onClose={() => setEditEmployee(null)} title="Edit Employee">
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }} keyboardShouldPersistTaps="handled">
-          <View style={adminStyles.addEmployeeInputsRow}>
-            <TextInput
-              style={adminStyles.inputText}
-              placeholder="Name"
-              value={newEmployeeName}
-              onChangeText={setNewEmployeeName}
-              accessibilityLabel="Modal Employee Name"
-              testID="modal-employee-name-input"
-            />
-            <TextInput
-              style={adminStyles.inputText}
-              placeholder="Code"
-              value={newEmployeeCode}
-              onChangeText={setNewEmployeeCode}
-              accessibilityLabel="Modal Employee Code"
-              testID="modal-employee-code-input"
-            />
-          </View>
-          <View style={adminStyles.addEmployeeInputsRow}>
-            <TextInput
-              style={adminStyles.inputText}
-              placeholder="Lunch Start"
-              value={newEmployeeLunchStart}
-              onChangeText={setNewEmployeeLunchStart}
-              accessibilityLabel="Modal Lunch Start"
-              testID="modal-employee-lunch-start-input"
-            />
-            <TextInput
-              style={adminStyles.inputText}
-              placeholder="Lunch End"
-              value={newEmployeeLunchEnd}
-              onChangeText={setNewEmployeeLunchEnd}
-              accessibilityLabel="Modal Lunch End"
-              testID="modal-employee-lunch-end-input"
-            />
-          </View>
-          <View style={adminStyles.addEmployeeInputsRow}>
-            <TextInput
-              style={adminStyles.inputText}
-              placeholder="Department"
-              value={newEmployeeDepartment}
-              onChangeText={setNewEmployeeDepartment}
-              accessibilityLabel="Modal Employee Department"
-              testID="modal-employee-department-input"
-            />
-          </View>
+          <FormInputRow
+            inputs={[
+              {
+                placeholder: "Name",
+                value: newEmployeeName,
+                onChangeText: setNewEmployeeName
+              },
+              {
+                placeholder: "Code",
+                value: newEmployeeCode,
+                onChangeText: setNewEmployeeCode
+              }
+            ]}
+            style={{ marginBottom: 12 }}
+            inputStyle={adminStyles.inputText}
+          />
+          
+          <FormInputRow
+            inputs={[
+              {
+                placeholder: "Lunch Start",
+                value: newEmployeeLunchStart,
+                onChangeText: setNewEmployeeLunchStart
+              },
+              {
+                placeholder: "Lunch End",
+                value: newEmployeeLunchEnd,
+                onChangeText: setNewEmployeeLunchEnd
+              }
+            ]}
+            style={{ marginBottom: 12 }}
+            inputStyle={adminStyles.inputText}
+          />
+          
+          <FormInputRow
+            inputs={[
+              {
+                placeholder: "Department",
+                value: newEmployeeDepartment,
+                onChangeText: setNewEmployeeDepartment
+              }
+            ]}
+            style={{ marginBottom: 12 }}
+            inputStyle={adminStyles.inputText}
+          />
+          
           <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }} onPress={pickEmployeePhoto}>
             {newEmployeePhotoUri ? (
               <Image source={{ uri: newEmployeePhotoUri }} style={{ width: 40, height: 40, borderRadius: 20, marginRight: 8 }} />
