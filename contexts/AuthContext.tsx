@@ -2,7 +2,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User } from '@supabase/supabase-js';
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
-import { Platform, Text, View } from 'react-native';
+import { Platform, Text, View, TouchableOpacity } from 'react-native';
 import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
@@ -62,6 +62,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [darkMode, setDarkModeState] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Load dark mode preference from storage
   useEffect(() => {
@@ -117,48 +118,63 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Get session from Supabase and restore user state, with loading timeout
-  useEffect(() => {
-    let didTimeout = false;
-    const timeout = setTimeout(() => {
-      didTimeout = true;
-      setLoading(false);
-      setSessionError('Session check timed out. Please refresh or log in again.');
-      console.warn('[AuthContext] getSession timed out after 7 seconds');
-    }, 7000); // 7 seconds
-
-    const getSession = async () => {
+  // Get session from Supabase and restore user state, with loading timeout and retry
+  const getSessionWithRetry = useCallback(async (maxRetries = 2) => {
+    let attempt = 0;
+    let lastError = null;
+    setLoading(true);
+    setSessionError(null);
+    while (attempt <= maxRetries) {
+      let didTimeout = false;
+      const timeout = setTimeout(() => {
+        didTimeout = true;
+        setLoading(false);
+        setSessionError('Session check timed out. Please refresh or log in again.');
+        console.warn('[AuthContext] getSession timed out after 7 seconds');
+      }, 7000);
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        console.log('[AuthContext] getSession result:', { session, error });
+        console.log(`[AuthContext] getSession attempt ${attempt + 1}:`, { session, error });
         if (didTimeout) return;
         if (error) {
-          console.error('Error getting session:', error);
+          lastError = error;
           setUser(null);
           setUserProfile(null);
         } else if (session?.user) {
           setUser(session.user);
           await fetchUserProfile(session.user.id);
+          setSessionError(null);
+          clearTimeout(timeout);
+          setLoading(false);
+          return;
         } else {
           setUser(null);
           setUserProfile(null);
         }
       } catch (error) {
         if (didTimeout) return;
-        console.error('Error getting session:', error);
+        lastError = error;
         setUser(null);
         setUserProfile(null);
       } finally {
         if (!didTimeout) {
-          setLoading(false);
           clearTimeout(timeout);
         }
       }
-    };
+      attempt++;
+      if (attempt <= maxRetries) {
+        console.warn(`[AuthContext] getSession retrying... (${attempt})`);
+        await new Promise(res => setTimeout(res, 1000));
+      }
+    }
+    setLoading(false);
+    setSessionError('Failed to restore session. Please log in again.');
+    if (lastError) console.error('[AuthContext] getSession final error:', lastError);
+  }, [fetchUserProfile]);
 
-    getSession();
-    return () => clearTimeout(timeout);
-  }, []);
+  useEffect(() => {
+    getSessionWithRetry();
+  }, [getSessionWithRetry, retryCount]);
 
   // Listen for auth state changes
   useEffect(() => {
@@ -251,8 +267,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   return (
     <AuthContext.Provider value={value}>
       {sessionError && (
-        <View style={{ backgroundColor: '#fffbe6', padding: 16, borderRadius: 8, margin: 16 }}>
-          <Text style={{ color: '#d32f2f', fontWeight: 'bold', textAlign: 'center' }}>{sessionError}</Text>
+        <View style={{ backgroundColor: '#fffbe6', padding: 16, borderRadius: 8, margin: 16, alignItems: 'center' }}>
+          <Text style={{ color: '#d32f2f', fontWeight: 'bold', textAlign: 'center', marginBottom: 8 }}>{sessionError}</Text>
+          <TouchableOpacity
+            style={{ backgroundColor: '#1976d2', paddingHorizontal: 18, paddingVertical: 8, borderRadius: 8 }}
+            onPress={() => setRetryCount(c => c + 1)}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Retry</Text>
+          </TouchableOpacity>
         </View>
       )}
       {children}
