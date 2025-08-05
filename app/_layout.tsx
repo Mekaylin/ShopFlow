@@ -51,6 +51,7 @@ export default function RootLayout() {
           <Stack.Screen name="index" options={{ title: 'Welcome to ShopFlow' }} />
           <Stack.Screen name="admin-dashboard" options={{ headerShown: false }} />
           <Stack.Screen name="employee-dashboard" options={{ headerShown: false }} />
+          <Stack.Screen name="license-scanner" options={{ headerShown: false }} />
           <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>

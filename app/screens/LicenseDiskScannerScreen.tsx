@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useCallback, useState } from 'react';
-import { Alert, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, SafeAreaView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import PlatformCamera from '../../components/camera/PlatformCamera';
 import { supabase } from '../../lib/supabase';
 
@@ -319,6 +319,7 @@ const LicenseDiskScannerScreen: React.FC<LicenseDiskScannerScreenProps> = ({
 
       {isProcessing && (
         <View style={styles.processingOverlay}>
+          <ActivityIndicator size="large" color="#00FF88" />
           <Text style={styles.processingText}>Processing license disk...</Text>
         </View>
       )}
@@ -342,22 +343,40 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    paddingTop: 10,
+    paddingBottom: 15,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    zIndex: 10,
   },
   closeButton: {
-    padding: 10,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     color: 'white',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 10,
   },
   rescanButton: {
-    padding: 10,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   camera: {
     flex: 1,
+    position: 'relative',
   },
   overlay: {
     position: 'absolute',
@@ -367,33 +386,50 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
   },
   scanFrame: {
-    width: 280,
-    height: 180,
-    borderWidth: 2,
-    borderColor: '#00FF00',
-    borderRadius: 10,
+    width: '90%',
+    maxWidth: 320,
+    height: 200,
+    borderWidth: 3,
+    borderColor: '#00FF88',
+    borderRadius: 12,
     backgroundColor: 'transparent',
+    shadowColor: '#00FF88',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 8,
   },
   instructionText: {
     color: 'white',
     fontSize: 16,
+    fontWeight: '500',
     textAlign: 'center',
-    marginTop: 30,
-    paddingHorizontal: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    borderRadius: 10,
-    padding: 10,
+    marginTop: 40,
+    marginHorizontal: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    lineHeight: 22,
   },
   subInstructionText: {
     color: '#CCCCCC',
     fontSize: 14,
+    fontWeight: '400',
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 12,
+    marginHorizontal: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    borderRadius: 5,
-    padding: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    lineHeight: 18,
   },
   processingOverlay: {
     position: 'absolute',
@@ -401,24 +437,31 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 20,
   },
   processingText: {
     color: 'white',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    textAlign: 'center',
+    marginTop: 16,
   },
   footer: {
     paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    paddingVertical: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
   footerText: {
     color: '#CCCCCC',
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '400',
     textAlign: 'center',
+    lineHeight: 18,
   },
 });
 
