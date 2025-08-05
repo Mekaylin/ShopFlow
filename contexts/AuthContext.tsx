@@ -12,6 +12,7 @@ interface AuthContextType {
   darkMode: boolean;
   signOut: () => Promise<void>;
   setDarkMode: (value: boolean) => void;
+  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -126,17 +127,38 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [userProfile]);
 
-  // Simplified session check with faster timeout and fewer retries
+  // Simplified session check with mobile web optimizations
   const getInitialSession = useCallback(async () => {
     console.log('[AuthContext] Getting initial session...');
     setLoading(true);
     setSessionError(null);
     
     try {
-      // Use a promise race to implement timeout
+      // For mobile web, first check localStorage directly
+      if (Platform.OS === 'web') {
+        // Check for any Supabase auth keys in localStorage
+        const hasSupabaseAuth = Object.keys(localStorage).some(key => 
+          key.startsWith('sb-') && key.includes('-auth-token')
+        );
+        console.log('[AuthContext] Supabase auth data exists:', hasSupabaseAuth);
+        
+        // If no stored session on mobile web, skip the wait
+        if (!hasSupabaseAuth && /Mobi|Android/i.test(navigator.userAgent)) {
+          console.log('[AuthContext] No stored session on mobile web, setting to logged out');
+          setUser(null);
+          setUserProfile(null);
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Use a promise race to implement timeout (shorter for mobile)
+      const isMobileWeb = Platform.OS === 'web' && /Mobi|Android/i.test(navigator.userAgent);
+      const timeout = isMobileWeb ? 2000 : 3000; // Shorter timeout for mobile web
+      
       const sessionPromise = supabase.auth.getSession();
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Session check timeout')), 3000)
+        setTimeout(() => reject(new Error('Session check timeout')), timeout)
       );
       
       const { data: { session }, error } = await Promise.race([
@@ -152,7 +174,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUserProfile(null);
       } else if (session?.user) {
         setUser(session.user);
-        // Fetch profile asynchronously without blocking the loading state
+        // For mobile web, eagerly set a basic profile to enable navigation
+        if (isMobileWeb) {
+          setUserProfile({ id: session.user.id, role: 'employee', email: session.user.email });
+        }
+        // Fetch full profile asynchronously
         fetchUserProfile(session.user.id);
       } else {
         setUser(null);
@@ -174,7 +200,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     getInitialSession();
   }, [getInitialSession]);
 
-  // Listen for auth state changes
+  // Listen for auth state changes with mobile web optimizations
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -188,8 +214,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           setUser(session.user);
           
-          // Fetch profile asynchronously for certain events
-          if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && shouldFetchProfile) {
+          // For mobile web, set a basic profile immediately to prevent blocking
+          const isMobileWeb = Platform.OS === 'web' && /Mobi|Android/i.test(navigator.userAgent);
+          if (isMobileWeb && (!userProfile || shouldFetchProfile)) {
+            setUserProfile({ id: currentUserId, role: 'employee', email: session.user.email });
+          }
+          
+          // Fetch full profile asynchronously for certain events
+          if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && shouldFetchProfile) {
             fetchUserProfile(currentUserId);
           }
         } else {
@@ -200,7 +232,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           if (event === 'SIGNED_OUT') {
             try {
               if (Platform.OS === 'web') {
-                localStorage.removeItem('supabase.auth.token');
+                // Clear all supabase auth related items with correct key format
+                Object.keys(localStorage).forEach(key => {
+                  if (key.startsWith('sb-') && key.includes('auth-token')) {
+                    localStorage.removeItem(key);
+                  }
+                });
               } else {
                 await AsyncStorage.removeItem('supabase.auth.token');
               }
@@ -228,7 +265,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Clear any stored session data
         try {
           if (Platform.OS === 'web') {
-            localStorage.removeItem('supabase.auth.token');
+            // Clear all supabase auth related items with correct key format
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith('sb-') && key.includes('auth-token')) {
+                localStorage.removeItem(key);
+              }
+            });
           } else {
             await AsyncStorage.removeItem('supabase.auth.token');
           }
@@ -237,7 +279,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       }
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('Error during sign out:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Mobile web session refresh function
+  const refreshSession = async () => {
+    console.log('[AuthContext] Refreshing session...');
+    try {
+      setLoading(true);
+      const { data: { session }, error } = await supabase.auth.refreshSession();
+      
+      if (error) {
+        console.error('[AuthContext] Session refresh error:', error);
+        return;
+      }
+      
+      if (session?.user) {
+        setUser(session.user);
+        // For mobile web, set basic profile immediately
+        const isMobileWeb = Platform.OS === 'web' && /Mobi|Android/i.test(navigator.userAgent);
+        if (isMobileWeb) {
+          setUserProfile({ id: session.user.id, role: 'employee', email: session.user.email });
+        }
+        // Fetch full profile
+        await fetchUserProfile(session.user.id);
+      }
+    } catch (error) {
+      console.error('[AuthContext] Failed to refresh session:', error);
     } finally {
       setLoading(false);
     }
@@ -250,6 +321,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     darkMode,
     signOut,
     setDarkMode,
+    refreshSession,
   };
 
   return (

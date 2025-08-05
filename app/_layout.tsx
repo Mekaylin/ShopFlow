@@ -6,6 +6,7 @@ import Head from 'expo-router/head';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect } from 'react';
+import { Platform } from 'react-native';
 import { AuthProvider } from '../contexts/AuthContext';
 
 // Keep the splash screen visible while we fetch resources
@@ -46,14 +47,14 @@ export default function RootLayout() {
         <link rel="stylesheet" href="/styles.css" />
       </Head>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
+        <Stack initialRouteName="index">
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="index" options={{ title: 'Welcome to ShopFlow' }} />
           <Stack.Screen name="admin-dashboard" options={{ headerShown: false }} />
           <Stack.Screen name="employee-dashboard" options={{ headerShown: false }} />
           <Stack.Screen name="license-scanner" options={{ headerShown: false }} />
           <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
+          <Stack.Screen name="+not-found" options={{ title: 'Page Not Found' }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

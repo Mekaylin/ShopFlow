@@ -7,7 +7,7 @@ import LoginScreen from './screens/LoginScreen';
 
 export default function Index() {
   const router = useRouter();
-  const { user, userProfile, loading } = useAuth();
+  const { user, userProfile, loading, refreshSession } = useAuth();
   // Debug log for auth state
   console.log('[Index] loading:', loading, 'user:', !!user, 'userProfile:', !!userProfile, 'role:', userProfile?.role);
   const [redirecting, setRedirecting] = useState(false);
@@ -34,6 +34,24 @@ export default function Index() {
       };
     }
   }, [redirecting]);
+
+  // Mobile web session refresh check
+  useEffect(() => {
+    const isMobileWeb = Platform.OS === 'web' && /Mobi|Android/i.test(navigator.userAgent);
+    
+    if (isMobileWeb && !loading && !user) {
+      console.log('[Index] Mobile web detected, checking for stored session...');
+      
+      // Check if there's a stored session but no current user
+      const hasSupabaseAuth = Object.keys(localStorage).some(key => 
+        key.startsWith('sb-') && key.includes('-auth-token')
+      );
+      if (hasSupabaseAuth) {
+        console.log('[Index] Found stored session, attempting refresh...');
+        refreshSession();
+      }
+    }
+  }, [loading, user, refreshSession]);
 
   useEffect(() => {
     // Prevent multiple redirections
@@ -83,21 +101,26 @@ export default function Index() {
       } 
       // If no profile after 3 seconds, default to employee dashboard to avoid infinite loading
       else {
+        const isMobileWeb = Platform.OS === 'web' && /Mobi|Android/i.test(navigator.userAgent);
         const fallbackTimer = setTimeout(() => {
           if (!userProfile && !hasRedirected.current) {
-            console.log('[Index] No profile after 3s, defaulting to employee dashboard');
-            hasRedirected.current = true;
-            setRedirecting(true);
-            setTimeout(() => {
-              try {
-                router.replace('/employee-dashboard');
-              } catch (error) {
-                console.error('[Index] Fallback navigation error:', error);
-                router.push('/employee-dashboard');
-              }
-            }, 300);
+            console.log('[Index] No profile after timeout, checking if user exists in DB...');
+            // For mobile web, be more aggressive about navigation
+            if (isMobileWeb || !userProfile) {
+              console.log('[Index] Mobile web or no profile, navigating to employee dashboard');
+              hasRedirected.current = true;
+              setRedirecting(true);
+              setTimeout(() => {
+                try {
+                  router.replace('/employee-dashboard');
+                } catch (error) {
+                  console.error('[Index] Fallback navigation error:', error);
+                  router.push('/employee-dashboard');
+                }
+              }, 300);
+            }
           }
-        }, 3000);
+        }, isMobileWeb ? 1500 : 3000); // Shorter timeout for mobile web
         
         return () => clearTimeout(fallbackTimer);
       }
@@ -114,24 +137,26 @@ export default function Index() {
   }, [user, loading]);
 
   // Additional mobile-specific navigation handler
-  const handleManualNavigation = () => {
+  const handleManualNavigation = async () => {
     console.log('[Index] Manual navigation triggered, userProfile:', userProfile);
     hasRedirected.current = false;
     setRedirecting(false);
     setShowDebugButton(false);
     
-    // Force navigation with longer delay for mobile
-    setTimeout(() => {
-      const targetRoute = userProfile?.role === 'admin' ? '/admin-dashboard' : '/employee-dashboard';
-      console.log('[Index] Forcing navigation to:', targetRoute);
-      
-      if (Platform.OS === 'web') {
-        router.replace(targetRoute);
-      } else {
-        // For mobile, use push instead of replace
-        router.push(targetRoute);
-      }
-    }, 100);
+    // For mobile web, try refreshing the session first
+    const isMobileWeb = Platform.OS === 'web' && /Mobi|Android/i.test(navigator.userAgent);
+    if (isMobileWeb && !user) {
+      console.log('[Index] Mobile web manual navigation, refreshing session...');
+      await refreshSession();
+      return;
+    }
+    
+    // If user exists, navigate immediately
+    if (user && userProfile) {
+      const targetRoute = userProfile.role === 'admin' ? '/admin-dashboard' : '/employee-dashboard';
+      console.log('[Index] Manual navigation to:', targetRoute);
+      router.replace(targetRoute);
+    }
   };
 
   if (loading || redirecting) {
@@ -178,7 +203,10 @@ export default function Index() {
             onPress={handleManualNavigation}
           >
             <Text style={{ color: '#ffffff', fontWeight: 'bold' }}>
-              Continue Manually
+              {Platform.OS === 'web' && /Mobi|Android/i.test(navigator.userAgent) 
+                ? 'Refresh & Continue' 
+                : 'Continue Manually'
+              }
             </Text>
           </TouchableOpacity>
         )}
