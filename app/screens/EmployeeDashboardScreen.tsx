@@ -1,12 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import AddTaskModal from '../../components/ui/AddTaskModal';
 // --- Welcome/Goodbye Animation State ---
 import { ActivityIndicator, Alert, Animated, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import NotificationPanel, { Notification } from '../../components/admin/NotificationPanel';
 import { supabase } from '../../lib/supabase';
-import { createShadowStyle, shadowPresets } from '../../utils/shadowUtils';
 // Helper: Welcome/Goodbye animation state must be inside the component
 // Helper to queue clock events locally
 type ClockEvent = {

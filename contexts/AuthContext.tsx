@@ -1,8 +1,8 @@
 // contexts/AuthContext.tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User } from '@supabase/supabase-js';
-import React, { createContext, ReactNode, useContext, useEffect, useState, useCallback } from 'react';
-import { Platform, View, Text } from 'react-native';
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+import { Platform, Text, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
@@ -117,12 +117,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Get session from Supabase and restore user state
+  // Get session from Supabase and restore user state, with loading timeout
   useEffect(() => {
+    let didTimeout = false;
+    const timeout = setTimeout(() => {
+      didTimeout = true;
+      setLoading(false);
+      setSessionError('Session check timed out. Please refresh or log in again.');
+      console.warn('[AuthContext] getSession timed out after 7 seconds');
+    }, 7000); // 7 seconds
+
     const getSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         console.log('[AuthContext] getSession result:', { session, error });
+        if (didTimeout) return;
         if (error) {
           console.error('Error getting session:', error);
           setUser(null);
@@ -135,15 +144,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUserProfile(null);
         }
       } catch (error) {
+        if (didTimeout) return;
         console.error('Error getting session:', error);
         setUser(null);
         setUserProfile(null);
       } finally {
-        setLoading(false);
+        if (!didTimeout) {
+          setLoading(false);
+          clearTimeout(timeout);
+        }
       }
     };
 
     getSession();
+    return () => clearTimeout(timeout);
   }, []);
 
   // Listen for auth state changes
