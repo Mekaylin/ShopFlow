@@ -261,6 +261,13 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       Alert.alert('Invalid Code', 'The employee code you entered is incorrect. Please try again.');
       return;
     }
+    // Helper for timeout
+    const withTimeout = (promise: Promise<any>, ms: number) => {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out. Please check your connection and try again.')), ms))
+      ]);
+    };
     // Auto-detect action based on working hours and lunch times
     // Assumes employee object has work_start, work_end, lunch_start, lunch_end as 'HH:mm' strings
     const nowDate = new Date();
@@ -310,12 +317,19 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
     setClockLoading(true);
     // Prevent duplicate clock events within 1 minute
     try {
-      const { data: recentEvents, error: recentError } = await supabase
-        .from('clock_events')
-        .select('id, action, created_at')
-        .eq('employee_id', employee.id)
-        .order('created_at', { ascending: false })
-        .limit(1);
+      // Timeout for all network requests (10s)
+      const recentResult = await withTimeout(
+        (async () =>
+          await supabase
+            .from('clock_events')
+            .select('id, action, created_at')
+            .eq('employee_id', employee.id)
+            .order('created_at', { ascending: false })
+            .limit(1)
+        )(),
+        10000
+      );
+      const { data: recentEvents, error: recentError } = recentResult;
       if (recentError) {
         console.error('[ClockIn] Error fetching recent events:', recentError);
         throw recentError;
@@ -340,9 +354,14 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
         action,
         created_at: now
       };
-      
       console.log('[ClockIn] Inserting event:', event);
-      const { error } = await supabase.from('clock_events').insert(event);
+      const insertResult = await withTimeout(
+        (async () =>
+          await supabase.from('clock_events').insert(event)
+        )(),
+        10000
+      );
+      const { error } = insertResult;
       if (error) {
         console.error('[ClockIn] Error inserting clock event:', error);
         throw error;
@@ -353,12 +372,10 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       ]);
       if (action === 'in') {
         setClockedIn(true); setOnLunch(false);
-        // Always show welcome greeting after clock in (unless lunch)
         if (!(nowHM >= '12:00' && nowHM <= '14:00')) {
           triggerGreeting('welcome', employee.name);
         }
         Alert.alert('Clocked In', `${employee.name} clocked in at ${new Date().toLocaleTimeString()}`);
-        // Robust error log after successful clock in
         console.info('[ClockIn][Success]', {
           employeeId: employee.id,
           employeeName: employee.name,
@@ -369,7 +386,6 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       }
       else if (action === 'out') {
         setClockedIn(false); setOnLunch(false);
-        // Always show goodbye greeting after clock out (unless lunch)
         if (!(nowHM >= '12:00' && nowHM <= '14:00')) {
           triggerGreeting('goodbye', employee.name);
         }
@@ -377,12 +393,17 @@ function EmployeeDashboardScreen({ onLogout, user }: EmployeeDashboardScreenProp
       }
       else if (action === 'lunch') { setOnLunch(true); Alert.alert('Lunch', `${employee.name} started lunch at ${new Date().toLocaleTimeString()}`); }
       else if (action === 'lunchBack') { setOnLunch(false); Alert.alert('Back', `${employee.name} ended lunch at ${new Date().toLocaleTimeString()}`); }
-      // Modal rendering moved to main return block
       setCodePrompt('');
       console.log('[ClockIn] Clock event successful for', employee.name, 'Action:', action);
     } catch (err) {
       console.error('[ClockIn] Failed to clock event:', err);
-      setClockInError('Failed to clock event. Please check your connection or try again.');
+      if (err instanceof Error && err.message === 'Request timed out. Please check your connection and try again.') {
+        setClockInError('Request timed out. Please check your connection and try again.');
+        Alert.alert('Timeout', 'The request took too long. Please check your connection and try again.');
+      } else {
+        setClockInError('Failed to clock event. Please check your connection or try again.');
+        Alert.alert('Clock Event Failed', 'Could not clock event. Please check your connection or try again.');
+      }
     } finally {
       setClockLoading(false);
     }
