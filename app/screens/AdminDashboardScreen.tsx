@@ -51,6 +51,7 @@ class DashboardErrorBoundary extends React.Component<{ children: React.ReactNode
 
 interface AdminDashboardScreenProps {
   onLogout: () => void;
+  onBackToEmployee?: () => void;
   user: User | Business;
 }
 
@@ -70,9 +71,17 @@ function isBusiness(obj: any): obj is Business {
   return obj && typeof obj === 'object' && 'name' in obj && 'code' in obj && 'created_at' in obj;
 }
 
-function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
+function AdminDashboardScreen({ onLogout, onBackToEmployee, user }: AdminDashboardScreenProps) {
   // Use global auth context for dark mode
   const { darkMode, setDarkMode } = useAuth();
+  
+  console.log('[AdminDashboardScreen] Component rendered with props:', {
+    hasOnLogout: !!onLogout,
+    hasOnBackToEmployee: !!onBackToEmployee,
+    user: !!user,
+    userId: user?.id,
+    darkMode
+  });
   
   // Get theme colors based on current mode
   const themeColors = darkMode ? Colors.dark : Colors.light;
@@ -575,15 +584,21 @@ function AdminDashboardScreen({ onLogout, user }: AdminDashboardScreenProps) {
               }}
               onUpdateLateThreshold={setLateThreshold}
               onSwitchDashboard={() => {
+                console.log('[AdminDashboardScreen] Switch dashboard requested');
                 setSettingsModalVisible(false);
-                // Use expo-router navigation for both web and native
-                if (typeof window !== 'undefined' && window.location.pathname === '/employee-dashboard') return;
-                if (typeof window !== 'undefined' && window.location.pathname === '/admin-dashboard') {
-                  // On web, use router.replace
-                  require('expo-router').useRouter().replace('/employee-dashboard');
+                
+                // Use the provided callback if available, otherwise fallback to direct navigation
+                if (onBackToEmployee) {
+                  console.log('[AdminDashboardScreen] Using provided onBackToEmployee callback');
+                  onBackToEmployee();
                 } else {
-                  // On native, use router.replace
-                  require('expo-router').useRouter().replace('/employee-dashboard');
+                  console.log('[AdminDashboardScreen] Using fallback navigation');
+                  // Fallback direct navigation
+                  try {
+                    require('expo-router').useRouter().replace('/employee-dashboard');
+                  } catch (error) {
+                    console.error('[AdminDashboardScreen] Fallback navigation error:', error);
+                  }
                 }
               }}
             />

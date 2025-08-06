@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { logPageReload, logNavigation, getNavigationContext } from '../utils/navigationDebug';
 import LoginScreen from './screens/LoginScreen';
 
 export default function Index() {
@@ -14,19 +15,29 @@ export default function Index() {
   const hasRedirected = useRef(false);
   const [showDebugButton, setShowDebugButton] = useState(false);
 
-  // Show debug button after 5 seconds if still redirecting
+  // Log page reload/load for debugging
+  useEffect(() => {
+    logPageReload('index');
+    console.log('[Index] Navigation context:', getNavigationContext());
+  }, []);
+
+  // Show debug button sooner for web platforms if still redirecting
   useEffect(() => {
     if (redirecting) {
+      const isWeb = Platform.OS === 'web';
+      const debugButtonDelay = isWeb ? 3000 : 5000; // Show sooner for web
+      const resetDelay = isWeb ? 8000 : 10000; // Reset sooner for web
+      
       const debugTimer = setTimeout(() => {
         setShowDebugButton(true);
-      }, 5000);
+      }, debugButtonDelay);
       
-      // Also reset redirecting state after 10 seconds to prevent infinite stuck state
+      // Also reset redirecting state after timeout to prevent infinite stuck state
       const resetTimer = setTimeout(() => {
         console.log('[Index] Resetting redirecting state after timeout');
         setRedirecting(false);
         hasRedirected.current = false;
-      }, 10000);
+      }, resetDelay);
       
       return () => {
         clearTimeout(debugTimer);
@@ -35,20 +46,45 @@ export default function Index() {
     }
   }, [redirecting]);
 
-  // Mobile web session refresh check
+  // Web session refresh check (desktop and mobile)
   useEffect(() => {
-    const isMobileWeb = Platform.OS === 'web' && /Mobi|Android/i.test(navigator.userAgent);
+    const isWeb = Platform.OS === 'web';
+    const isMobileWeb = isWeb && /Mobi|Android/i.test(navigator.userAgent);
+    const isDesktopWeb = isWeb && !/Mobi|Android/i.test(navigator.userAgent);
     
-    if (isMobileWeb && !loading && !user) {
-      console.log('[Index] Mobile web detected, checking for stored session...');
+    console.log('[Index] Session refresh check - Platform detection:', { 
+      isWeb, 
+      isMobileWeb, 
+      isDesktopWeb,
+      userAgent: isWeb ? navigator.userAgent : 'N/A'
+    });
+    
+    if (isWeb && !loading && !user) {
+      console.log('[Index] Web platform detected, checking for stored session...');
       
-      // Check if there's a stored session but no current user
+      // Check for the specific Supabase auth key pattern
+      const supabaseProjectRef = 'qdfhklikmkyeqsiuapjg'; // From our Supabase URL
+      const authTokenKey = `sb-${supabaseProjectRef}-auth-token`;
+      const hasSpecificAuth = localStorage.getItem(authTokenKey) !== null;
+      
+      // Also check for any sb-* auth token pattern as fallback
       const hasSupabaseAuth = Object.keys(localStorage).some(key => 
         key.startsWith('sb-') && key.includes('-auth-token')
       );
-      if (hasSupabaseAuth) {
-        console.log('[Index] Found stored session, attempting refresh...');
+      
+      console.log('[Index] Auth token check:', { 
+        hasSpecificAuth, 
+        hasSupabaseAuth, 
+        authTokenKey,
+        allStorageKeys: Object.keys(localStorage).filter(k => k.startsWith('sb-')),
+        platform: { isMobileWeb, isDesktopWeb }
+      });
+      
+      if (hasSpecificAuth || hasSupabaseAuth) {
+        console.log('[Index] Found stored session, attempting refresh for', isDesktopWeb ? 'desktop' : 'mobile', 'web...');
         refreshSession();
+      } else {
+        console.log('[Index] No stored auth tokens found on', isDesktopWeb ? 'desktop' : 'mobile', 'web');
       }
     }
   }, [loading, user, refreshSession]);
@@ -56,11 +92,19 @@ export default function Index() {
   useEffect(() => {
     // Prevent multiple redirections
     if (hasRedirected.current) {
+      console.log('[Index] Redirect already in progress, skipping...');
       return;
     }
 
     // Auto-navigate based on auth state - be more lenient about profile loading
     if (!loading && user) {
+      console.log('[Index] User found, checking profile for navigation...', {
+        user: !!user,
+        userProfile: !!userProfile,
+        userRole: userProfile?.role,
+        hasRedirected: hasRedirected.current
+      });
+      
       // If we have a userProfile, use it for role-based routing
       if (userProfile) {
         hasRedirected.current = true;
@@ -75,14 +119,17 @@ export default function Index() {
             
             // Use different navigation methods based on platform
             if (Platform.OS === 'web') {
+              logNavigation('index', targetRoute, 'router.replace');
               router.replace(targetRoute);
             } else {
               // For mobile, try both replace and push as fallback
+              logNavigation('index', targetRoute, 'router.replace');
               router.replace(targetRoute);
               // Additional fallback for mobile
               setTimeout(() => {
                 if (hasRedirected.current && !router.canGoBack()) {
                   console.log('[Index] Mobile fallback navigation');
+                  logNavigation('index', targetRoute, 'router.push-fallback');
                   router.push(targetRoute);
                 }
               }, 1000);
@@ -92,6 +139,8 @@ export default function Index() {
             // Fallback navigation attempt
             setTimeout(() => {
               const fallbackRoute = userProfile.role === 'admin' ? '/admin-dashboard' : '/employee-dashboard';
+              console.log('[Index] Attempting fallback navigation to:', fallbackRoute);
+              logNavigation('index', fallbackRoute, 'router.push-error-fallback');
               router.push(fallbackRoute);
             }, 500);
           }
@@ -99,15 +148,33 @@ export default function Index() {
         
         return () => clearTimeout(timer);
       } 
-      // If no profile after 3 seconds, default to employee dashboard to avoid infinite loading
+      // If no profile after timeout, default to employee dashboard to avoid infinite loading
       else {
         const isMobileWeb = Platform.OS === 'web' && /Mobi|Android/i.test(navigator.userAgent);
+        const isDesktopWeb = Platform.OS === 'web' && !/Mobi|Android/i.test(navigator.userAgent);
+        
+        // Use differentiated timeouts for better user experience
+        let fallbackTimeout = 3000; // Default/native
+        if (isMobileWeb) {
+          fallbackTimeout = 1500; // Mobile web - shortest for responsiveness
+        } else if (isDesktopWeb) {
+          fallbackTimeout = 2500; // Desktop web - balanced timeout
+        }
+        
+        console.log('[Index] Setting fallback timer with timeout:', fallbackTimeout, 'ms for platform:', { 
+          isMobileWeb, 
+          isDesktopWeb, 
+          isNative: Platform.OS !== 'web'
+        });
+        
         const fallbackTimer = setTimeout(() => {
           if (!userProfile && !hasRedirected.current) {
-            console.log('[Index] No profile after timeout, checking if user exists in DB...');
-            // For mobile web, be more aggressive about navigation
-            if (isMobileWeb || !userProfile) {
-              console.log('[Index] Mobile web or no profile, navigating to employee dashboard');
+            console.log('[Index] No profile after timeout, navigating to fallback dashboard...');
+            console.log('[Index] Platform detection for fallback:', { isMobileWeb, isDesktopWeb, fallbackTimeout });
+            
+            // For all web platforms, be more aggressive about navigation to prevent stuck loading
+            if (isMobileWeb || isDesktopWeb || !userProfile) {
+              console.log('[Index] Web platform or no profile, navigating to employee dashboard');
               hasRedirected.current = true;
               setRedirecting(true);
               setTimeout(() => {
@@ -115,12 +182,13 @@ export default function Index() {
                   router.replace('/employee-dashboard');
                 } catch (error) {
                   console.error('[Index] Fallback navigation error:', error);
+                  logNavigation('index', '/employee-dashboard', 'router.push-final-fallback');
                   router.push('/employee-dashboard');
                 }
               }, 300);
             }
           }
-        }, isMobileWeb ? 1500 : 3000); // Shorter timeout for mobile web
+        }, fallbackTimeout);
         
         return () => clearTimeout(fallbackTimer);
       }
@@ -136,17 +204,40 @@ export default function Index() {
     }
   }, [user, loading]);
 
-  // Additional mobile-specific navigation handler
+  // Enhanced navigation handler for all platforms
   const handleManualNavigation = async () => {
     console.log('[Index] Manual navigation triggered, userProfile:', userProfile);
+    console.log('[Index] Current auth state:', { user: !!user, userProfile: !!userProfile, loading });
+    
+    // Platform detection for manual navigation
+    const isWeb = Platform.OS === 'web';
+    const isMobileWeb = isWeb && /Mobi|Android/i.test(navigator.userAgent);
+    const isDesktopWeb = isWeb && !/Mobi|Android/i.test(navigator.userAgent);
+    
+    // For web debugging, log all localStorage keys
+    if (isWeb) {
+      const allKeys = Object.keys(localStorage);
+      const supabaseKeys = allKeys.filter(k => k.includes('supabase') || k.startsWith('sb-'));
+      console.log('[Index] Manual navigation - localStorage debug:', {
+        allKeys: allKeys.length,
+        supabaseKeys,
+        platform: { isMobileWeb, isDesktopWeb }
+      });
+      
+      // Check specific patterns
+      supabaseKeys.forEach(key => {
+        const value = localStorage.getItem(key);
+        console.log('[Index] Auth key:', key, 'Value length:', value?.length || 0);
+      });
+    }
+    
     hasRedirected.current = false;
     setRedirecting(false);
     setShowDebugButton(false);
     
-    // For mobile web, try refreshing the session first
-    const isMobileWeb = Platform.OS === 'web' && /Mobi|Android/i.test(navigator.userAgent);
-    if (isMobileWeb && !user) {
-      console.log('[Index] Mobile web manual navigation, refreshing session...');
+    // For all web platforms, try refreshing the session first if no user
+    if (isWeb && !user) {
+      console.log('[Index] Web platform manual navigation, refreshing session...');
       await refreshSession();
       return;
     }
@@ -203,8 +294,8 @@ export default function Index() {
             onPress={handleManualNavigation}
           >
             <Text style={{ color: '#ffffff', fontWeight: 'bold' }}>
-              {Platform.OS === 'web' && /Mobi|Android/i.test(navigator.userAgent) 
-                ? 'Refresh & Continue' 
+              {Platform.OS === 'web' 
+                ? (/Mobi|Android/i.test(navigator.userAgent) ? 'Refresh & Continue' : 'Continue')
                 : 'Continue Manually'
               }
             </Text>

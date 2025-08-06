@@ -1,13 +1,89 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import AddTaskModal from '../../components/ui/AddTaskModal';
 // --- Welcome/Goodbye Animation State ---
-import { ActivityIndicator, Alert, Animated, FlatList, Modal, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, FlatList, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, useColorScheme, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import NotificationPanel, { Notification } from '../../components/admin/NotificationPanel';
 import TaskModal from '../../components/TaskModal';
 import { supabase } from '../../lib/supabase';
 import { getCurrentTimeHM, getCurrentTimestamp, isTimeBetween } from '../../utils/dateUtils';
+// EMERGENCY: Removed dangerous navigation debug imports that could cause system crashes
+// import { logNavigation, logNavigationError, getCurrentRoute } from '../../utils/navigationDebug';
+
+// Emergency safe error boundary - prevents infinite re-renders that could crash system
+class EmployeeDashboardErrorBoundary extends React.Component<
+  { children: React.ReactNode }, 
+  { hasError: boolean; error: any; errorCount: number }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null, errorCount: 0 };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    console.error('[EmployeeDashboardErrorBoundary] Error caught:', error);
+    return { hasError: true, error, errorCount: 1 };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error('[EmployeeDashboardErrorBoundary] Dashboard error details:', error, errorInfo);
+    
+    // EMERGENCY: Prevent infinite error loops that could crash the system
+    if (this.state.errorCount > 3) {
+      console.error('[EmployeeDashboardErrorBoundary] Too many errors, redirecting to safe page');
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+      return;
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 32 }}>
+          <Text style={{ fontSize: 20, color: '#c62828', marginBottom: 16, textAlign: 'center' }}>
+            Dashboard Error
+          </Text>
+          <Text style={{ color: '#666', marginBottom: 24, textAlign: 'center' }}>
+            {this.state.errorCount < 3 
+              ? 'Something went wrong with the employee dashboard. Please reload.'
+              : 'Too many errors occurred. Redirecting to home page for safety.'
+            }
+          </Text>
+          {this.state.errorCount < 3 && (
+            <TouchableOpacity
+              style={{ backgroundColor: '#1976d2', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 }}
+              onPress={() => {
+                // EMERGENCY: Limit reload attempts to prevent infinite loops
+                if (this.state.errorCount < 3) {
+                  this.setState({ hasError: false, error: null, errorCount: this.state.errorCount + 1 });
+                  // Try to reload the current page
+                  if (Platform.OS === 'web') {
+                    window.location.reload();
+                  }
+                } else {
+                  if (typeof window !== 'undefined') {
+                    window.location.href = '/';
+                  }
+                }
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+                {this.state.errorCount < 3 ? 'Reload' : 'Go Home'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 // Helper: Welcome/Goodbye animation state must be inside the component
 // Helper to queue clock events locally
 type ClockEvent = {
@@ -109,8 +185,6 @@ interface EmployeeDashboardScreenProps {
   user?: any;
   onLogout?: () => void;
 }
-
-import { useRouter } from 'expo-router';
 
 function EmployeeDashboardScreen({ user, onLogout }: EmployeeDashboardScreenProps) {
   // Welcome/Goodbye animation state (moved inside component)
@@ -240,11 +314,12 @@ function EmployeeDashboardScreen({ user, onLogout }: EmployeeDashboardScreenProp
   }, [user?.business_id]);
 
   // Fetch employees, tasks, and materials from Supabase on mount
+  // FIXED: Removed fetchData from dependencies to prevent infinite loop
   useEffect(() => {
     if (user?.business_id) {
       fetchData();
     }
-  }, [user?.business_id, fetchData]);
+  }, [user?.business_id]); // Only depend on business_id, not fetchData function
 
   // --- CLOCK IN/OUT LOGIC ---
   const [clockLoading, setClockLoading] = useState(false);
@@ -466,6 +541,40 @@ function EmployeeDashboardScreen({ user, onLogout }: EmployeeDashboardScreenProp
       Alert.alert('Error', 'Failed to complete task.');
     }
   };
+
+  // Emergency safe admin dashboard navigation function - NO INFINITE LOOPS
+  const handleAdminNavigation = useCallback(async () => {
+    try {
+      console.log('[EmployeeDashboardScreen] Admin dashboard navigation initiated');
+      
+      // Close modal first
+      setSettingsVisible(false);
+      
+      // Minimal delay to prevent modal/navigation race conditions
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // EMERGENCY: Simple navigation without complex error handling that could cause infinite loops
+      console.log('[EmployeeDashboardScreen] Performing emergency navigation...');
+      
+      // Direct navigation without complex debugging that could cause system crashes
+      if (Platform.OS === 'web') {
+        // For web, use window.location as emergency fallback
+        window.location.href = '/admin-dashboard';
+      } else {
+        router.replace('/admin-dashboard');
+      }
+      
+      console.log('[EmployeeDashboardScreen] Emergency navigation completed');
+      
+    } catch (error: any) {
+      console.error('[EmployeeDashboardScreen] Emergency navigation error:', error);
+      Alert.alert('Navigation Error', 'Please refresh the page and try again.');
+      
+      // Re-open settings modal only if we can safely do so
+      setTimeout(() => setSettingsVisible(true), 1000);
+    }
+  }, [router]);
+
   // Theme/colors
   const colorScheme = useColorScheme();
   const [darkMode, setDarkMode] = useState(false);
@@ -510,7 +619,8 @@ function EmployeeDashboardScreen({ user, onLogout }: EmployeeDashboardScreenProp
 
   // Tab UI
   return (
-    <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 16, paddingHorizontal: 8 }]}> 
+    <EmployeeDashboardErrorBoundary>
+      <View style={[styles.container, { backgroundColor: theme.background, paddingTop: insets.top + 16, paddingHorizontal: 8 }]}> 
       {/* Welcome/Goodbye Animation Modal */}
       {showGreeting && (
         <Modal visible transparent animationType="none">
@@ -552,7 +662,13 @@ function EmployeeDashboardScreen({ user, onLogout }: EmployeeDashboardScreenProp
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { alignItems: 'center', padding: 32 }]}> 
             <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.primary, marginBottom: 18 }}>Settings</Text>
-            <TouchableOpacity style={[styles.settingsBtn, { backgroundColor: theme.primary, marginBottom: 14 }]} onPress={() => { setSettingsVisible(false); router.replace('/admin-dashboard'); }}>
+            <TouchableOpacity 
+              style={[styles.settingsBtn, { backgroundColor: theme.primary, marginBottom: 14 }]} 
+              onPress={() => {
+                // Use a safer, non-async approach to prevent crashes
+                handleAdminNavigation();
+              }}
+            >
               <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Go to Admin Dashboard</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.settingsBtn, { backgroundColor: isDark ? theme.card : theme.primary, marginBottom: 14 }]} onPress={() => setDarkMode(!darkMode)}>
@@ -790,6 +906,7 @@ function EmployeeDashboardScreen({ user, onLogout }: EmployeeDashboardScreenProp
         <NotificationPanel notifications={notifications} onClose={() => setNotificationPanelVisible(false)} />
       </Modal>
     </View>
+    </EmployeeDashboardErrorBoundary>
   );
 }
 

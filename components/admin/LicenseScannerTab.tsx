@@ -34,12 +34,7 @@ const LicenseScannerTab: React.FC<LicenseScannerTabProps> = ({ user, darkMode })
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Load initial data
-  useEffect(() => {
-    loadData();
-  }, [user.business_id]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       console.log('📊 Loading scan data for business:', user.business_id);
       setLoading(true);
@@ -59,13 +54,18 @@ const LicenseScannerTab: React.FC<LicenseScannerTabProps> = ({ user, darkMode })
     } finally {
       setLoading(false);
     }
-  };
+  }, [user.business_id]); // Only depend on business_id
+
+  // FIXED: Load initial data
+  useEffect(() => {
+    loadData();
+  }, [loadData]); // Now depends on memoized loadData
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadData();
     setRefreshing(false);
-  }, [user.business_id]);
+  }, [loadData]); // Now safe to depend on loadData since it's memoized
 
   const handleScanComplete = useCallback(async (vehicleData: any) => {
     try {
@@ -138,7 +138,7 @@ const LicenseScannerTab: React.FC<LicenseScannerTabProps> = ({ user, darkMode })
     } finally {
       setLoading(false);
     }
-  }, [user.business_id, loadData]);
+  }, [user.business_id, loadData]); // Now safe to depend on loadData since it's memoized
 
   // Handle image upload from main screen
   const handleImageUpload = useCallback(() => {
@@ -211,7 +211,7 @@ const LicenseScannerTab: React.FC<LicenseScannerTabProps> = ({ user, darkMode })
       console.error('Error verifying scan:', error);
       Alert.alert('Error', 'Failed to verify record. Please try again.');
     }
-  }, [loadData]);
+  }, [loadData]); // Now safe to depend on loadData since it's memoized
 
   const handleDeleteRecord = useCallback(async (recordId: string) => {
     Alert.alert(
@@ -235,7 +235,7 @@ const LicenseScannerTab: React.FC<LicenseScannerTabProps> = ({ user, darkMode })
         }
       ]
     );
-  }, [loadData]);
+  }, [loadData]); // Now safe to depend on loadData since it's memoized
 
   const renderVehicleRecord = ({ item }: { item: VehicleScanWithUserInfo }) => (
     <View style={[styles.recordCard, { backgroundColor: darkMode ? '#23262f' : '#fff' }]}>

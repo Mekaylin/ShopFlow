@@ -113,15 +113,22 @@ export default function LoginScreen({ onLogin, setSession }: LoginScreenProps) {
         setLoading(false);
         return;
       }
-      // Only allow admin login
-      if (userRow.role !== 'admin') {
-        setError('Only admin login is allowed.');
+      // Allow both admin and employee login
+      if (userRow.role !== 'admin' && userRow.role !== 'employee') {
+        setError('Invalid user role. Please contact administrator.');
         setLoading(false);
         return;
       }
       setLoginAttempts(0);
-      if (onLogin) onLogin('admin');
-      router.replace('/admin-dashboard');
+      
+      // Route based on user role
+      if (userRow.role === 'admin') {
+        if (onLogin) onLogin('admin');
+        router.replace('/admin-dashboard');
+      } else {
+        if (onLogin) onLogin('employee');
+        router.replace('/employee-dashboard');
+      }
     } catch (e: any) {
       setError(e.message || 'Login failed.');
       console.error('[Login] Unexpected error:', e, { email });

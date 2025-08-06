@@ -36,6 +36,16 @@
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/icon.png",
+      "build": {
+        "babel": {
+          "include": [
+            "@expo/vector-icons"
+          ]
+        }
+      },
+      "routing": {
+        "mode": "spa"
+      },
       "meta": [
         {
           "name": "mobile-web-app-capable",

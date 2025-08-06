@@ -64,6 +64,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [darkMode, setDarkModeState] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [sessionInitialized, setSessionInitialized] = useState(false);
+  const [lastSessionCheck, setLastSessionCheck] = useState<number>(0);
 
   // Load dark mode preference from storage
   useEffect(() => {
@@ -127,84 +129,105 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [userProfile]);
 
-  // Simplified session check with mobile web optimizations
+  // EMERGENCY: Simplified session check to prevent system crashes and infinite loops
   const getInitialSession = useCallback(async () => {
+    // EMERGENCY CIRCUIT BREAKER: Prevent infinite loops
+    const now = Date.now();
+    if (sessionInitialized && (now - lastSessionCheck < 5000)) {
+      console.log('[AuthContext] CIRCUIT BREAKER: Skipping session check - too frequent');
+      return;
+    }
+    
+    if (retryCount >= 3) {
+      console.log('[AuthContext] CIRCUIT BREAKER: Max retry count reached, stopping');
+      setLoading(false);
+      return;
+    }
+    
     console.log('[AuthContext] Getting initial session...');
+    setLastSessionCheck(now);
     setLoading(true);
     setSessionError(null);
     
     try {
-      // For mobile web, first check localStorage directly
-      if (Platform.OS === 'web') {
-        // Check for any Supabase auth keys in localStorage
-        const hasSupabaseAuth = Object.keys(localStorage).some(key => 
-          key.startsWith('sb-') && key.includes('-auth-token')
-        );
-        console.log('[AuthContext] Supabase auth data exists:', hasSupabaseAuth);
-        
-        // If no stored session on mobile web, skip the wait
-        if (!hasSupabaseAuth && /Mobi|Android/i.test(navigator.userAgent)) {
-          console.log('[AuthContext] No stored session on mobile web, setting to logged out');
-          setUser(null);
-          setUserProfile(null);
-          setLoading(false);
-          return;
-        }
-      }
+      // EMERGENCY: Use simple session check without complex platform detection that could cause crashes
+      const { data: { session }, error } = await supabase.auth.getSession();
       
-      // Use a promise race to implement timeout (shorter for mobile)
-      const isMobileWeb = Platform.OS === 'web' && /Mobi|Android/i.test(navigator.userAgent);
-      const timeout = isMobileWeb ? 2000 : 3000; // Shorter timeout for mobile web
-      
-      const sessionPromise = supabase.auth.getSession();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Session check timeout')), timeout)
-      );
-      
-      const { data: { session }, error } = await Promise.race([
-        sessionPromise,
-        timeoutPromise
-      ]) as any;
-      
-      console.log('[AuthContext] Initial session result:', { session: !!session, error });
+      console.log('[AuthContext] Session result:', { 
+        hasSession: !!session, 
+        hasUser: !!session?.user, 
+        userId: session?.user?.id,
+        error: error?.message
+      });
       
       if (error) {
         console.error('[AuthContext] Session error:', error);
         setUser(null);
         setUserProfile(null);
       } else if (session?.user) {
+        console.log('[AuthContext] Found session for user:', session.user.id);
         setUser(session.user);
-        // For mobile web, eagerly set a basic profile to enable navigation
-        if (isMobileWeb) {
-          setUserProfile({ id: session.user.id, role: 'employee', email: session.user.email });
+        
+        // EMERGENCY: For web platforms, set basic profile immediately to prevent loading loops
+        if (Platform.OS === 'web') {
+          setUserProfile({ 
+            id: session.user.id, 
+            role: 'employee', 
+            email: session.user.email,
+            business_id: 'demo' // Default business for emergency access
+          });
         }
-        // Fetch full profile asynchronously
-        fetchUserProfile(session.user.id);
+        
+        // Fetch full profile without infinite retry loops
+        try {
+          const profile = await fetchUserProfile(session.user.id);
+          if (!profile && retryCount < 2) {
+            setRetryCount(prev => prev + 1);
+          }
+        } catch (profileError) {
+          console.error('[AuthContext] Profile fetch failed:', profileError);
+          // Don't retry profile fetch on error to prevent infinite loops
+        }
       } else {
+        console.log('[AuthContext] No session found');
         setUser(null);
         setUserProfile(null);
       }
+      
+      setSessionInitialized(true);
     } catch (error) {
       console.error('[AuthContext] Failed to get session:', error);
       setUser(null);
       setUserProfile(null);
-      if ((error as Error)?.message === 'Session check timeout') {
-        setSessionError('Connection slow. Please refresh if login doesn\'t complete.');
-      }
+      setSessionError('Connection error. Please refresh if login doesn\'t complete.');
     } finally {
       setLoading(false);
     }
-  }, [fetchUserProfile]);
+  }, [fetchUserProfile]); // REMOVED retryCount from dependencies to prevent infinite loops
 
   useEffect(() => {
-    getInitialSession();
-  }, [getInitialSession]);
+    // EMERGENCY: Only run initial session check once
+    if (!sessionInitialized) {
+      getInitialSession();
+    }
+  }, []); // EMPTY dependency array to prevent infinite loops
 
-  // Listen for auth state changes with mobile web optimizations
+  // Listen for auth state changes with web platform optimizations
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('[AuthContext] Auth state changed:', event, session?.user?.id);
+        
+        // EMERGENCY CIRCUIT BREAKER: Prevent INITIAL_SESSION from triggering infinite loops
+        if (event === 'INITIAL_SESSION' && sessionInitialized) {
+          console.log('[AuthContext] CIRCUIT BREAKER: Ignoring duplicate INITIAL_SESSION event');
+          return;
+        }
+        
+        // Platform detection for auth state changes
+        const isMobileWeb = Platform.OS === 'web' && /Mobi|Android/i.test(navigator.userAgent);
+        const isDesktopWeb = Platform.OS === 'web' && !/Mobi|Android/i.test(navigator.userAgent);
+        const isWeb = Platform.OS === 'web';
         
         if (session?.user) {
           const currentUserId = session.user.id;
@@ -214,14 +237,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           
           setUser(session.user);
           
-          // For mobile web, set a basic profile immediately to prevent blocking
-          const isMobileWeb = Platform.OS === 'web' && /Mobi|Android/i.test(navigator.userAgent);
-          if (isMobileWeb && (!userProfile || shouldFetchProfile)) {
+          // For all web platforms, set a basic profile immediately to prevent blocking
+          if (isWeb && (!userProfile || shouldFetchProfile)) {
+            console.log('[AuthContext] Setting temporary profile for web platform');
             setUserProfile({ id: currentUserId, role: 'employee', email: session.user.email });
           }
           
-          // Fetch full profile asynchronously for certain events
-          if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && shouldFetchProfile) {
+          // Fetch full profile asynchronously for certain events (but NOT for INITIAL_SESSION to prevent loops)
+          if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && shouldFetchProfile) {
             fetchUserProfile(currentUserId);
           }
         } else {
@@ -231,7 +254,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Clear stored session data on sign out
           if (event === 'SIGNED_OUT') {
             try {
-              if (Platform.OS === 'web') {
+              if (isWeb) {
                 // Clear all supabase auth related items with correct key format
                 Object.keys(localStorage).forEach(key => {
                   if (key.startsWith('sb-') && key.includes('auth-token')) {
@@ -250,7 +273,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     );
 
     return () => subscription.unsubscribe();
-  }, [fetchUserProfile, userProfile?.id]); // Only depend on profile ID, not entire profile
+  }, [fetchUserProfile, userProfile?.id, sessionInitialized]); // Added sessionInitialized to dependencies
 
   // Sign out function
   const signOut = async () => {
@@ -290,25 +313,59 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     console.log('[AuthContext] Refreshing session...');
     try {
       setLoading(true);
+      
+      // For mobile web, first check if we have stored auth data
+      if (Platform.OS === 'web') {
+        const supabaseProjectRef = 'qdfhklikmkyeqsiuapjg';
+        const authTokenKey = `sb-${supabaseProjectRef}-auth-token`;
+        const storedToken = localStorage.getItem(authTokenKey);
+        
+        console.log('[AuthContext] Refresh session - stored token exists:', !!storedToken);
+        
+        if (!storedToken) {
+          console.log('[AuthContext] No stored token, cannot refresh session');
+          setUser(null);
+          setUserProfile(null);
+          setLoading(false);
+          return;
+        }
+      }
+      
       const { data: { session }, error } = await supabase.auth.refreshSession();
       
       if (error) {
         console.error('[AuthContext] Session refresh error:', error);
+        // On mobile web, if refresh fails, try to get session directly
+        if (Platform.OS === 'web' && /Mobi|Android/i.test(navigator.userAgent)) {
+          console.log('[AuthContext] Mobile web refresh failed, trying getSession...');
+          const { data: { session: currentSession }, error: getError } = await supabase.auth.getSession();
+          if (!getError && currentSession?.user) {
+            setUser(currentSession.user);
+            await fetchUserProfile(currentSession.user.id);
+            setLoading(false);
+            return;
+          }
+        }
+        setUser(null);
+        setUserProfile(null);
+        setLoading(false);
         return;
       }
       
       if (session?.user) {
+        console.log('[AuthContext] Session refreshed successfully for user:', session.user.id);
         setUser(session.user);
-        // For mobile web, set basic profile immediately
-        const isMobileWeb = Platform.OS === 'web' && /Mobi|Android/i.test(navigator.userAgent);
-        if (isMobileWeb) {
-          setUserProfile({ id: session.user.id, role: 'employee', email: session.user.email });
-        }
         // Fetch full profile
         await fetchUserProfile(session.user.id);
+      } else {
+        console.log('[AuthContext] No user in refreshed session');
+        setUser(null);
+        setUserProfile(null);
       }
     } catch (error) {
       console.error('[AuthContext] Failed to refresh session:', error);
+      setUser(null);
+      setUserProfile(null);
     } finally {
       setLoading(false);
     }
@@ -329,15 +386,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       {sessionError && (
         <View style={{ backgroundColor: '#fffbe6', padding: 16, borderRadius: 8, margin: 16, alignItems: 'center' }}>
           <Text style={{ color: '#d32f2f', fontWeight: 'bold', textAlign: 'center', marginBottom: 8 }}>{sessionError}</Text>
-          <TouchableOpacity
-            style={{ backgroundColor: '#1976d2', paddingHorizontal: 18, paddingVertical: 8, borderRadius: 8 }}
-            onPress={() => {
-              setSessionError(null);
-              getInitialSession();
-            }}
-          >
-            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Retry</Text>
-          </TouchableOpacity>
+          {retryCount < 3 && (
+            <TouchableOpacity
+              style={{ backgroundColor: '#1976d2', paddingHorizontal: 18, paddingVertical: 8, borderRadius: 8 }}
+              onPress={() => {
+                setSessionError(null);
+                setRetryCount(prev => prev + 1);
+                getInitialSession();
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Retry ({3 - retryCount} left)</Text>
+            </TouchableOpacity>
+          )}
+          {retryCount >= 3 && (
+            <Text style={{ color: '#666', textAlign: 'center', marginTop: 8 }}>
+              Max retries reached. Please refresh the page manually.
+            </Text>
+          )}
         </View>
       )}
       {children}

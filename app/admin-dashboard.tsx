@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../contexts/AuthContext';
+import { logNavigation, logNavigationError, getCurrentRoute } from '../utils/navigationDebug';
 import AdminDashboardScreen from './screens/AdminDashboardScreen';
 
 export default function AdminDashboard() {
@@ -9,38 +10,83 @@ export default function AdminDashboard() {
   const { user, userProfile, loading: authLoading, signOut } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
+  console.log('[AdminDashboard] Component mounted/updated:', {
+    user: !!user,
+    userProfile: !!userProfile,
+    userRole: userProfile?.role,
+    businessId: userProfile?.business_id,
+    authLoading,
+    error
+  });
+
   // Redirect if not authenticated or not an admin
   useEffect(() => {
-    if (!authLoading) {
-      if (!user) {
-        router.replace('/');
-        return;
-      }
+    // Add a small delay on web platforms to avoid navigation conflicts
+    const checkAccess = async () => {
+      console.log('[AdminDashboard] Access check starting:', {
+        authLoading,
+        user: !!user,
+        userProfile: !!userProfile,
+        userRole: userProfile?.role
+      });
       
-      if (!userProfile) {
-        setError('Could not load user profile');
-        return;
+      if (!authLoading) {
+        if (!user) {
+          console.log('[AdminDashboard] No user found, redirecting to login');
+          // Add delay for web platform compatibility
+          await new Promise(resolve => setTimeout(resolve, 100));
+          router.replace('/');
+          return;
+        }
+        
+        if (!userProfile) {
+          console.log('[AdminDashboard] No user profile found');
+          setError('Could not load user profile');
+          return;
+        }
+        
+        if (userProfile.role !== 'admin') {
+          console.log('[AdminDashboard] Access denied, user role:', userProfile.role);
+          setError('Access denied: Admin privileges required');
+          return;
+        }
+        
+        if (!userProfile.business_id) {
+          console.log('[AdminDashboard] No business ID found');
+          setError('No business associated with this account');
+          return;
+        }
+        
+        console.log('[AdminDashboard] Access check passed successfully');
+        setError(null); // Clear any previous errors
       }
-      
-      if (userProfile.role !== 'admin') {
-        setError('Access denied: Admin privileges required');
-        return;
-      }
-      
-      if (!userProfile.business_id) {
-        setError('No business associated with this account');
-        return;
-      }
-    }
+    };
+    
+    checkAccess();
   }, [user, userProfile, authLoading, router]);
 
   const handleLogout = async () => {
+    console.log('[AdminDashboard] Logout initiated');
     try {
       await signOut();
+      console.log('[AdminDashboard] Logout successful, redirecting to login');
       router.replace('/');
     } catch (error: any) {
-      console.error('Logout error:', error);
+      console.error('[AdminDashboard] Logout error:', error);
       Alert.alert('Error', 'Failed to log out. Please try again.');
+    }
+  };
+
+  const handleBackToEmployee = async () => {
+    console.log('[AdminDashboard] Navigating back to employee dashboard');
+    try {
+      // Use replace instead of push to avoid navigation stack issues
+      logNavigation(getCurrentRoute(), '/employee-dashboard', 'router.replace');
+      router.replace('/employee-dashboard');
+    } catch (error: any) {
+      console.error('[AdminDashboard] Navigation error:', error);
+      logNavigationError(getCurrentRoute(), '/employee-dashboard', error);
+      Alert.alert('Error', 'Failed to navigate to employee dashboard. Please try again.');
     }
   };
 
@@ -70,5 +116,5 @@ export default function AdminDashboard() {
     );
   }
 
-  return <AdminDashboardScreen onLogout={handleLogout} user={userProfile} />;
+  return <AdminDashboardScreen onLogout={handleLogout} onBackToEmployee={handleBackToEmployee} user={userProfile} />;
 }
